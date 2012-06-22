@@ -155,6 +155,11 @@ public:
    * PiPo host:
    * A terminating receiver module provided by a PiPo host handles the received frames and usally returns 0.
    *
+   * @param time   time-tag for a single frame or a block of frames
+   * @param values   interleaved frames values, row by row (interleaving channels or columns), frame by frame
+   * @param size   size of eaqch of all frames
+   * @param num   number of frames
+   *
    * @return   0 for ok or a negative error code (to be specified), -1 for an unspecified error
    *
    */
