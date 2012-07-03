@@ -230,9 +230,12 @@ typedef struct MaxPiPoSt {
   PiPo pipo;
 } MaxPiPoT;
 
+#ifndef mysneg
 #define atom_isnum(a) ((a)->a_type == A_LONG || (a)->a_type == A_FLOAT)
 #define atom_issym(a) ((a)->a_type == A_SYM)
+#define atom_isobj(p) ((p)->a_type == A_OBJ) 
 #define mysneg(s) ((s)->s_name)
+#endif
 
 #define PIPO_MAX_CLASS(pipoClassName, pipoClass, pipoName) \
 static t_class *pipoClassName = NULL; \
