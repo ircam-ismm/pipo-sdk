@@ -12,6 +12,12 @@
 #ifndef _PIPO_
 #define _PIPO_
 
+#include <string>
+
+#ifdef WIN32
+#define snprintf _snprintf
+#endif
+
 class PiPo
 {
 public:
