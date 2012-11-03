@@ -26,20 +26,20 @@ public:
    *
    * This method is called in the streamAttributes() method of a PiPo module.
    *
-   * @param hasTimeTags   a boolean representing whether the elements of the stream are time-tagged
-   * @param rate   the frame rate (highest average rate for time-tagged streams)
-   * @param offset   the lag of the output stream relative to the input
-   * @param width   the frame width (also number of channels or matrix columns)
-   * @param size   the frame size (or number of matrix rows)
-   * @param labels   optional labels for the frames' channels or columns
-   * @param hasVarSize   a boolean representing whether the frames have a variable size (respecting the given frame size as maximum)
-   * @param domain   extent of a frame in the given domain (e.g. duration or frequency range)
-   * @param maxFrames   maximum number of frames in a block exchanged between two modules
+   * @param hasTimeTags a boolean representing whether the elements of the stream are time-tagged
+   * @param rate the frame rate (highest average rate for time-tagged streams)
+   * @param offset the lag of the output stream relative to the input
+   * @param width the frame width (also number of channels or matrix columns)
+   * @param size the frame size (or number of matrix rows)
+   * @param labels optional labels for the frames' channels or columns
+   * @param hasVarSize a boolean representing whether the frames have a variable size (respecting the given frame size as maximum)
+   * @param domain extent of a frame in the given domain (e.g. duration or frequency range)
+   * @param maxFrames maximum number of frames in a block exchanged between two modules
    *
-   * @return   used as return value of the streamAttributes() method
+   * @return used as return value of the streamAttributes() method
    *
    */
-  int propagateStreamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, char **labels, bool hasVarSize, double domain, unsigned int maxFrames) 
+  int propagateStreamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames) 
   { 
     if(this->receiver != NULL)
       return this->receiver->streamAttributes(hasTimeTags, rate, offset, width, size, labels, hasVarSize, domain, maxFrames);
@@ -52,7 +52,7 @@ public:
    *
    * This method is called in the reset() method of a PiPo module.
    *
-   * @return   used as return value of the reset() method
+   * @return used as return value of the reset() method
    *
    */
   int propagateReset(void) 
@@ -68,12 +68,12 @@ public:
    *
    * This method is called in the frames() method of a PiPo module.
    *
-   * @param time   time-tag for a single frame or a block of frames
-   * @param values   interleaved frames values, row by row (interleaving channels or columns), frame by frame
-   * @param size   size of eaqch of all frames
-   * @param num   number of frames
+   * @param time time-tag for a single frame or a block of frames
+   * @param values interleaved frames values, row by row (interleaving channels or columns), frame by frame
+   * @param size size of eaqch of all frames
+   * @param num number of frames
    *
-   * @return   used as return value of the frames() method
+   * @return used as return value of the frames() method
    *
    */
   int propagateFrames(double time, float *values, unsigned int size, unsigned int num) 
@@ -89,7 +89,7 @@ public:
    *
    * This method is called in the finalize() method of a PiPo module.
    *
-   * @return   used as return value of the finalize() method
+   * @return used as return value of the finalize() method
    *
    */
   int propagateFinalize(double inputEnd) 
@@ -101,9 +101,17 @@ public:
   }
   
   /**
+   * @brief Gets a PiPo modules reciver (call only by the PiPo host)
+   *
+   * return receiver PiPo module receiving this module's output stream
+   *
+   */
+  PiPo *getReceiver(void) { return this->receiver; };
+  
+  /**
    * @brief Sets a PiPo modules reciver (call only by the PiPo host)
    *
-   * @param receiver   PiPo module receiving this module's output stream
+   * @param receiver PiPo module receiving this module's output stream
    *
    */
   virtual void setReceiver(PiPo *receiver) { this->receiver = receiver; };
@@ -117,20 +125,20 @@ public:
    * PiPo host:
    * A terminating receiver module provided by a PiPo host handles the final output stream attributes and usally returns 0.
    *
-   * @param hasTimeTags   a boolean representing whether the elements of the stream are time-tagged
-   * @param rate   the frame rate (highest average rate for time-tagged streams)
-   * @param offset   the lag of the output stream relative to the input
-   * @param width   the frame width (also number of channels or matrix columns)
-   * @param size   the frame size (or number of matrix rows)
-   * @param labels   optional labels for the frames' channels or columns
-   * @param hasVarSize   a boolean representing whether the frames have a variable size (respecting the given frame size as maximum)
-   * @param domain   extent of a frame in the given domain (e.g. duration or frequency range)
-   * @param maxFrames   maximum number of frames in a block exchanged between two modules
+   * @param hasTimeTags a boolean representing whether the elements of the stream are time-tagged
+   * @param rate the frame rate (highest average rate for time-tagged streams)
+   * @param offset the lag of the output stream relative to the input
+   * @param width the frame width (also number of channels or matrix columns)
+   * @param size the frame size (or number of matrix rows)
+   * @param labels optional labels for the frames' channels or columns
+   * @param hasVarSize a boolean representing whether the frames have a variable size (respecting the given frame size as maximum)
+   * @param domain extent of a frame in the given domain (e.g. duration or frequency range)
+   * @param maxFrames maximum number of frames in a block exchanged between two modules
    *
-   * @return   0 for ok or a negative error code (to be specified), -1 for an unspecified error
+   * @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
    *
    */
-  virtual int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, char **labels, bool hasVarSize, double domain, unsigned int maxFrames) 
+  virtual int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames) 
   { 
     return this->propagateStreamAttributes(hasTimeTags, rate, offset, width, size, labels, hasVarSize, domain, maxFrames); 
   };
@@ -144,7 +152,7 @@ public:
    * PiPo host:
    * A terminating receiver module provided by a PiPo host usally simply returns 0.
    *
-   * @return   0 for ok or a negative error code (to be specified), -1 for an unspecified error
+   * @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
    *
    */
   virtual int reset(void) 
@@ -161,10 +169,10 @@ public:
    * PiPo host:
    * A terminating receiver module provided by a PiPo host handles the received frames and usally returns 0.
    *
-   * @param time   time-tag for a single frame or a block of frames
-   * @param values   interleaved frames values, row by row (interleaving channels or columns), frame by frame
-   * @param size   size of eaqch of all frames
-   * @param num   number of frames
+   * @param time time-tag for a single frame or a block of frames
+   * @param values interleaved frames values, row by row (interleaving channels or columns), frame by frame
+   * @param size size of eaqch of all frames
+   * @param num number of frames
    *
    * @return   0 for ok or a negative error code (to be specified), -1 for an unspecified error
    *
@@ -183,9 +191,9 @@ public:
    * PiPo host:
    * A terminating receiver module provided by a PiPo host usally simply returns 0.
    *
-   * @param inputEnd   end time of the finalized input stream
+   * @param inputEnd end time of the finalized input stream
    *
-   * @return   0 for ok or a negative error code (to be specified), -1 for an unspecified error
+   * @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
    *
    */
   virtual int finalize(double inputEnd) 
@@ -210,8 +218,8 @@ protected:
    * The implmentation of this method by the terminating receiver module provided by a PiPo host
    * would repropagate the input stream attributes by calling streamAttributes() of the first module.
    *
-   * param unitId   (for host) index of the module that initially called streamAttributesChanged().
-   * @return   0 for ok or a negative error code (to be specified), -1 for an unspecified error
+   * param unitId (for host) index of the module that initially called streamAttributesChanged().
+   * @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
    *
    */
   virtual int streamAttributesChanged(unsigned int unitId = 0) 
