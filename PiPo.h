@@ -13,14 +13,14 @@
 #define _PIPO_
 
 #include <string>
-
-#ifdef WIN32
-#define snprintf _snprintf
-#endif
+#include "PiPoAttrs.h"
 
 class PiPo
 {
 public:
+  PiPo(PiPo *receiver = NULL) : attrs() { this->receiver = receiver; };  
+  ~PiPo(void) { destroyAttrs(); };
+  
   /**
    * @brief Propagates a module's output stream attributes to its reciever.
    *
@@ -142,7 +142,7 @@ public:
   { 
     return this->propagateStreamAttributes(hasTimeTags, rate, offset, width, size, labels, hasVarSize, domain, maxFrames); 
   };
-
+  
   /**
    * @brief Resets processing (optional)
    *
@@ -200,13 +200,6 @@ public:
   {
     return this->propagateFinalize(inputEnd); 
   };
-  
-  PiPo(void) { this->receiver = NULL; };  
-  PiPo(PiPo *receiver) { this->receiver = receiver; };  
-  ~PiPo(void) { };
-  
-protected:
-  PiPo *receiver;
 
   /**
    * @brief Signals that the output stream parameters of a given module have changed
@@ -215,7 +208,7 @@ protected:
    * This method is called (with 0) in method setting a module parameter that requires changing the output stream attributes.
    *
    * PiPo host:
-   * The implmentation of this method by the terminating receiver module provided by a PiPo host
+   * The implementation of this method by the terminating receiver module provided by a PiPo host
    * would repropagate the input stream attributes by calling streamAttributes() of the first module.
    *
    * param unitId (for host) index of the module that initially called streamAttributesChanged().
@@ -229,6 +222,104 @@ protected:
     else 
       return -1; 
   };
+    
+protected:
+  PiPo *receiver;
+  vector<PiPoAttr *> attrs;
+ 
+  unsigned int addAttr(const char *name, enum PiPoAttrDef::Type type, unsigned int size, const char *enumItems, bool changesStream, const char *descr)
+  {
+    unsigned int  index = this->attrs.size();
+    
+    PiPoAttrDef *attrDef = new PiPoAttrDef(name, type, size, enumItems, changesStream, descr);
+    PiPoAttr *attr = attrDef->instantiate();
+    this->attrs.push_back(attr);
+    
+    return index;
+  };
+  
+  unsigned int addAttr(const char *name, enum PiPoAttrDef::Type type, unsigned int size, const char *enumItems, bool changesStream, const char *descr, int initVal)
+  {
+    unsigned int index = this->addAttr(name, type, size, enumItems, changesStream, descr);
+    
+    this->attrs[index]->set(initVal);
+    
+    return index;
+  };
+  
+  unsigned int addAttr(const char *name, enum PiPoAttrDef::Type type, unsigned int size, const char *enumItems, bool changesStream, const char *descr, double initVal)
+  {
+    unsigned int index = this->addAttr(name, type, size, enumItems, changesStream, descr);
+    
+    this->attrs[index]->set(initVal);
+    
+    return index;
+  };
+  
+  void addAttr(const char *name, PiPoAttr *attr)
+  {
+    attr->rename(name);
+    this->attrs.push_back(attr);
+  }
+  
+  void destroyAttrs(void)
+  {
+    if(this->attrs.size() > 0)
+    {
+      for(unsigned int i = 0; i < this->attrs.size(); i++)
+      {
+        this->attrs[i]->destroyDef();
+        delete this->attrs[i];
+      }
+    }
+  }  
+  
+public:
+  int getAttrId(const char *attrName)
+  {
+    for(unsigned int i = 0; i < attrs.size(); i++)
+    {
+      if(strcasecmp(this->attrs[i]->getName(), attrName) == 0)
+        return i;
+    }
+    
+    return -1;
+  }
+
+  PiPoAttr *getAttr(unsigned int attrId)
+  {
+    if(attrId >= this->attrs.size())
+      attrId = this->attrs.size() - 1;
+    
+    return this->attrs[attrId];
+  }
+    
+  unsigned int getNumAttrs(void)
+  {
+    return this->attrs.size();
+  }
+  
+  const char *getAttrName(unsigned int attrId) { return this->getAttr(attrId)->getName(); };
+  enum PiPoAttrDef::Type getAttrType(unsigned int attrId) { return this->getAttr(attrId)->getType(); };
+  unsigned int getAttrSize(unsigned int attrId) { return this->getAttr(attrId)->getSize(); };
+  bool attrChangesStream(unsigned int attrId) { return this->getAttr(attrId)->changesStream(); };
+  const char *getAttrEnum(unsigned int attrId) { return this->getAttr(attrId)->getEnum(); };
+  const char *getAttrDescr(unsigned int attrId) { return this->getAttr(attrId)->getDescr(); };
+  
+  void clearAttribute(unsigned int attrId);
+  bool setAttrVal(unsigned int attrId, int value){ return this->getAttr(attrId)->set(value); };
+  bool setAttrVal(unsigned int attrId, double value) { return this->getAttr(attrId)->set(value); };
+  bool setAttrVal(unsigned int attrId, const char *value) { return this->getAttr(attrId)->set(value); };
+  bool setAttrVal(unsigned int attrId, vector<int> &value) { return this->getAttr(attrId)->set(value); };
+  bool setAttrVal(unsigned int attrId, vector<double> &value) { return this->getAttr(attrId)->set(value); };
+  bool setAttrVal(unsigned int attrId, vector<const char *> &value) { return this->getAttr(attrId)->set(value); };
+  
+  bool getAttrVal(unsigned int attrId, int &value) { return this->getAttr(attrId)->get(value); };
+  bool getAttrVal(unsigned int attrId, double &value) { return this->getAttr(attrId)->get(value); };
+  bool getAttrVal(unsigned int attrId, const char *&value) { return this->getAttr(attrId)->get(value); };
+  bool getAttrVal(unsigned int attrId, vector<int> &value) { return this->getAttr(attrId)->get(value); };
+  bool getAttrVal(unsigned int attrId, vector<double> &value) { return this->getAttr(attrId)->get(value); };
+  bool getAttrVal(unsigned int attrId, vector<const char *> &value) { return this->getAttr(attrId)->get(value); };
 };
 
 #endif
