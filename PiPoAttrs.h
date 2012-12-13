@@ -3,7 +3,7 @@
  * @file PiPoAttrs.h
  * @author Norbert.Schnell@ircam.fr
  * 
- * @brief Plugin Interface for Processing Objects 0.1 (experimental)
+ * @brief Plugin Interface for Processing Objects
  * 
  * Copyright (C) 2012 by IMTR IRCAM – Centre Pompidou, Paris, France.
  * All rights reserved.
