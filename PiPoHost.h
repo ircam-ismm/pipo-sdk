@@ -12,8 +12,8 @@
 #ifndef _PIPO_HOST_
 #define _PIPO_HOST_
 
+#include "MaxPiPo.h"
 #include <string>
-#include "PiPo.h"
 
 using namespace std;
 
@@ -99,9 +99,9 @@ public:
   
   ~PiPoChainDescr(void) { };
   
-  unsigned int parse(const char *pipoChain)
+  unsigned int parse(const char *str)
   {
-    string pipoChainStr = pipoChain;
+    string pipoChainStr = str;
     unsigned int pos = 0;
     
     this->clear();
@@ -185,7 +185,7 @@ public:
   
   ~PiPoChain(void) { };
   
-  PiPo *instantiate(PiPoChainDescr &chainDescr, PiPo *receiver)
+  PiPo *instantiate(PiPoChainDescr chainDescr, PiPo *receiver)
   {
     PiPo *pipo = NULL;
     
