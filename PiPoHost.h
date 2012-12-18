@@ -3,7 +3,7 @@
  * @file PiPoHost.h
  * @author Norbert.Schnell@ircam.fr
  * 
- * @brief Plugin Interface for Processing Objects 0.1 (experimental)
+ * @brief Plugin Interface for Processing Objects
  * 
  * Copyright (C) 2012 by IMTR IRCAM – Centre Pompidou, Paris, France.
  * All rights reserved.
@@ -12,7 +12,7 @@
 #ifndef _PIPO_HOST_
 #define _PIPO_HOST_
 
-#include "MaxPiPo.h"
+#include "PiPo.h"
 #include <string>
 
 using namespace std;
@@ -148,7 +148,7 @@ public:
   {
     this->descr = other.descr;
     this->pipo = other.pipo;
-    this->module = other.module;
+    this->module = NULL; /* clone is a pure PiPo without module */
   };
   
   ~PiPoOp(void)
@@ -158,12 +158,17 @@ public:
     
     if(this->pipo != NULL)
       delete pipo;
-  }
-
+  };
+  
   PiPo *instantiate(PiPoModuleFactory *moduleFactory, unsigned int index, PiPoDecr &descr)
   {
     this->descr = &descr;
-    this->module = moduleFactory->createModule(index, descr.pipoName, descr.instanceName, this->pipo);    
+    this->pipo = NULL;
+    this->module = NULL;
+    
+    if(moduleFactory != NULL)
+      this->module = moduleFactory->createModule(index, descr.pipoName, descr.instanceName, this->pipo);
+    
     return this->pipo;
   };
   
@@ -173,45 +178,132 @@ public:
   }
 };
 
-class PiPoChain : public vector<PiPoOp>
+class PiPoChain : public PiPo, public vector<PiPoOp>
 {
   PiPoModuleFactory *moduleFactory;
 
 public:
-  PiPoChain(PiPoModuleFactory *moduleFactory) : vector<PiPoOp>()
+  PiPoChain(PiPoModuleFactory *moduleFactory = NULL, PiPoChainDescr *chainDescr = NULL, PiPo *receiver = NULL) : PiPo(), vector<PiPoOp>()
   { 
     this->moduleFactory = moduleFactory;
+    
+    if(chainDescr != NULL)
+      this->set(chainDescr, receiver);
+  };  
+  
+  PiPoChain(const PiPoChain &other) : vector<PiPoOp>(*this)
+  { 
+    this->moduleFactory = NULL;
+    
+    PiPo *next = getTail();
+    
+    if(next != NULL)
+    {
+      for(int i = this->size() - 2; i >= 0; i--)
+      {
+        PiPo *pipo = (*this)[i].getPiPo();
+        pipo->setReceiver(next);
+        next = pipo;
+      }
+    }
   };  
   
   ~PiPoChain(void) { };
   
-  PiPo *instantiate(PiPoChainDescr chainDescr, PiPo *receiver)
+  PiPo *getHead(void)
   {
-    PiPo *pipo = NULL;
+    if(this->size() > 0)
+      return (*this)[0].getPiPo();
     
+    return NULL;
+  }
+  
+  PiPo *getTail(void)
+  {
+    if(this->size() > 0)
+      return (*this)[this->size() - 1].getPiPo();
+    
+    return NULL;
+  }
+  
+  void setReceiver(PiPo *receiver)
+  {
+    if(this->size() > 0)
+    {
+      PiPo *tail = this->getTail();
+      
+      if(tail != NULL)
+        tail->setReceiver(receiver);
+    }
+  }
+  
+  int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
+  {
+    PiPo *head = this->getHead();
+    
+    if(head != NULL)
+      return head->streamAttributes(hasTimeTags, rate, offset, width, size, labels, hasVarSize, domain, maxFrames);
+    
+    return -1;
+  }
+  
+  int reset(void)
+  {
+    PiPo *head = this->getHead();
+    
+    if(head != NULL)
+      return head->reset();
+    
+    return -1;
+  }
+  
+  int frames(double time, float *values, unsigned int size, unsigned int num)
+  {
+    PiPo *head = this->getHead();
+    
+    if(head != NULL)
+      return head->frames(time, values, size, num);
+    
+    return -1;
+  }
+  
+  int finalize(double inputEnd)
+  {
+    PiPo *head = this->getHead();
+    
+    if(head != NULL)
+      return head->finalize(inputEnd);
+    
+    return -1;
+  }
+  
+  bool set(PiPoChainDescr *chainDescr, PiPo *receiver = NULL)
+  {
     this->clear();
     
-    if(chainDescr.size() > 0)
+    if(chainDescr->size() > 0)
     {
-      this->resize(chainDescr.size());
+      this->resize(chainDescr->size());
       
       for(int i = this->size() - 1; i >= 0; i--)
       {
-        pipo = (*this)[i].instantiate(this->moduleFactory, i, chainDescr[i]);
+        PiPo *pipo = (*this)[i].instantiate(this->moduleFactory, i, (*chainDescr)[i]);
         
         if(pipo == NULL)
-          return NULL;        
-        
-        if(receiver != NULL)
-        {
-          pipo->setReceiver(receiver);
-          receiver = pipo;
+        {    
+          this->clear();
+          return false; 
         }
+        
+        pipo->setReceiver(receiver);
+        receiver = pipo;
       }
+      
+      return true;
     }
     
-    return pipo;
-  }  
+    return false;
+  };
 };
 
 #endif

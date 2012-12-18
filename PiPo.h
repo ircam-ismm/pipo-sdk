@@ -13,13 +13,30 @@
 #define _PIPO_
 
 #include <string>
-#include "PiPoAttrs.h"
+#include <vector>
+#include <functional>
+#include <cstring>
+#include <typeinfo>
+#include <map>
 
 class PiPo
 {
+protected:
+  PiPo *receiver;
+
 public:
-  PiPo(PiPo *receiver = NULL) : attrs() { this->receiver = receiver; };  
-  ~PiPo(void) { destroyAttrs(); };
+  PiPo(PiPo *receiver = NULL) : attrs() 
+  { 
+    this->receiver = receiver; 
+  };
+  
+  PiPo(const PiPo &other)
+  { 
+    this->receiver = NULL; 
+    this->attrs = other.attrs;
+  };
+  
+  ~PiPo(void) { };
   
   /**
    * @brief Propagates a module's output stream attributes to its reciever.
@@ -35,7 +52,6 @@ public:
    * @param hasVarSize a boolean representing whether the frames have a variable size (respecting the given frame size as maximum)
    * @param domain extent of a frame in the given domain (e.g. duration or frequency range)
    * @param maxFrames maximum number of frames in a block exchanged between two modules
-   *
    * @return used as return value of the streamAttributes() method
    *
    */
@@ -51,7 +67,6 @@ public:
    * @brief Propagates the reset control event.
    *
    * This method is called in the reset() method of a PiPo module.
-   *
    * @return used as return value of the reset() method
    *
    */
@@ -72,7 +87,6 @@ public:
    * @param values interleaved frames values, row by row (interleaving channels or columns), frame by frame
    * @param size size of eaqch of all frames
    * @param num number of frames
-   *
    * @return used as return value of the frames() method
    *
    */
@@ -103,7 +117,7 @@ public:
   /**
    * @brief Gets a PiPo modules reciver (call only by the PiPo host)
    *
-   * return receiver PiPo module receiving this module's output stream
+   * @return receiver PiPo module receiving this module's output stream
    *
    */
   PiPo *getReceiver(void) { return this->receiver; };
@@ -134,7 +148,6 @@ public:
    * @param hasVarSize a boolean representing whether the frames have a variable size (respecting the given frame size as maximum)
    * @param domain extent of a frame in the given domain (e.g. duration or frequency range)
    * @param maxFrames maximum number of frames in a block exchanged between two modules
-   *
    * @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
    *
    */
@@ -173,7 +186,6 @@ public:
    * @param values interleaved frames values, row by row (interleaving channels or columns), frame by frame
    * @param size size of eaqch of all frames
    * @param num number of frames
-   *
    * @return   0 for ok or a negative error code (to be specified), -1 for an unspecified error
    *
    */
@@ -192,7 +204,6 @@ public:
    * A terminating receiver module provided by a PiPo host usally simply returns 0.
    *
    * @param inputEnd end time of the finalized input stream
-   *
    * @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
    *
    */
@@ -223,103 +234,503 @@ public:
       return -1; 
   };
     
-protected:
-  PiPo *receiver;
-  vector<PiPoAttr *> attrs;
- 
-  unsigned int addAttr(const char *name, enum PiPoAttrDef::Type type, unsigned int size, const char *enumItems, bool changesStream, const char *descr)
-  {
-    unsigned int  index = this->attrs.size();
-    
-    PiPoAttrDef *attrDef = new PiPoAttrDef(name, type, size, enumItems, changesStream, descr);
-    PiPoAttr *attr = attrDef->instantiate();
-    this->attrs.push_back(attr);
-    
-    return index;
-  };
-  
-  unsigned int addAttr(const char *name, enum PiPoAttrDef::Type type, unsigned int size, const char *enumItems, bool changesStream, const char *descr, int initVal)
-  {
-    unsigned int index = this->addAttr(name, type, size, enumItems, changesStream, descr);
-    
-    this->attrs[index]->set(initVal);
-    
-    return index;
-  };
-  
-  unsigned int addAttr(const char *name, enum PiPoAttrDef::Type type, unsigned int size, const char *enumItems, bool changesStream, const char *descr, double initVal)
-  {
-    unsigned int index = this->addAttr(name, type, size, enumItems, changesStream, descr);
-    
-    this->attrs[index]->set(initVal);
-    
-    return index;
-  };
-  
-  void addAttr(const char *name, PiPoAttr *attr)
-  {
-    attr->rename(name);
-    this->attrs.push_back(attr);
-  }
-  
-  void destroyAttrs(void)
-  {
-    if(this->attrs.size() > 0)
-    {
-      for(unsigned int i = 0; i < this->attrs.size(); i++)
-      {
-        this->attrs[i]->destroyDef();
-        delete this->attrs[i];
-      }
-    }
-  }  
-  
+  /***********************************************
+   *
+   *  PiPo Attributes
+   *
+   */
 public:
-  int getAttrId(const char *attrName)
+  enum Type { Undefined, Bool, Enum, Int, Float, Double, String };
+  enum Enumerate { };
+  
+  class Attr
   {
-    for(unsigned int i = 0; i < attrs.size(); i++)
+  private:
+    unsigned int index;
+    const char *name; /**< attribute name */
+    const char *descr; /**< short description */
+    enum Type type;
+    bool changesStream;
+    
+  public:
+    /**
+     * PiPo attribute base class
+     */
+    Attr(PiPo *pipo, const char *name, const char *descr, const std::type_info *type, bool changesStream) 
+    { 
+      this->index = pipo->attrs.size();
+      this->name = name;
+      this->descr = descr;
+      
+      if(type == &typeid(bool))
+        this->type = Bool;
+      else if(type == &typeid(enum Enumerate))
+        this->type = Enum;
+      else if(type == &typeid(int))
+        this->type = Int;
+      else if(type == &typeid(float))
+        this->type = Float;
+      else if(type == &typeid(double))
+        this->type = Double;
+      else if(type == &typeid(std::string) || type == &typeid(const char *))
+        this->type = String;
+      else
+        this->type = Undefined;
+
+      this->changesStream = changesStream;
+
+      pipo->attrs.push_back(this);
+    };
+    
+    ~Attr(void) { };
+    
+    void setIndex(unsigned int index) { this->index = index; };
+    void setName(const char *name) { this->name = name; };
+    void setDescr(const char *descr) { this->descr = descr; };
+    
+    unsigned int getIndex(void) { return this->index; };
+    const char *getName(void) { return this->name; };
+    const char *getDescr(void) { return this->descr; };
+    enum Type getType(void) { return this->type; };
+    bool doesChangeStream(void) { return this->changesStream; };
+    
+    virtual unsigned int setSize(unsigned int size) { return this->getSize(); };
+    virtual unsigned int getSize(void) = 0;
+    
+    virtual void set(unsigned int i, int val) = 0;
+    virtual void set(unsigned int i, double val) = 0;
+    virtual void set(unsigned int i, const char *val) { };
+    virtual int getInt(unsigned int i) = 0;
+    virtual double getDbl(unsigned int i) = 0;
+    virtual const char *getStr(unsigned int i) { return NULL; };
+    
+    virtual std::vector<const char *> *getEnumList(void) { return NULL; };
+    
+    void rename(const char *name) { this->name = name; };
+  };
+  
+  /**
+   * PiPo enumerator attribute base class
+   */
+  class EnumAttr : public Attr
+  {
+    struct strCompare : public std::binary_function<const char *, const char *, bool> { 
+      bool operator() (const char *str1, const char *str2) const { return std::strcmp(str1, str2) < 0; } 
+    };
+    
+    unsigned int numEnumItems;
+    std::vector<const char *>enumList;
+    std::map<const char *, unsigned int, strCompare> enumMap;
+    
+  public:
+    EnumAttr(PiPo *pipo, const char *name, const char *descr, const std::type_info *type, bool changesStream) :
+    Attr(pipo, name, descr, type, changesStream)
     {
-      if(strcasecmp(this->attrs[i]->getName(), attrName) == 0)
-        return i;
     }
     
-    return -1;
-  }
+    void addEnumItem(const char *item)
+    {
+      unsigned int idx = this->enumList.size();
+      
+      this->enumList.push_back(item);
+      this->enumMap[item] = idx;
+    }
+    
+    std::vector<const char *> *getEnumList(void) 
+    { 
+      return &this->enumList; 
+    };
+    
+    int getEnumIndex(const char *tag)
+    { 
+      if(tag != NULL && this->enumMap.find(tag) != this->enumMap.end())
+        return this->enumMap[tag];
+      
+      return 0;
+    };    
 
-  PiPoAttr *getAttr(unsigned int attrId)
+    const char *getEnumTag(unsigned int idx)
+    { 
+      if(idx < this->numEnumItems)
+        return this->enumList[idx];
+      
+      return NULL;
+    };  
+    
+  protected:
+    int clipEnumIndex(int index)
+    {
+      if(index < 0)
+        index = 0;
+      else if(index >= (int)this->enumList.size())
+        index = this->enumList.size() - 1;
+      
+      return index;
+    }
+  };
+  
+  /**
+   * @brief Gets number of attributes
+   *
+   * @return number of attributes
+   *
+   */
+
+  void addAttr(PiPo *pipo, const char *name, const char *descr, Attr *attr) 
+  { 
+    /* overwrite index, name, and description */
+    attr->setIndex(pipo->attrs.size());
+    attr->setName(name);
+    attr->setDescr(descr);
+    
+    /* add to attr list */
+    this->attrs.push_back(attr);
+  };
+  
+  /**
+   * @brief Gets PiPo attribute by index
+   *
+   * @param index attribute index
+   * @return reference to PiPo attribute (NULL for invalid attribute index)
+   *
+   */
+  Attr *getAttr(unsigned int index)
   {
-    if(attrId >= this->attrs.size())
-      attrId = this->attrs.size() - 1;
+    if(index < this->attrs.size())
+      return this->attrs[index];
     
-    return this->attrs[attrId];
+    return NULL;
   }
+  
+  /**
+   * @brief Gets PiPo attribute by name
+   *
+   * @param name attribute name
+   * @return reference to PiPo attribute (NULL for invalid attribute name)
+   *
+   */
+  Attr *getAttr(const char *name)
+  {
+    for(unsigned int i = 0; i < this->attrs.size(); i++)
+    {
+      if(strcasecmp(this->attrs[i]->getName(), name) == 0)
+        return this->attrs[i];
+    }
     
+    return NULL;
+  }
+  
+  /**
+   * @brief Gets number of attributes
+   *
+   * @return number of attributes
+   *
+   */
   unsigned int getNumAttrs(void)
   {
     return this->attrs.size();
   }
+    
+private:
+  std::vector<Attr *> attrs; /**< list of attributes */
+};
+
+/***********************************************
+ *
+ *  Scalar Attribute
+ *
+ */
+template <typename TYPE>
+class PiPoScalarAttribute : public PiPo::Attr
+{
+private:
+  TYPE value;
   
-  const char *getAttrName(unsigned int attrId) { return this->getAttr(attrId)->getName(); };
-  enum PiPoAttrDef::Type getAttrType(unsigned int attrId) { return this->getAttr(attrId)->getType(); };
-  unsigned int getAttrSize(unsigned int attrId) { return this->getAttr(attrId)->getSize(); };
-  bool attrChangesStream(unsigned int attrId) { return this->getAttr(attrId)->changesStream(); };
-  const char *getAttrEnum(unsigned int attrId) { return this->getAttr(attrId)->getEnum(); };
-  const char *getAttrDescr(unsigned int attrId) { return this->getAttr(attrId)->getDescr(); };
+public:
+  PiPoScalarAttribute(PiPo *pipo, const char *name, const char *descr, bool changesStream,
+                      TYPE initVal = (TYPE)0) : 
+  Attr(pipo, name, descr, &typeid(TYPE), changesStream)
+  {
+    this->value = initVal;
+  }
   
-  void clearAttribute(unsigned int attrId);
-  bool setAttrVal(unsigned int attrId, int value){ return this->getAttr(attrId)->set(value); };
-  bool setAttrVal(unsigned int attrId, double value) { return this->getAttr(attrId)->set(value); };
-  bool setAttrVal(unsigned int attrId, const char *value) { return this->getAttr(attrId)->set(value); };
-  bool setAttrVal(unsigned int attrId, vector<int> &value) { return this->getAttr(attrId)->set(value); };
-  bool setAttrVal(unsigned int attrId, vector<double> &value) { return this->getAttr(attrId)->set(value); };
-  bool setAttrVal(unsigned int attrId, vector<const char *> &value) { return this->getAttr(attrId)->set(value); };
+  void set(TYPE value) { this->value = value; };
+  TYPE get(void) { return this->value; };
   
-  bool getAttrVal(unsigned int attrId, int &value) { return this->getAttr(attrId)->get(value); };
-  bool getAttrVal(unsigned int attrId, double &value) { return this->getAttr(attrId)->get(value); };
-  bool getAttrVal(unsigned int attrId, const char *&value) { return this->getAttr(attrId)->get(value); };
-  bool getAttrVal(unsigned int attrId, vector<int> &value) { return this->getAttr(attrId)->get(value); };
-  bool getAttrVal(unsigned int attrId, vector<double> &value) { return this->getAttr(attrId)->get(value); };
-  bool getAttrVal(unsigned int attrId, vector<const char *> &value) { return this->getAttr(attrId)->get(value); };
+  unsigned int getSize(void) { return 1; };
+  
+  void set(unsigned int i, int val) { this->value = (TYPE)val; };
+  void set(unsigned int i, double val) { this->value = (TYPE)val; };
+  
+  int getInt(unsigned int i) { return (int)this->value; };
+  double getDbl(unsigned int i) { return (double)this->value; };
+};
+
+template <>
+class PiPoScalarAttribute<enum PiPo::Enumerate> : public PiPo::EnumAttr
+{
+private:
+  unsigned int value;
+  
+public:
+  PiPoScalarAttribute(PiPo *pipo, const char *name, const char *descr, bool changesStream,
+                      unsigned int initVal = NULL) :
+  EnumAttr(pipo, name, descr, &typeid(enum PiPo::Enumerate), changesStream)
+  {    
+    this->value = initVal;
+  }
+  
+  void set(unsigned int value) { this->value = clipEnumIndex(value); };
+  void set(const char *value) { this->value = this->getEnumIndex(value); };
+  unsigned int get(void) { return this->value; };
+  const char *getStr(void) { return this->getEnumTag(this->value); };
+  
+  unsigned int getSize(void) { return 1; };  
+
+  void set(unsigned int i, int val) { this->value = clipEnumIndex((unsigned int)val); };
+  void set(unsigned int i, double val) { this->value = clipEnumIndex((unsigned int)val); };
+  void set(unsigned int i, const char *val) { this->value = getEnumIndex(val); };
+  
+  int getInt(unsigned int i) { return (int)this->value; };
+  double getDbl(unsigned int i) { return (double)this->value; };
+  const char *getStr(unsigned int i) { return this->getEnumTag(this->value); };
+};
+
+/***********************************************
+ *
+ *  Array Attribute
+ *
+ */
+/* waiting for C++11 */
+template< class TYPE, std::size_t SIZE>
+class array
+{
+  TYPE values[SIZE];
+  static const int size = SIZE;
+  
+public:
+  TYPE const& operator [] (unsigned int index) const { return this->values[index]; };
+  TYPE& operator [] (unsigned int index) { return &this->values[index]; };
+  //unsigned int size(void) { return this->numElems; };
+};
+
+template <typename TYPE, unsigned int SIZE>
+class PiPoArrayAttribute : public PiPo::Attr, public array<TYPE, SIZE>
+{
+public:
+  PiPoArrayAttribute(PiPo *pipo, const char *name, const char *descr, bool changesStream,
+                     TYPE initVal = (TYPE)0) : 
+  Attr(pipo, name, descr, &typeid(TYPE), changesStream), 
+  array<TYPE, SIZE>()
+  {
+    for(unsigned int i = 0; i < this->size(); i++)
+      (*this)[i] = initVal;
+  }
+  
+  unsigned int getSize(void) { return this->size(); }
+
+  void set(unsigned int i, int val)
+  { 
+    if(i < this->size())
+      (*this)[i] = (TYPE)val;
+  };
+  
+  void set(unsigned int i, double val) 
+  { 
+    if(i < this->size())
+      (*this)[i] = (TYPE)val;
+  };
+  
+  int getInt(unsigned int i) 
+  { 
+    if(i >= this->size())
+      i = this->size() - 1;
+    
+    return (*this)[i]; 
+  };
+  
+  double getDbl(unsigned int i) 
+  { 
+    if(i >= this->size())
+      i = this->size() - 1;
+    
+    return (double)(*this)[i]; 
+  };
+  
+  const char *getStr(unsigned int i) 
+  { 
+    if(i >= this->size())
+      i = this->size() - 1;
+    
+    return (double)(*this)[i]; 
+  };
+};
+
+template <unsigned int SIZE>
+class PiPoArrayAttribute<enum PiPo::Enumerate, SIZE> : public PiPo::EnumAttr, public array<unsigned int, SIZE>
+{
+public:
+  PiPoArrayAttribute(PiPo *pipo, const char *name, const char *descr, bool changesStream,
+                     unsigned int initVal = NULL) : 
+  EnumAttr(pipo, name, descr, &typeid(enum PiPo::Enumerate), changesStream),
+  array<unsigned int, SIZE>()
+  {    
+    for(unsigned int i = 0; i < this->size; i++)
+      this->value[i] = initVal;
+  }
+    
+  ~PiPoArrayAttribute(void) { free(this->value); }
+  
+  unsigned int getSize(void) { return this->size; }
+
+  void set(unsigned int i, int val)
+  { 
+    if(i < this->size())
+      (*this)[i] = (unsigned int)val;
+  };
+  
+  void set(unsigned int i, double val) 
+  { 
+    if(i < this->size())
+      (*this)[i] = (unsigned int)val;
+  };
+  
+  void set(unsigned int i, const char *val) 
+  { 
+    if(i < this->size())
+      (*this)[i] = getEnumIndex(val); 
+  };
+
+  int getInt(unsigned int i) 
+  { 
+    if(i >= this->size())
+      i = this->size() - 1;
+    
+    return (int)(*this)[i]; 
+  };
+  
+  double getDbl(unsigned int i) 
+  { 
+    if(i >= this->size())
+      i = this->size() - 1;
+    
+    return (double)(*this)[i]; 
+  };
+  
+  const char *getStr(unsigned int i) 
+  { 
+    if(i >= this->size())
+      return this->getEnumTag(this->value[i]); 
+    
+    return NULL;
+  };
+};
+
+/***********************************************
+ *
+ *  Var Size Attribute
+ *
+ */
+template <typename TYPE>
+class PiPoVarSizeAttribute : public PiPo::Attr, public std::vector<TYPE>
+{
+public:
+  PiPoVarSizeAttribute(PiPo *pipo, const char *name, const char *descr, bool changesStream, 
+                       unsigned int size = 0, TYPE initVal = (TYPE)0) : 
+  Attr(pipo, name, descr, &typeid(TYPE), changesStream), 
+  std::vector<TYPE>(size, initVal)
+  {
+  }
+  
+  unsigned int setSize(unsigned int size) { this->resize(size, (TYPE)0); return size; };
+  unsigned int getSize(void) { return this->size(); }
+  
+  void set(unsigned int i, int val)
+  { 
+    if(i < this->size())
+      (*this)[i] = (TYPE)val;
+  };
+  
+  void set(unsigned int i, double val) 
+  { 
+    if(i < this->size())
+      (*this)[i] = (TYPE)val;
+  };
+  
+  int getInt(unsigned int i) 
+  { 
+    if(i >= this->size())
+      i = this->size() - 1;
+    
+    return (int)(*this)[i]; 
+  };
+  
+  double getDbl(unsigned int i) 
+  { 
+    if(i >= this->size())
+      i = this->size() - 1;
+    
+    return (double)(*this)[i]; 
+  };
+};
+
+template <>
+class PiPoVarSizeAttribute<enum PiPo::Enumerate> : public PiPo::EnumAttr, public std::vector<unsigned int>
+{
+public:
+  PiPoVarSizeAttribute(PiPo *pipo, const char *name, const char *descr, bool changesStream, 
+                       unsigned int size = 0, unsigned int initVal = NULL) : 
+  EnumAttr(pipo, name, descr, &typeid(enum PiPo::Enumerate), changesStream), 
+  std::vector<unsigned int>(size, 0)
+  {
+    for(unsigned int i = 0; i < this->size(); i++)
+      (*this)[i] = initVal;
+  }
+  
+  unsigned int setSize(unsigned int size) { this->resize(size, 0); return size; };
+  unsigned int getSize(void) { return this->size(); }
+  
+  void set(unsigned int i, int val)
+  { 
+    if(i < this->size())
+      (*this)[i] = (unsigned int)val;
+  };
+  
+  void set(unsigned int i, double val) 
+  { 
+    if(i < this->size())
+      (*this)[i] = (unsigned int)val;
+  };
+  
+  void set(unsigned int i, const char *val) 
+  { 
+    if(i < this->size())
+      (*this)[i] = getEnumIndex(val); 
+  };
+  
+  int getInt(unsigned int i) 
+  { 
+    if(i >= this->size())
+      i = this->size() - 1;
+    
+    return (int)(*this)[i]; 
+  };
+  
+  double getDbl(unsigned int i) 
+  { 
+    if(i >= this->size())
+      i = this->size() - 1;
+    
+    return (double)(*this)[i]; 
+  };
+
+  const char *getStr(unsigned int i) 
+  { 
+    if(i >= this->size())
+      return this->getEnumTag((*this)[i]); 
+    
+    return NULL;
+  };
 };
 
 #endif
