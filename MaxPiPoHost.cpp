@@ -48,52 +48,39 @@ getPiPoInstanceAndAttrName(const char *attrName, char *instanceName, char *pipoA
 static void
 getMaxAttributeList(PiPo *pipo, unsigned int attrId, long *pac, t_atom **pat)
 {
-  enum PiPoAttrDef::Type type = pipo->getAttrType(attrId);
+  PiPo::Attr *attr = pipo->getAttr(attrId);
+  enum PiPo::Type type = attr->getType();
   
   switch(type)
   {
-    case PiPoAttrDef::Undefined:
+    case PiPo::Undefined:
       break;
       
-    case PiPoAttrDef::Bool:
-    case PiPoAttrDef::Int:
+    case PiPo::Bool:
+    case PiPo::Enum:
+    case PiPo::Int:
     {
-      vector<int> values;
-      pipo->getAttrVal(attrId, values);
-      
-      for(unsigned int i = 0; i < values.size(); i++)
-        atom_setlong((*pat) + i, values[i]);
+      for(unsigned int i = 0; i < attr->getSize(); i++)
+        atom_setlong((*pat) + i, attr->getInt(i));
       
       break;
     }
-    case PiPoAttrDef::Float:
-    case PiPoAttrDef::Double:
+    case PiPo::Float:
+    case PiPo::Double:
     {
-      vector<double> values;
-      pipo->getAttrVal(attrId, values);
-      
-      for(unsigned int i = 0; i < values.size(); i++)
-        atom_setfloat((*pat) + i, values[i]);
+      for(unsigned int i = 0; i < attr->getSize(); i++)
+        atom_setfloat((*pat) + i, attr->getDbl(i));
       
       break;
     }
-      
-    case PiPoAttrDef::String:
+    case PiPo::String:
     {
-      vector<const char *> values;
-      pipo->getAttrVal(attrId, values);
-      
-      for(unsigned int i = 0; i < values.size(); i++)
-      {
-        if(values[i] != NULL)
-          atom_setsym((*pat) + i, gensym(values[i]));
-        else
-          atom_setsym((*pat) + i, gensym(""));
-      }
+      for(unsigned int i = 0; i < attr->getSize(); i++)
+        atom_setsym((*pat) + i, gensym(attr->getStr(i)));
       
       break;
     }
-      
+
     default:
       break;      
   }
@@ -116,18 +103,18 @@ getPiPoAttr(MaxPiPoHostT *self, void *attr, long *pac, t_atom **pat)
       
       if(pipo != NULL)
       {
-        int attrId = pipo->getAttrId(pipoAttrName);
+        PiPo::Attr *attr = pipo->getAttr(pipoAttrName);
         
-        if(attrId >= 0)
+        if(attr != NULL)
         {
           maxPiPoHost_lock(self);
           
-          unsigned int attrSize = pipo->getAttrSize(attrId);
+          unsigned int attrSize = attr->getSize();
           char alloc;
           
           if(atom_alloc_array(attrSize, pac, pat, &alloc) == MAX_ERR_NONE)
           {
-            getMaxAttributeList(pipo, attrId, pac, pat);
+            getMaxAttributeList(pipo, attr->getIndex(), pac, pat);
             *pac = attrSize;
           }
           
@@ -153,42 +140,42 @@ setPiPoAttr(MaxPiPoHostT *self, void *attr, long ac, t_atom *at)
     
     if(pipo != NULL)
     {
-      int attrId = pipo->getAttrId(pipoAttrName);
+      PiPo::Attr *attr = pipo->getAttr(pipoAttrName);
       
-      if(attrId >= 0)
+      if(attr != NULL)
       {
         if(ac > 0)
         {
           maxPiPoHost_lock(self);
           
+          attr->setSize(ac);
+          
           if(atom_isnum(at))
           {
-            vector<double> values(ac);
-            
             for(int i = 0; i < ac; i++)
             {
-              if(atom_isnum(at + i))
-                values[i] = atom_getfloat(at + i);
+              if(atom_islong(at + i))
+                attr->set(i, (int)atom_getlong(at + i));
+              else if(atom_isfloat(at + i))
+                attr->set(i, (double)atom_getfloat(at + i));
+              else                
+                attr->set(i, 0);
             }
             
-            pipo->setAttrVal(attrId, values);
-            
-            if(pipo->attrChangesStream(attrId))
+            if(attr->doesChangeStream())
               pipo->streamAttributesChanged();
           }
           else if(atom_issym(at))
           {
-            vector<const char *> values(ac);
-            
             for(int i = 0; i < ac; i++)
             {
               if(atom_issym(at + i))
-                values[i] = (const char *)mysneg(atom_getsym(at + i));
+                attr->set(i, (const char *)mysneg(atom_getsym(at + i)));
+              else
+                attr->set(i, NULL);
             }
             
-            pipo->setAttrVal(attrId, values);
-            
-            if(pipo->attrChangesStream(attrId))
+            if(attr->doesChangeStream())
               pipo->streamAttributesChanged();
           }
           else
@@ -213,60 +200,71 @@ copyPiPoAttributesToMaxObj(t_object *obj, PiPo *pipo, const char *instanceName, 
   
   for(unsigned int i = 0; i < numAttrs; i++)
   {
+    PiPo::Attr *attr = pipo->getAttr(i);
+    
     /* attribute name */
     string attrName = instanceName;
     attrName += ".";
-    attrName += pipo->getAttrName(i);
+    attrName += attr->getName();
     
     /* description */
-    string label = pipo->getAttrDescr(i);
+    string label = attr->getDescr();
     label += " (";
     label += instanceName;
     label += ")";
 
-    enum PiPoAttrDef::Type type = pipo->getAttrType(i);
+    enum PiPo::Type type = attr->getType();
     t_symbol *typeSym = NULL;
 
     switch(type)
     {
-      case PiPoAttrDef::Undefined:
+      case PiPo::Undefined:
         break;
         
-      case PiPoAttrDef::Bool:
+      case PiPo::Bool:
+      case PiPo::Enum:
+      case PiPo::Int:
         typeSym = USESYM(long);
         break;
         
-      case PiPoAttrDef::Int:
-        typeSym = USESYM(long);
-        break;
-        
-      case PiPoAttrDef::Float:
+      case PiPo::Float:
         typeSym = USESYM(float32);
         break;
         
-      case PiPoAttrDef::Double:
+      case PiPo::Double:
         typeSym = USESYM(float64);
         break;
         
-      case PiPoAttrDef::String:
+      case PiPo::String:
         typeSym = USESYM(symbol);
         break;
         
       default:
-        break;      
+        break;
     }
     
-    t_object *attr = attribute_new(attrName.c_str(), typeSym, 0, (method)getPiPoAttr, (method)setPiPoAttr);
-    object_addattr(obj, attr);
+    t_object *maxAttr = attribute_new(attrName.c_str(), typeSym, 0, (method)getPiPoAttr, (method)setPiPoAttr);
+    object_addattr(obj, maxAttr);
     
-    const char *attrEnum = pipo->getAttrEnum(i);
-
-    if(type == PiPoAttrDef::Bool)
+    if(type == PiPo::Bool)
       object_attr_addattr_parse(obj, attrName.c_str(), "style", USESYM(symbol), 0, "onoff");
-    else if(type == PiPoAttrDef::Int && attrEnum != NULL)
-    {
-      object_attr_addattr_parse(obj, attrName.c_str(), "style", USESYM(symbol), 0, "enumindex");
-      object_attr_addattr_parse(obj, attrName.c_str(), "enumvals", USESYM(symbol), 0, attrEnum);
+    else if(type == PiPo::Enum)
+    {      
+      vector<const char *> *enumList = attr->getEnumList();
+      
+      if(enumList != NULL && enumList->size() > 0)
+      {
+        string enumStr = (*enumList)[0];
+        
+        for(unsigned int i = 1; i < enumList->size(); i++)
+        {
+          enumStr += " ";
+          enumStr += (*enumList)[i];
+        }
+        
+        object_attr_addattr_parse(obj, attrName.c_str(), "style", USESYM(symbol), 0, "enumindex");
+        object_attr_addattr_parse(obj, attrName.c_str(), "enumvals", USESYM(symbol), 0, enumStr.c_str());
+      }
     }
     
     object_attr_addattr_format(obj, attrName.c_str(), "label", USESYM(symbol), 0, "s", gensym(label.c_str()));
@@ -287,8 +285,8 @@ MaxPiPoHost::setChainDescription(const char *str, PiPo *receiver)
 {
   this->chain.clear();
   
-  if(this->chainDescr.parse(str) > 0)
-    return this->chain.instantiate(this->chainDescr, receiver);
+  if(this->chainDescr.parse(str) > 0 && this->chain.set(&this->chainDescr, receiver))
+     return this->chain.getHead();
   
   return NULL;
 }
@@ -314,6 +312,12 @@ MaxPiPoHost::getPiPo(const char *instanceName)
     return this->chain[index].getPiPo();
   
   return NULL;
+}
+
+PiPoChain *
+MaxPiPoHost::getChain(void)
+{
+  return &this->chain;
 }
 
 /*********************************************************

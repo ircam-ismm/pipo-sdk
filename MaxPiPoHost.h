@@ -11,8 +11,8 @@
 #ifndef _MAX_PIPO_HOST_
 #define _MAX_PIPO_HOST_
 
-#include "PiPo.h"
 #include "PiPoHost.h"
+#include "MaxPiPo.h"
 #include "ext_systhread.h"
 #include "z_dsp.h"
 
@@ -101,8 +101,9 @@ public:
   void unlock(void) { systhread_mutex_unlock(this->mutex); };
   
   PiPo *setChainDescription(const char *str, PiPo *receiver);
-  PiPo *getPiPo(const char *pipoInstanceName);
   void copyPiPoAttributes(t_object *maxObj);
+  PiPo *getPiPo(const char *pipoInstanceName);
+  PiPoChain *getChain();
 };
 
 struct MaxPiPoHostSt

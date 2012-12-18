@@ -12,9 +12,9 @@
 #ifndef _MAX_PIPO_
 #define _MAX_PIPO_
 
+#include "PiPo.h"
 #include "ext.h"
 #include "ext_obex.h"
-#include "PiPo.h"
 
 typedef struct MaxPiPoSt {
   t_object head;
