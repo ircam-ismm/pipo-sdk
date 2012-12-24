@@ -20,8 +20,6 @@
 #include <vector>
 #include <new>
 
-using namespace std;
-
 #define atom_isnum(a) ((a)->a_type == A_LONG || (a)->a_type == A_FLOAT)
 #define atom_issym(a) ((a)->a_type == A_SYM)
 #define atom_isobj(p) ((p)->a_type == A_OBJ) 
@@ -33,12 +31,14 @@ using namespace std;
 #define atom_setvoid(p) ((p)->a_type = A_NOTHING)
 
 typedef struct MaxPiPoHostSt MaxPiPoHostT;
+typedef void (*MaxPiPoAttrChangedMethodT)(MaxPiPoHostT *maxPiPoHost, unsigned int pipoIndex, PiPo::Attr *attr);
 
 class MaxPiPoHost
 {
   class MaxPiPoModuleFactory : public PiPoModuleFactory
   { 
-    MaxPiPoHost *host;
+    MaxPiPoHostT *maxPiPoHost;
+    MaxPiPoAttrChangedMethodT attrChangedMethod;
     
     class MaxPiPoModule : public PiPoModule
     {
@@ -58,51 +58,55 @@ class MaxPiPoHost
     };
 
   public:
-    MaxPiPoModuleFactory(MaxPiPoHost *host)
+    MaxPiPoModuleFactory(MaxPiPoHostT *maxPiPoHost)
     { 
-      this->host = host;
+      this->maxPiPoHost = maxPiPoHost;
+      this->attrChangedMethod = (MaxPiPoAttrChangedMethodT)object_getmethod(maxPiPoHost, gensym("attrChanged"));
     };
     
     ~MaxPiPoModuleFactory(void) { }
     
-    PiPoModule *createModule(unsigned int index, string &pipoName, string &instanceName, PiPo *&pipo)
+    PiPo *create(unsigned int index, const std::string &pipoName, const std::string &instanceName, PiPoModule *&module)
     {
-      string pipoClassNameStr = "pipo." + pipoName;
+      std::string pipoClassNameStr = "pipo." + pipoName;
       MaxPiPoT *maxPiPo = (MaxPiPoT *)object_new_typed(CLASS_NOBOX, gensym(pipoClassNameStr.c_str()), 0, NULL);
       
       if(maxPiPo != NULL)
       {
-        pipo = maxPiPo->pipo;
-        return new MaxPiPoModule(maxPiPo);
+        module = new MaxPiPoModule(maxPiPo);
+        return maxPiPo->pipo;
       }
       
-      object_error((t_object *)this->host, "cannot find external module pipo.%s", pipoName.c_str());
+      object_error((t_object *)this->maxPiPoHost, "cannot find external module pipo.%s", pipoName.c_str());
       return NULL;
     }
+    
+    void attrChanged(unsigned int pipoIndex, PiPo::Attr *attr) 
+    { 
+      if(this->attrChangedMethod != NULL)
+        (*this->attrChangedMethod)(this->maxPiPoHost, pipoIndex, attr); 
+    };
   };
   
-  t_systhread_mutex mutex;
+  MaxPiPoHostT *maxPiPoHost;
   MaxPiPoModuleFactory moduleFactory;
-  PiPoChainDescr chainDescr;
   PiPoChain chain;
   
 public:
-  MaxPiPoHost(void) : moduleFactory(this), chainDescr(), chain(&this->moduleFactory)
+  MaxPiPoHost(MaxPiPoHostT *maxPiPoHost) : moduleFactory(maxPiPoHost), chain(&this->moduleFactory)
   {
-    systhread_mutex_new(&this->mutex, SYSTHREAD_MUTEX_RECURSIVE);
+    this->maxPiPoHost = maxPiPoHost;
   }
 
-  ~MaxPiPoHost(void)
-  {
-    systhread_mutex_free(this->mutex);  
-  }
-  
-  void lock(void) { systhread_mutex_lock(this->mutex); };
-  void unlock(void) { systhread_mutex_unlock(this->mutex); };
-  
   PiPo *setChainDescription(const char *str, PiPo *receiver);
-  void copyPiPoAttributes(t_object *maxObj);
-  PiPo *getPiPo(const char *pipoInstanceName);
+  
+  typedef t_max_err (*MaxAttrGetterT)(MaxPiPoHostT *self, void *attr, long *pac, t_atom **pat);
+  typedef t_max_err (*MaxAttrSetterT)(MaxPiPoHostT *self, void *attr, long ac, t_atom *at);
+  void copyPiPoAttributes(MaxAttrGetterT getAttrMeth, MaxAttrSetterT setAttrMeth);
+
+  void getMaxAttr(PiPoChain *chain, const char *attrName, long *pac, t_atom **pat);
+  void setMaxAttr(PiPoChain *chain, const char *attrName, long ac, t_atom *at);
+  
   PiPoChain *getChain();
 };
 
@@ -110,12 +114,14 @@ struct MaxPiPoHostSt
 {
   t_pxobject head;
   MaxPiPoHost host;
+  t_systhread_mutex mutex;
 };
-
-#define maxPiPoHost_lock(h) ((MaxPiPoHostT *)(h))->host.lock()
-#define maxPiPoHost_unlock(h) ((MaxPiPoHostT *)(h))->host.unlock()
 
 void maxPiPoHost_init(MaxPiPoHostT *self);
 void maxPiPoHost_deinit(MaxPiPoHostT *self);
+
+void maxPiPoHost_lock(MaxPiPoHostT *self);
+bool maxPiPoHost_trylock(MaxPiPoHostT *self);
+void maxPiPoHost_unlock(MaxPiPoHostT *self);
 
 #endif
