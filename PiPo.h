@@ -415,6 +415,86 @@ public:
     return NULL;
   };
   
+  bool setAttr(unsigned int index, int value)
+  {
+    Attr *attr = getAttr(index);
+    
+    if(attr != NULL)
+    {
+      attr->set(0, value);
+      
+      if(attr->doesChangeStream())
+        this->streamAttributesChanged();
+      
+      return true;
+    }
+    
+    return false;
+  }
+  
+  bool setAttr(unsigned int index, int *values, unsigned int numValues)
+  {
+    Attr *attr = getAttr(index);
+    
+    if(attr != NULL)
+    {
+      unsigned int size = attr->getSize();
+      
+      if(numValues > size)
+        numValues = size;
+      
+      for(unsigned int i = 0; i < numValues; i++)
+        attr->set(i, values[i]);
+      
+      if(attr->doesChangeStream())
+        this->streamAttributesChanged();
+      
+      return true;
+    }
+    
+    return false;
+  }
+  
+  bool setAttr(unsigned int index, double val)
+  {
+    Attr *attr = getAttr(index);
+    
+    if(attr != NULL)
+    {
+      attr->set(0, val);
+      
+      if(attr->doesChangeStream())
+        this->streamAttributesChanged();
+      
+      return true;
+    }
+    
+    return false;
+  }
+  
+  bool setAttr(unsigned int index, double *values, unsigned int numValues)
+  {
+    Attr *attr = getAttr(index);
+    
+    if(attr != NULL)
+    {
+      unsigned int size = attr->getSize();
+      
+      if(numValues > size)
+        numValues = size;
+      
+      for(unsigned int i = 0; i < numValues; i++)
+        attr->set(i, values[i]);
+      
+      if(attr->doesChangeStream())
+        this->streamAttributesChanged();
+      
+      return true;
+    }
+    
+    return false;
+  }
+  
   /**
    * @brief Gets number of attributes
    *
