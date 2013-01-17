@@ -21,13 +21,19 @@
 
 class PiPo
 {
-protected:
-  PiPo *receiver;
-
 public:
-  PiPo(PiPo *receiver = NULL) : attrs() 
+  class Attr;
+  
+private:
+  std::vector<PiPo *> receivers; /**< list of receivers */
+  std::vector<Attr *> attrs; /**< list of attributes */
+  float *weightPtr; /**< pointer to current weight (used in ) */
+  
+public:
+  PiPo(PiPo *receiver = NULL) : receivers(), attrs() 
   { 
-    this->receiver = receiver; 
+    this->receivers.push_back(receiver);
+    this->weightPtr = NULL;
   };
   
   ~PiPo(void) { };
@@ -47,14 +53,20 @@ public:
    * @param domain extent of a frame in the given domain (e.g. duration or frequency range)
    * @param maxFrames maximum number of frames in a block exchanged between two modules
    * @return used as return value of the streamAttributes() method
-   *
    */
   int propagateStreamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames) 
   { 
-    if(this->receiver != NULL)
-      return this->receiver->streamAttributes(hasTimeTags, rate, offset, width, size, labels, hasVarSize, domain, maxFrames);
-    else
-      return -1;
+    int ret = -1;
+    
+    for(unsigned int i = 0; i < this->receivers.size(); i++)
+    {
+      ret = this->receivers[i]->streamAttributes(hasTimeTags, rate, offset, width, size, labels, hasVarSize, domain, maxFrames);
+      
+      if(ret < 0)
+        break;
+    }
+         
+    return ret;
   };
   
   /**
@@ -62,15 +74,21 @@ public:
    *
    * This method is called in the reset() method of a PiPo module.
    * @return used as return value of the reset() method
-   *
    */
   int propagateReset(void) 
-  {
-    if(this->receiver != NULL)
-      return this->receiver->reset();
-    else
-      return -1;
-  };
+  { 
+    int ret = -1;
+    
+    for(unsigned int i = 0; i < this->receivers.size(); i++)
+    {
+      ret = this->receivers[i]->reset();
+      
+      if(ret < 0)
+        break;
+    }
+    
+    return ret;
+  }
   
   /**
    * @brief Propagates a module's output frames to its reciever.
@@ -81,48 +99,112 @@ public:
    * @param values interleaved frames values, row by row (interleaving channels or columns), frame by frame
    * @param size size of eaqch of all frames
    * @param num number of frames
-   * @return used as return value of the frames() method
-   *
+   * @return used as return value of the calling method
    */
   int propagateFrames(double time, float *values, unsigned int size, unsigned int num) 
   { 
-    if(this->receiver != NULL)
-      return this->receiver->frames(time, values, size, num); 
-    else
-      return -1;
-  };
+    int ret = -1;
+    
+    for(unsigned int i = 0; i < this->receivers.size(); i++)
+    {
+      ret = this->receivers[i]->frames(time, values, size, num); 
+      
+      if(ret < 0)
+        break;
+    }
+    
+    return ret;
+  }
+  
+  /**
+   * @brief Propagates a segmentation module's output segment start and end to its reciever.
+   *
+   * This method is called in the frames() method of a PiPo ssegmentation module.
+   *
+   * @param time time-tag for a single frame or a block of frames
+   * @param start start (start=true) or end (start=false) segment
+   * @return used as return value of the calling method
+   */
+  int propagateSegment(double time, bool start)
+  { 
+    int ret = -1;
+    
+    for(unsigned int i = 0; i < this->receivers.size(); i++)
+    {
+      ret = this->receivers[i]->segment(time, start);
+      
+      if(ret < 0)
+        break;
+    }
+    
+    return ret;
+  }
   
   /**
    * @brief Propagates the finalize control event.
    *
    * This method is called in the finalize() method of a PiPo module.
    *
-   * @return used as return value of the finalize() method
-   *
+   * @return used as return value of the calling method
    */
   int propagateFinalize(double inputEnd) 
-  {
-    if(this->receiver != NULL)
-      return this->receiver->finalize(inputEnd);
-    else
-      return -1;
+  { 
+    int ret = -1;
+    
+    for(unsigned int i = 0; i < this->receivers.size(); i++)
+    {
+      ret = this->receivers[i]->finalize(inputEnd);
+      
+      if(ret < 0)
+        break;
+    }
+    
+    return ret;
+  }
+  
+  /**
+   * @brief Gets a PiPo modules receiver (call only by the PiPo host)
+   *
+   * @return receiver PiPo module receiving this module's output stream
+   */
+  PiPo *getReceiver(unsigned int index = 0) 
+  { 
+    if(index < this->receivers.size())
+      return this->receivers[index];
+    
+    return NULL;
   };
   
   /**
-   * @brief Gets a PiPo modules reciver (call only by the PiPo host)
-   *
-   * @return receiver PiPo module receiving this module's output stream
-   *
-   */
-  PiPo *getReceiver(void) { return this->receiver; };
-  
-  /**
-   * @brief Sets a PiPo modules reciver (call only by the PiPo host)
+   * @brief Sets a PiPo modules receiver (call only by the PiPo host)
    *
    * @param receiver PiPo module receiving this module's output stream
-   *
    */
-  virtual void setReceiver(PiPo *receiver) { this->receiver = receiver; };
+  virtual void setReceiver(PiPo *receiver) 
+  { 
+    this->receivers.clear();
+    this->addReceiver(receiver); 
+  };
+  
+  /**
+   * @brief Adds a PiPo modules receiver (call only by the PiPo host)
+   *
+   * @param receiver PiPo module receiving this module's output stream
+   */
+  virtual void addReceiver(PiPo *receiver) 
+  { 
+    this->receivers.push_back(receiver);
+  };
+  
+  /**
+   * @brief Sets a PiPo modules weight pointer (for weighted accumulation/integration)
+   *
+   * @param ptr pointer to the current weight
+   */
+  virtual void setWeightPtr(float *ptr) 
+  { 
+    this->weightPtr = ptr;
+  };
   
   /**
    * @brief Configures a PiPo module according to the input stream attributes and propagate output stream attributes
@@ -143,7 +225,6 @@ public:
    * @param domain extent of a frame in the given domain (e.g. duration or frequency range)
    * @param maxFrames maximum number of frames in a block exchanged between two modules
    * @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
-   *
    */
   virtual int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames) 
   { 
@@ -160,7 +241,6 @@ public:
    * A terminating receiver module provided by a PiPo host usally simply returns 0.
    *
    * @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
-   *
    */
   virtual int reset(void) 
   { 
@@ -171,7 +251,10 @@ public:
    * @brief Processes a single frame or a block of frames
    *
    * PiPo module:
-   * Any implementation of this method requires a propagateFrames() method call and returns its return value.
+   * Generally, an implementation of this method requires a propagateFrames() method call.
+   * Exceptions are segmentation modules that propagate segments instead of frames 
+   * as well as integration modules that accumulate frames over a segment and call propagateFrames() 
+   * for an integrated frame in the segment() method.
    *
    * PiPo host:
    * A terminating receiver module provided by a PiPo host handles the received frames and usally returns 0.
@@ -180,12 +263,29 @@ public:
    * @param values interleaved frames values, row by row (interleaving channels or columns), frame by frame
    * @param size size of eaqch of all frames
    * @param num number of frames
-   * @return   0 for ok or a negative error code (to be specified), -1 for an unspecified error
-   *
+   * @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
    */
   virtual int frames(double time, float *values, unsigned int size, unsigned int num) 
   { 
     return this->propagateFrames(time, values, size, num); 
+  };
+  
+  /**
+   * @brief Starts or ends a segment
+   *
+   * PiPo module:
+   * Any implementation of this method requires a propagateFrames() method call and returns its return value.
+   *
+   * PiPo host:
+   * A terminating receiver module provided by a PiPo host handles the received frames and usally returns 0.
+   *
+   * @param time time-tag for segment start or end
+   * @param start start (start=true) or end (start=false) segment
+   * @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
+   */
+  virtual int segment(double time, bool start = true) 
+  { 
+    return -1;
   };
   
   /**
@@ -199,7 +299,6 @@ public:
    *
    * @param inputEnd end time of the finalized input stream
    * @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
-   *
    */
   virtual int finalize(double inputEnd) 
   {
@@ -218,15 +317,21 @@ public:
    *
    * param unitId (for host) index of the module that initially called streamAttributesChanged().
    * @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
-   *
    */
   virtual int streamAttributesChanged(unsigned int unitId = 0) 
   { 
-    if(this->receiver != NULL) 
-      return this->receiver->streamAttributesChanged(unitId + 1); 
-    else 
-      return -1; 
-  };
+    int ret = -1;
+    
+    for(unsigned int i = 0; i < this->receivers.size(); i++)
+    {
+      ret = this->receivers[i]->streamAttributesChanged(unitId + 1); 
+      
+      if(ret < 0)
+        break;
+    }
+    
+    return ret;
+  }
   
   /***********************************************
    *
@@ -369,7 +474,6 @@ public:
    * @brief Gets number of attributes
    *
    * @return number of attributes
-   *
    */
   void addAttr(PiPo *pipo, const char *name, const char *descr, Attr *attr) 
   { 
@@ -387,7 +491,6 @@ public:
    *
    * @param index attribute index
    * @return reference to PiPo attribute (NULL for invalid attribute index)
-   *
    */
   Attr *getAttr(unsigned int index)
   {
@@ -402,7 +505,6 @@ public:
    *
    * @param name attribute name
    * @return reference to PiPo attribute (NULL for invalid attribute name)
-   *
    */
   Attr *getAttr(const char *name)
   {
@@ -499,7 +601,6 @@ public:
    * @brief Gets number of attributes
    *
    * @return number of attributes
-   *
    */
   unsigned int getNumAttrs(void)
   {
@@ -510,7 +611,6 @@ public:
    * @brief Copies current value(s) of all attributes
    *
    * @param other PiPo to clone
-   *
    */
   void cloneAttrs(PiPo *other)
   {
@@ -522,17 +622,13 @@ public:
    * @brief Copies current value(s) of given attribute
    *
    * @param other PiPo to clone
-   *
    */
   void cloneAttr(PiPo::Attr *attr)
   {
     unsigned int index = attr->getIndex();
     
     this->attrs[index]->clone(attr);
-  };
-  
-private:
-  std::vector<Attr *> attrs; /**< list of attributes */
+  };  
 };
 
 /***********************************************
@@ -619,7 +715,6 @@ class array
 public:
   TYPE const& operator [] (unsigned int index) const { return this->values[index]; };
   TYPE& operator [] (unsigned int index) { return &this->values[index]; };
-  //unsigned int size(void) { return this->numElems; };
 };
 
 template <typename TYPE, unsigned int SIZE>
