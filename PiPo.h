@@ -528,8 +528,11 @@ public:
    *
    * @return number of attributes
    */
-  void addAttr(PiPo *pipo, const char *name, const char *descr, Attr *attr) 
+  void addAttr(PiPo *pipo, const char *name, const char *descr, Attr *attr, bool clear = false) 
   { 
+    if(clear)
+      this->attrs.clear();
+    
     /* overwrite index, name, and description */
     attr->setIndex(pipo->attrs.size());
     attr->setName(name);
