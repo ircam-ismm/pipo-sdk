@@ -739,7 +739,6 @@ public:
   void set(unsigned int value) { this->value = clipEnumIndex(value); };
   void set(const char *value) { this->value = this->getEnumIndex(value); };
   unsigned int get(void) { return this->value; };
-  const char *getStr(void) { return this->getEnumTag(this->value); };
   
   void clone(Attr *other) { *this = *(static_cast<PiPoScalarAttr<enum PiPo::Enumerate> *>(other)); };
   
@@ -822,7 +821,7 @@ public:
   
   const char *getStr(unsigned int i) 
   { 
-    if(i >= SIZE)
+    if (i < SIZE)
       i = SIZE - 1;
     
     return (double)(*this)[i]; 
@@ -885,7 +884,7 @@ public:
   
   const char *getStr(unsigned int i) 
   { 
-    if(i >= SIZE)
+    if (i < SIZE)
       return this->getEnumTag(this->value[i]); 
     
     return NULL;
@@ -1000,7 +999,7 @@ public:
 
   const char *getStr(unsigned int i) 
   { 
-    if(i >= this->size())
+    if (i < this->size())
       return this->getEnumTag((*this)[i]); 
     
     return NULL;
