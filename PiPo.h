@@ -247,26 +247,25 @@ public:
    * @brief Configures a PiPo module according to the input stream attributes and propagate output stream attributes
    *
    * PiPo module:
-   * Any implementation of this method requires a propagateStreamAttributes() method call and returns its return value.
+   * Any implementation of this method requires a propagateStreamAttributes() method call and returns its return value, typically like this:
+   *
+   * \code{return this->propagateStreamAttributes(hasTimeTags, rate, offset, width, size, labels, hasVarSize, domain, maxFrames);}
    *
    * PiPo host:
    * A terminating receiver module provided by a PiPo host handles the final output stream attributes and usally returns 0.
    *
-   * @param hasTimeTags a boolean representing whether the elements of the stream are time-tagged
-   * @param rate the frame rate (highest average rate for time-tagged streams)
-   * @param offset the lag of the output stream relative to the input
-   * @param width the frame width (also number of channels or matrix columns)
-   * @param size the frame size (or number of matrix rows)
-   * @param labels optional labels for the frames' channels or columns
-   * @param hasVarSize a boolean representing whether the frames have a variable size (respecting the given frame size as maximum)
-   * @param domain extent of a frame in the given domain (e.g. duration or frequency range)
-   * @param maxFrames maximum number of frames in a block exchanged between two modules
+   * @param hasTimeTags   a boolean representing whether the elements of the stream are time-tagged
+   * @param rate          the frame rate (highest average rate for time-tagged streams, sample rate for audio input)
+   * @param offset        the lag of the output stream relative to the input
+   * @param width         the frame width (also number of channels for audio or matrix columns)
+   * @param size          the frame size (or number of matrix rows, always 1 for audio)
+   * @param labels        optional labels for the frames' channels or columns
+   * @param hasVarSize    a boolean representing whether the frames have a variable size (respecting the given frame size as maximum)
+   * @param domain        extent of a frame in the given domain (e.g. duration or frequency range)
+   * @param maxFrames     maximum number of frames in a block exchanged between two modules (window size for audio)
    * @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
    */
-  virtual int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames) 
-  { 
-    return this->propagateStreamAttributes(hasTimeTags, rate, offset, width, size, labels, hasVarSize, domain, maxFrames); 
-  };
+  virtual int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames) = 0;
   
   /**
    * @brief Configures a PiPo module according to the input stream attributes and propagate output stream attributes
@@ -304,7 +303,10 @@ public:
    * @brief Processes a single frame or a block of frames
    *
    * PiPo module:
-   * Generally, an implementation of this method requires a propagateFrames() method call.
+   * Generally, an implementation of this method requires a propagateFrames() method call, typically like this:
+   *
+   * \code{return this->propagateFrames(time, values, size, num); }
+   *
    * Exceptions are segmentation modules that propagate segments instead of frames 
    * as well as integration modules that accumulate frames over a segment and call propagateFrames() 
    * for an integrated frame in the segment() method.
@@ -312,16 +314,13 @@ public:
    * PiPo host:
    * A terminating receiver module provided by a PiPo host handles the received frames and usally returns 0.
    *
-   * @param time time-tag for a single frame or a block of frames
-   * @param values interleaved frames values, row by row (interleaving channels or columns), frame by frame
-   * @param size size of eaqch of all frames
-   * @param num number of frames
+   * @param time    time-tag for a single frame or a block of frames
+   * @param values  interleaved frames values, row by row (interleaving channels or columns), frame by frame
+   * @param size    size of each of all frames (number of channels for audio)
+   * @param num     number of frames (number of samples for audio input)
    * @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
    */
-  virtual int frames(double time, float *values, unsigned int size, unsigned int num) 
-  { 
-    return this->propagateFrames(time, values, size, num); 
-  };
+  virtual int frames(double time, float *values, unsigned int size, unsigned int num) = 0;
   
   /**
    * @brief Starts or ends a segment
@@ -718,9 +717,9 @@ public:
   void set(unsigned int i, double val) { this->value = (TYPE)val; };
   void set(unsigned int i, const char *val) { };
   
-  int getInt(unsigned int i) { return (int)this->value; };
-  double getDbl(unsigned int i) { return (double)this->value; };  
-  const char *getStr(unsigned int i) { return NULL; };
+  int getInt(unsigned int i = 0) { return (int)this->value; };
+  double getDbl(unsigned int i = 0) { return (double)this->value; };  
+  const char *getStr(unsigned int i = 0) { return NULL; };
 };
 
 template <>
@@ -751,9 +750,9 @@ public:
   void set(unsigned int i, double val) { this->value = clipEnumIndex((unsigned int)val); };
   void set(unsigned int i, const char *val) { this->value = getEnumIndex(val); };
   
-  int getInt(unsigned int i) { return (int)this->value; };
-  double getDbl(unsigned int i) { return (double)this->value; };
-  const char *getStr(unsigned int i) { return this->getEnumTag(this->value); };
+  int getInt(unsigned int i = 0) { return (int)this->value; };
+  double getDbl(unsigned int i = 0) { return (double)this->value; };
+  const char *getStr(unsigned int i = 0) { return this->getEnumTag(this->value); };
 };
 
 /***********************************************
