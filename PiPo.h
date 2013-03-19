@@ -22,7 +22,6 @@
 class PiPo
 {
 public:
-  enum SegmentSignal { Start, End, CouldStart, CouldEnd, Abort };
   class Attr;
   
 private:
@@ -73,28 +72,6 @@ public:
   };
   
   /**
-   * @brief Propagates a segmentation module's segment attributes to its reciever.
-   *
-   * This method is called in the segmentAttributes() method of a PiPo module.
-   *
-   * @return used as return value of the calling method
-   */
-  int propagateSegmentAttributes(double maxRate) 
-  { 
-    int ret = -1;
-    
-    for(unsigned int i = 0; i < this->receivers.size(); i++)
-    {
-      ret = this->receivers[i]->segmentAttributes(maxRate);
-      
-      if(ret < 0)
-        break;
-    }
-    
-    return ret;
-  };
-  
-  /**
    * @brief Propagates the reset control event.
    *
    * This method is called in the reset() method of a PiPo module.
@@ -134,30 +111,6 @@ public:
     for(unsigned int i = 0; i < this->receivers.size(); i++)
     {
       ret = this->receivers[i]->frames(time, values, size, num); 
-      
-      if(ret < 0)
-        break;
-    }
-    
-    return ret;
-  }
-  
-  /**
-   * @brief Propagates a segmentation module's output segment start and end to its reciever.
-   *
-   * This method is called in the frames() method of a PiPo ssegmentation module.
-   *
-   * @param time time-tag for a single frame or a block of frames
-   * @param start start (start=true) or end (start=false) segment
-   * @return used as return value of the calling method
-   */
-  int propagateSegment(double time, enum SegmentSignal signal)
-  { 
-    int ret = -1;
-    
-    for(unsigned int i = 0; i < this->receivers.size(); i++)
-    {
-      ret = this->receivers[i]->segment(time, signal);
       
       if(ret < 0)
         break;
@@ -268,22 +221,6 @@ public:
   virtual int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames) = 0;
   
   /**
-   * @brief Configures a PiPo module according to the input stream attributes and propagate output stream attributes
-   *
-   * PiPo module:
-   * Any implementation of this method requires a propagateSegmentAttributes() method call and returns its return value.
-   *
-   * PiPo host:
-   * A terminating receiver module provided by a PiPo host handles the final output segment attributes and usally returns 0.
-   *
-   * @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
-   */
-  virtual int segmentAttributes(double maxRate) 
-  { 
-    return -1; 
-  };
-  
-  /**
    * @brief Resets processing (optional)
    *
    * PiPo module:
@@ -307,10 +244,6 @@ public:
    *
    * \code{return this->propagateFrames(time, values, size, num); }
    *
-   * Exceptions are segmentation modules that propagate segments instead of frames 
-   * as well as integration modules that accumulate frames over a segment and call propagateFrames() 
-   * for an integrated frame in the segment() method.
-   *
    * PiPo host:
    * A terminating receiver module provided by a PiPo host handles the received frames and usally returns 0.
    *
@@ -321,24 +254,6 @@ public:
    * @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
    */
   virtual int frames(double time, float *values, unsigned int size, unsigned int num) = 0;
-  
-  /**
-   * @brief Starts or ends a segment
-   *
-   * PiPo module:
-   * Any implementation of this method requires a propagateFrames() method call and returns its return value.
-   *
-   * PiPo host:
-   * A terminating receiver module provided by a PiPo host handles the received frames and usally returns 0.
-   *
-   * @param time time-tag for segment start or end
-   * @param start start (start=true) or end (start=false) segment
-   * @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
-   */
-  virtual int segment(double time, enum SegmentSignal signal) 
-  { 
-    return -1;
-  };
   
   /**
    * @brief Finalizes processing (optinal)
