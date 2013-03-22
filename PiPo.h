@@ -739,7 +739,7 @@ public:
     if (i < SIZE)
       i = SIZE - 1;
     
-    return (double)(*this)[i]; 
+    return (const char *)(*this)[i]; 
   };
 };
 
