@@ -27,15 +27,12 @@ public:
 private:
   std::vector<PiPo *> receivers; /**< list of receivers */
   std::vector<Attr *> attrs; /**< list of attributes */
-  float *weightPtr; /**< pointer to current weight (used in ) */
   
 public:
   PiPo(PiPo *receiver = NULL) : receivers(), attrs() 
   { 
     if(receiver != NULL)
       this->receivers.push_back(receiver);
-    
-    this->weightPtr = NULL;
   };
   
   ~PiPo(void) { };
@@ -184,16 +181,6 @@ public:
    */
   virtual void addReceiver(PiPo *receiver) 
   { 
-  };
-  
-  /**
-   * @brief Sets a PiPo modules weight pointer (for weighted accumulation/integration)
-   *
-   * @param ptr pointer to the current weight
-   */
-  virtual void setWeightPtr(float *ptr) 
-  { 
-    this->weightPtr = ptr;
   };
   
   /**
