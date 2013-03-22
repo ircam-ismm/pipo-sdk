@@ -31,14 +31,12 @@
 #define atom_setvoid(p) ((p)->a_type = A_NOTHING)
 
 typedef struct MaxPiPoHostSt MaxPiPoHostT;
-typedef void (*MaxPiPoAttrChangedMethodT)(MaxPiPoHostT *maxPiPoHost, unsigned int pipoIndex, PiPo::Attr *attr);
 
 class MaxPiPoHost
 {
   class MaxPiPoModuleFactory : public PiPoModuleFactory
   { 
     MaxPiPoHostT *maxPiPoHost;
-    MaxPiPoAttrChangedMethodT attrChangedMethod;
     
     class MaxPiPoModule : public PiPoModule
     {
@@ -61,7 +59,6 @@ class MaxPiPoHost
     MaxPiPoModuleFactory(MaxPiPoHostT *maxPiPoHost)
     { 
       this->maxPiPoHost = maxPiPoHost;
-      this->attrChangedMethod = (MaxPiPoAttrChangedMethodT)object_getmethod(maxPiPoHost, gensym("attrChanged"));
     };
     
     ~MaxPiPoModuleFactory(void) { }
@@ -80,12 +77,6 @@ class MaxPiPoHost
       object_error((t_object *)this->maxPiPoHost, "cannot find external module pipo.%s", pipoName.c_str());
       return NULL;
     }
-    
-    void attrChanged(unsigned int pipoIndex, PiPo::Attr *attr) 
-    { 
-      if(this->attrChangedMethod != NULL)
-        (*this->attrChangedMethod)(this->maxPiPoHost, pipoIndex, attr); 
-    };
   };
   
   MaxPiPoHostT *maxPiPoHost;
