@@ -30,7 +30,6 @@ public:
   ~PiPoModuleFactory(void) { };
   
   virtual PiPo *create(unsigned int index, const std::string &pipoName, const std::string &instanceName, PiPoModule *&module) = 0;
-  virtual void attrChanged(PiPo *pipo, unsigned int index) { };
 };
 
 class PiPoOp
