@@ -600,8 +600,7 @@ private:
   TYPE value;
   
 public:
-  PiPoScalarAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream,
-                      TYPE initVal = (TYPE)0) : 
+  PiPoScalarAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream, TYPE initVal = (TYPE)0) : 
   Attr(pipo, name, descr, &typeid(TYPE), changesStream)
   {
     this->value = initVal;
@@ -631,8 +630,7 @@ private:
   unsigned int value;
   
 public:
-  PiPoScalarAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream,
-                      unsigned int initVal = NULL) :
+  PiPoScalarAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream, unsigned int initVal = NULL) :
   EnumAttr(pipo, name, descr, &typeid(enum PiPo::Enumerate), changesStream)
   {    
     this->value = initVal;
@@ -677,8 +675,7 @@ template <typename TYPE, unsigned int SIZE>
 class PiPoArrayAttr : public PiPo::Attr, public array<TYPE, SIZE>
 {
 public:
-  PiPoArrayAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream,
-                     TYPE initVal = (TYPE)0) : 
+  PiPoArrayAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream, TYPE initVal = (TYPE)0) : 
   Attr(pipo, name, descr, &typeid(TYPE), changesStream), 
   array<TYPE, SIZE>()
   {
@@ -710,7 +707,7 @@ public:
     if(i >= SIZE)
       i = SIZE - 1;
     
-    return (*this)[i]; 
+    return (int)(*this)[i]; 
   };
   
   double getDbl(unsigned int i) 
@@ -734,8 +731,7 @@ template <unsigned int SIZE>
 class PiPoArrayAttr<enum PiPo::Enumerate, SIZE> : public PiPo::EnumAttr, public array<unsigned int, SIZE>
 {
 public:
-  PiPoArrayAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream,
-                     unsigned int initVal = NULL) : 
+  PiPoArrayAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream, unsigned int initVal = NULL) : 
   EnumAttr(pipo, name, descr, &typeid(enum PiPo::Enumerate), changesStream),
   array<unsigned int, SIZE>()
   {    
@@ -802,8 +798,7 @@ template <typename TYPE>
 class PiPoVarSizeAttr : public PiPo::Attr, public std::vector<TYPE>
 {
 public:
-  PiPoVarSizeAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream, 
-                       unsigned int size = 0, TYPE initVal = (TYPE)0) : 
+  PiPoVarSizeAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream, unsigned int size = 0, TYPE initVal = (TYPE)0) : 
   Attr(pipo, name, descr, &typeid(TYPE), changesStream), 
   std::vector<TYPE>(size, initVal)
   {
@@ -851,8 +846,7 @@ template <>
 class PiPoVarSizeAttr<enum PiPo::Enumerate> : public PiPo::EnumAttr, public std::vector<unsigned int>
 {
 public:
-  PiPoVarSizeAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream, 
-                       unsigned int size = 0, unsigned int initVal = NULL) : 
+  PiPoVarSizeAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream, unsigned int size = 0, unsigned int initVal = NULL) : 
   EnumAttr(pipo, name, descr, &typeid(enum PiPo::Enumerate), changesStream), 
   std::vector<unsigned int>(size, 0)
   {
