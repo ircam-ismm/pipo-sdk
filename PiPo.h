@@ -375,6 +375,7 @@ public:
     
     unsigned int numEnumItems;
     std::vector<const char *>enumList;
+    std::vector<const char *>enumListDoc;
     std::map<const char *, unsigned int, strCompare> enumMap;
     
   public:
@@ -383,11 +384,12 @@ public:
     {
     };
     
-    void addEnumItem(const char *item)
+    void addEnumItem(const char *item, const char *doc = "undocumented")
     {
       unsigned int idx = this->enumList.size();
       
       this->enumList.push_back(item);
+      this->enumListDoc.push_back(doc);
       this->enumMap[item] = idx;
     };
     
@@ -614,8 +616,8 @@ public:
   unsigned int setSize(unsigned int size) { return this->getSize(); };
   unsigned int getSize(void) { return 1; };
   
-  void set(unsigned int i, int val) { this->value = (TYPE)val; };
-  void set(unsigned int i, double val) { this->value = (TYPE)val; };
+  void set(unsigned int i, int val) { if(i == 0) this->value = (TYPE)val; };
+  void set(unsigned int i, double val) { if(i == 0) this->value = (TYPE)val; };
   void set(unsigned int i, const char *val) { };
   
   int getInt(unsigned int i = 0) { return (int)this->value; };
@@ -645,9 +647,9 @@ public:
   unsigned int setSize(unsigned int size) { return this->getSize(); };
   unsigned int getSize(void) { return 1; };  
 
-  void set(unsigned int i, int val) { this->value = clipEnumIndex((unsigned int)val); };
-  void set(unsigned int i, double val) { this->value = clipEnumIndex((unsigned int)val); };
-  void set(unsigned int i, const char *val) { this->value = getEnumIndex(val); };
+  void set(unsigned int i, int val) { if(i == 0) this->value = clipEnumIndex((unsigned int)val); };
+  void set(unsigned int i, double val) { if(i == 0) this->value = clipEnumIndex((unsigned int)val); };
+  void set(unsigned int i, const char *val) { if(i == 0) this->value = getEnumIndex(val); };
   
   int getInt(unsigned int i = 0) { return (int)this->value; };
   double getDbl(unsigned int i = 0) { return (double)this->value; };
@@ -797,17 +799,20 @@ public:
 template <typename TYPE>
 class PiPoVarSizeAttr : public PiPo::Attr, public std::vector<TYPE>
 {
+  unsigned int nomSize;
+  
 public:
   PiPoVarSizeAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream, unsigned int size = 0, TYPE initVal = (TYPE)0) : 
   Attr(pipo, name, descr, &typeid(TYPE), changesStream), 
   std::vector<TYPE>(size, initVal)
   {
+    this->nomSize = size;
   }
   
   void clone(Attr *other) { *this = *(static_cast<PiPoVarSizeAttr<TYPE> *>(other)); };
 
-  unsigned int setSize(unsigned int size) { this->resize(size, (TYPE)0); return size; };
-  unsigned int getSize(void) { return this->size(); }
+  unsigned int setSize(unsigned int size) { this->resize(size, (TYPE)0); this->nomSize = size; return size; };
+  unsigned int getSize(void) { return this->nomSize; }
   
   void set(unsigned int i, int val)
   { 
