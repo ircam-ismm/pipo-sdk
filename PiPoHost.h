@@ -48,15 +48,28 @@ public:
     this->module = NULL;
   };
   
-  ~PiPoOp(void) { this->clear(); };
+  PiPoOp(const PiPoOp &other) : pipoName(), instanceName()
+  { 
+    this->index = other.index;
+    this->pipoName = other.pipoName;
+    this->instanceName = other.instanceName;
+    this->pipo = other.pipo;
+    this->module = other.module;
+  };
+  
+  ~PiPoOp(void) { };
 
   void clear(void)
   {
     if(this->module != NULL)
       delete this->module;
     
+    this->module = NULL;
+    
     if(this->pipo != NULL)
       delete pipo;
+    
+    this->pipo = NULL;
   };
   
   void parse(std::string str, unsigned int &pos)
@@ -100,7 +113,7 @@ public:
     this->pipoName = other.pipoName;
     this->instanceName = other.instanceName;
     
-    instantiate(moduleFactory);
+    this->instantiate(moduleFactory);
     
     if(this->pipo != NULL)
       this->pipo->cloneAttrs(other.pipo);
@@ -111,17 +124,18 @@ public:
   bool isInstanceName(const char *str) { return (this->instanceName.compare(str) == 0); };
 };
 
-class PiPoChain : public PiPo, public std::vector<PiPoOp>
+class PiPoChain : public PiPo
 {
+  std::vector<PiPoOp> ops;
   PiPoModuleFactory *moduleFactory;
 
 public:
-  PiPoChain(PiPoModuleFactory *moduleFactory = NULL) : PiPo(), std::vector<PiPoOp>()
+  PiPoChain(PiPoModuleFactory *moduleFactory = NULL) : PiPo(), ops()
   { 
     this->moduleFactory = moduleFactory;
   };  
   
-  PiPoChain(const PiPoChain &other) : std::vector<PiPoOp>(*this)
+  PiPoChain(const PiPoChain &other) : PiPo(), ops()
   { 
     this->moduleFactory = NULL;
     this->connect(NULL);
@@ -131,12 +145,12 @@ public:
   {
     this->moduleFactory = other.moduleFactory;
     
-    this->clear();
+    this->ops.clear();
     
-    for(unsigned int i = 0; i < other.size(); i++)
+    for(unsigned int i = 0; i < other.ops.size(); i++)
     {
-      this->resize(i + 1, i); 
-      (*this)[i].clone(this->moduleFactory, other[i]);
+      this->ops.resize(i + 1, i); 
+      this->ops[i].clone(this->moduleFactory, other.ops[i]);
     }
     
     this->connect(NULL);
@@ -145,7 +159,23 @@ public:
     return *this;
   };
   
-  ~PiPoChain(void) { };
+  ~PiPoChain(void) 
+  { 
+    this->clear();
+  };
+  
+  int getSize()
+  {
+    return this->ops.size();
+  }
+  
+  void clear()
+  {
+    for(unsigned int i = 0; i < this->ops.size(); i++)
+      this->ops[0].clear();
+
+    this->ops.clear();
+  }
   
   unsigned int parse(const char *str)
   {
@@ -156,20 +186,20 @@ public:
     
     for(unsigned int i = 0; pos < std::string::npos; i++)
     {
-      this->resize(i + 1, i); 
-      (*this)[i].parse(pipoChainStr, pos);
+      this->ops.resize(i + 1, i); 
+      this->ops[i].parse(pipoChainStr, pos);
     }
     
-    return this->size();
+    return this->ops.size();
   };
     
   bool instantiate(void)
   {
-    if(this->size() > 0)
+    if(this->ops.size() > 0)
     {
-      for(unsigned int i = 0; i < this->size(); i++)
+      for(unsigned int i = 0; i < this->ops.size(); i++)
       {
-        if(!(*this)[i].instantiate(this->moduleFactory))
+        if(!this->ops[i].instantiate(this->moduleFactory))
         {
           this->clear();
           return false; 
@@ -190,9 +220,9 @@ public:
     {
       next->setReceiver(receiver);
       
-      for(int i = this->size() - 2; i >= 0; i--)
+      for(int i = this->ops.size() - 2; i >= 0; i--)
       {
-        PiPo *pipo = (*this)[i].getPiPo();
+        PiPo *pipo = this->ops[i].getPiPo();
         pipo->setReceiver(next);
         next = pipo;
       }
@@ -205,7 +235,7 @@ public:
   
   void setReceiver(PiPo *receiver)
   {
-    if(this->size() > 0)
+    if(this->ops.size() > 0)
     {
       PiPo *tail = this->getTail();
       
@@ -216,25 +246,25 @@ public:
   
   PiPo *getHead(void)
   {
-    if(this->size() > 0)
-      return (*this)[0].getPiPo();
+    if(this->ops.size() > 0)
+      return this->ops[0].getPiPo();
     
     return NULL;
   };
   
   PiPo *getTail(void)
   {
-    if(this->size() > 0)
-      return (*this)[this->size() - 1].getPiPo();
+    if(this->ops.size() > 0)
+      return this->ops[this->ops.size() - 1].getPiPo();
     
     return NULL;
   };
   
   int getIndex(const char *instanceName)
   {
-    for(unsigned int i = 0; i < this->size(); i++)
+    for(unsigned int i = 0; i < this->ops.size(); i++)
     {
-      if((*this)[i].isInstanceName(instanceName))
+      if(this->ops[i].isInstanceName(instanceName))
         return i;
     }
     
@@ -243,7 +273,10 @@ public:
   
   PiPo *getPiPo(unsigned int index)
   {
-    return (*this)[index].getPiPo();
+    if(index < this->ops.size())
+      return this->ops[index].getPiPo();
+    
+    return NULL;
   };  
   
   PiPo *getPiPo(const char *instanceName)
@@ -255,6 +288,14 @@ public:
     
     return NULL;
   };  
+  
+  const char *getInstanceName(unsigned int index) 
+  { 
+    if(index < this->ops.size())
+      return this->ops[index].getInstanceName(); 
+    
+    return NULL;
+  };
   
   int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
   {

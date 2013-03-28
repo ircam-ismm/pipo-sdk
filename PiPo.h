@@ -373,14 +373,16 @@ public:
       bool operator() (const char *str1, const char *str2) const { return std::strcmp(str1, str2) < 0; } 
     };
     
-    unsigned int numEnumItems;
     std::vector<const char *>enumList;
     std::vector<const char *>enumListDoc;
     std::map<const char *, unsigned int, strCompare> enumMap;
     
   public:
     EnumAttr(PiPo *pipo, const char *name, const char *descr, const std::type_info *type, bool changesStream) :
-    Attr(pipo, name, descr, type, changesStream)
+    Attr(pipo, name, descr, type, changesStream)//,
+//    enumList(),
+//    enumListDoc(),
+//    enumMap()
     {
     };
     
@@ -408,7 +410,7 @@ public:
 
     const char *getEnumTag(unsigned int idx)
     { 
-      if(idx < this->numEnumItems)
+      if(idx < this->enumList.size())
         return this->enumList[idx];
       
       return NULL;
