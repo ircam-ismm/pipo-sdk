@@ -105,10 +105,10 @@ MaxPiPoHost::setChainDescription(const char *str, PiPo *receiver)
 void
 MaxPiPoHost::copyPiPoAttributes(MaxAttrGetterT getAttrMeth, MaxAttrSetterT setAttrMeth)
 {
-  for(unsigned int iPiPo = 0; iPiPo < this->chain.size(); iPiPo++)
+  for(unsigned int iPiPo = 0; iPiPo < this->chain.getSize(); iPiPo++)
   {
-    PiPo *pipo = this->chain[iPiPo].getPiPo();
-    const char *instanceName = this->chain[iPiPo].getInstanceName();
+    PiPo *pipo = this->chain.getPiPo(iPiPo);
+    const char *instanceName = this->chain.getInstanceName(iPiPo);
     unsigned int numAttrs = pipo->getNumAttrs();
     
     for(unsigned int iAttr = 0; iAttr < numAttrs; iAttr++)
