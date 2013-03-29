@@ -101,13 +101,13 @@ public:
    * @param num number of frames
    * @return used as return value of the calling method
    */
-  int propagateFrames(double time, float *values, unsigned int size, unsigned int num) 
+  int propagateFrames(double time, double weight, float *values, unsigned int size, unsigned int num) 
   { 
     int ret = -1;
     
     for(unsigned int i = 0; i < this->receivers.size(); i++)
     {
-      ret = this->receivers[i]->frames(time, values, size, num); 
+      ret = this->receivers[i]->frames(time, weight, values, size, num); 
       
       if(ret < 0)
         break;
@@ -229,7 +229,7 @@ public:
    * PiPo module:
    * Generally, an implementation of this method requires a propagateFrames() method call, typically like this:
    *
-   * \code{return this->propagateFrames(time, values, size, num); }
+   * \code{return this->propagateFrames(time, weight, values, size, num); }
    *
    * PiPo host:
    * A terminating receiver module provided by a PiPo host handles the received frames and usally returns 0.
@@ -240,7 +240,7 @@ public:
    * @param num     number of frames (number of samples for audio input)
    * @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
    */
-  virtual int frames(double time, float *values, unsigned int size, unsigned int num) = 0;
+  virtual int frames(double time, double weight, float *values, unsigned int size, unsigned int num) = 0;
   
   /**
    * @brief Finalizes processing (optinal)

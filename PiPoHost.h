@@ -317,12 +317,12 @@ public:
     return -1;
   };
   
-  int frames(double time, float *values, unsigned int size, unsigned int num)
+  int frames(double time, double weight, float *values, unsigned int size, unsigned int num)
   {
     PiPo *head = this->getHead();
     
     if(head != NULL)
-      return head->frames(time, values, size, num);
+      return head->frames(time, weight, values, size, num);
     
     return -1;
   };
