@@ -194,15 +194,15 @@ public:
    * PiPo host:
    * A terminating receiver module provided by a PiPo host handles the final output stream attributes and usally returns 0.
    *
-   * @param hasTimeTags   a boolean representing whether the elements of the stream are time-tagged
-   * @param rate          the frame rate (highest average rate for time-tagged streams, sample rate for audio input)
-   * @param offset        the lag of the output stream relative to the input
-   * @param width         the frame width (also number of channels for audio or matrix columns)
-   * @param size          the frame size (or number of matrix rows, always 1 for audio)
-   * @param labels        optional labels for the frames' channels or columns
-   * @param hasVarSize    a boolean representing whether the frames have a variable size (respecting the given frame size as maximum)
-   * @param domain        extent of a frame in the given domain (e.g. duration or frequency range)
-   * @param maxFrames     maximum number of frames in a block exchanged between two modules (window size for audio)
+   * @param hasTimeTags a boolean representing whether the elements of the stream are time-tagged
+   * @param rate the frame rate (highest average rate for time-tagged streams, sample rate for audio input)
+   * @param offset the lag of the output stream relative to the input
+   * @param width the frame width (also number of channels for audio or matrix columns)
+   * @param size the frame size (or number of matrix rows, always 1 for audio)
+   * @param labels optional labels for the frames' channels or columns
+   * @param hasVarSize a boolean representing whether the frames have a variable size (respecting the given frame size as maximum)
+   * @param domain extent of a frame in the given domain (e.g. duration or frequency range)
+   * @param maxFrames maximum number of frames in a block exchanged between two modules (window size for audio)
    * @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
    */
   virtual int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames) = 0;
@@ -227,21 +227,57 @@ public:
    * @brief Processes a single frame or a block of frames
    *
    * PiPo module:
-   * Generally, an implementation of this method requires a propagateFrames() method call, typically like this:
+   * An implementation of this method may call propagateFrames(), typically like this:
    *
    * \code{return this->propagateFrames(time, weight, values, size, num); }
    *
    * PiPo host:
    * A terminating receiver module provided by a PiPo host handles the received frames and usally returns 0.
    *
-   * @param time    time-tag for a single frame or a block of frames
-   * @param values  interleaved frames values, row by row (interleaving channels or columns), frame by frame
-   * @param size    size of each of all frames (number of channels for audio)
-   * @param num     number of frames (number of samples for audio input)
+   * @param time time-tag for a single frame or a block of frames
+   * @param weight weighth associated to frame or block
+   * @param values interleaved frames values, row by row (interleaving channels or columns), frame by frame
+   * @param size size of each of all frames (number of channels for audio)
+   * @param num number of frames (number of samples for audio input)
    * @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
    */
   virtual int frames(double time, double weight, float *values, unsigned int size, unsigned int num) = 0;
   
+  /**
+   * @brief Signals segment start or end
+   *
+   * PiPo module:
+   * An implementation of this method calls propagateFrames() at the end of the segment.
+   *
+   * In the case of two sucessive calls to segment(), the second call implitly ends the last segment.
+   *
+   * If the module did not receive any frames - at all or since the last segment end -, the method should 
+   * return 0 to the call segment(0.0, end) without calling propagateFrames(). 
+   * This permits the host to check whether a module implements the segment method or not.
+   *
+   * \code{
+   
+   if(this->started)
+   {
+     // do what is to be done to finalize the segment description
+     this->propagateFrames(time, weight, values, size, num); 
+     this->started = false;
+   }
+     
+   if(start)
+   {
+     // do what is to be done to initialize the segment description
+   }
+
+   return 0;
+
+   *
+   * @param time time of segment start of end
+   * @param start flag, true for segment start, false for segment end
+   * @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
+   */
+  virtual int segment(double time, bool start) { return -1; };
+
   /**
    * @brief Finalizes processing (optinal)
    *
@@ -379,10 +415,8 @@ public:
     
   public:
     EnumAttr(PiPo *pipo, const char *name, const char *descr, const std::type_info *type, bool changesStream) :
-    Attr(pipo, name, descr, type, changesStream)//,
-//    enumList(),
-//    enumListDoc(),
-//    enumMap()
+    Attr(pipo, name, descr, type, changesStream),
+    enumList(), enumListDoc(), enumMap()
     {
     };
     
