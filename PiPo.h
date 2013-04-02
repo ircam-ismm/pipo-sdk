@@ -19,6 +19,8 @@
 #include <typeinfo>
 #include <map>
 
+typedef float PiPoValue;
+
 class PiPo
 {
 public:
@@ -101,7 +103,7 @@ public:
    * @param num number of frames
    * @return used as return value of the calling method
    */
-  int propagateFrames(double time, double weight, float *values, unsigned int size, unsigned int num) 
+  int propagateFrames(double time, double weight, PiPoValue *values, unsigned int size, unsigned int num) 
   { 
     int ret = -1;
     
@@ -175,15 +177,6 @@ public:
   }
   
   /**
-   * @brief Adds a PiPo modules receiver (call only by the PiPo host)
-   *
-   * @param receiver PiPo module receiving this module's output stream
-   */
-  virtual void addReceiver(PiPo *receiver) 
-  { 
-  };
-  
-  /**
    * @brief Configures a PiPo module according to the input stream attributes and propagate output stream attributes
    *
    * PiPo module:
@@ -241,7 +234,7 @@ public:
    * @param num number of frames (number of samples for audio input)
    * @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
    */
-  virtual int frames(double time, double weight, float *values, unsigned int size, unsigned int num) = 0;
+  virtual int frames(double time, double weight, PiPoValue *values, unsigned int size, unsigned int num) = 0;
   
   /**
    * @brief Signals segment start or end
