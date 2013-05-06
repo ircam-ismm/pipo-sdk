@@ -18,7 +18,6 @@
 
 #include <string.h>
 #include <vector>
-#include <new>
 
 #define atom_isnum(a) ((a)->a_type == A_LONG || (a)->a_type == A_FLOAT)
 #define atom_issym(a) ((a)->a_type == A_SYM)

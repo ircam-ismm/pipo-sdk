@@ -12,6 +12,7 @@
 
 #include <string.h>
 #include <vector>
+#include <new>
 
 using namespace std;
 
