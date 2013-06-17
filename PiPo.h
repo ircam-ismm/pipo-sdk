@@ -19,6 +19,10 @@
 #include <typeinfo>
 #include <map>
 
+#ifdef WIN32
+#define strcasecmp _stricmp
+#endif
+
 typedef float PiPoValue;
 
 class PiPo
