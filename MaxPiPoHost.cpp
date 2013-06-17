@@ -26,7 +26,7 @@ static const unsigned int maxWordLen = 256;
 static bool
 getPiPoInstanceAndAttrName(const char *attrName, char *instanceName, char *pipoAttrName)
 {
-  char *dot = strrchr(attrName, '.');
+  const char *dot = strrchr(attrName, '.');
   
   if(dot != NULL)
   {
