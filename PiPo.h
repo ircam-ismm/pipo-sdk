@@ -849,7 +849,7 @@ public:
   
   void set(unsigned int i, int val)
   { 
-    if (i >= size()) 
+    if (i >= this->size())
 	setSize(i + 1);
 
     (*this)[i] = (TYPE)val;
@@ -857,8 +857,8 @@ public:
   
   void set(unsigned int i, double val) 
   { 
-    if (i >= size()) 
-	setSize(i + 1);
+    if (i >= this->size())
+      setSize(i + 1);
 
     (*this)[i] = (TYPE)val;
   };
