@@ -903,7 +903,7 @@ public:
 
   void set(unsigned int i, int val)
   { 
-    if (i >= size()) 
+    if (i >= this->size()) 
 	setSize(i + 1);
 
     (*this)[i] = (unsigned int)val;
@@ -911,7 +911,7 @@ public:
   
   void set(unsigned int i, double val) 
   { 
-    if (i >= size()) 
+    if (i >= this->size()) 
 	setSize(i + 1);
 
     (*this)[i] = (unsigned int)val;
@@ -919,7 +919,7 @@ public:
   
   void set(unsigned int i, const char *val) 
   { 
-    if (i >= size()) 
+    if (i >= this->size()) 
 	setSize(i + 1);
 
     (*this)[i] = getEnumIndex(val); 
