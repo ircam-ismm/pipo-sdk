@@ -266,7 +266,7 @@ MaxPiPoHost::setMaxAttr(PiPoChain *chain, const char *attrName, long ac, t_atom 
               if(atom_issym(at + i))
                 attr->set(i, (const char *)mysneg(atom_getsym(at + i)));
               else
-                attr->set(i, NULL);
+                attr->set(i, (const char *)NULL);
             }
             
             if(attr->doesChangeStream())
