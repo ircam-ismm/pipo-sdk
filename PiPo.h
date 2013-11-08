@@ -696,7 +696,7 @@ public:
  */
 /* waiting for C++11 */
 template< class TYPE, std::size_t SIZE>
-class array
+class make_array
 {
   TYPE values[SIZE];
   static const int size = SIZE;
@@ -707,12 +707,12 @@ public:
 };
 
 template <typename TYPE, unsigned int SIZE>
-class PiPoArrayAttr : public PiPo::Attr, public array<TYPE, SIZE>
+class PiPoArrayAttr : public PiPo::Attr, public make_array<TYPE, SIZE>
 {
 public:
   PiPoArrayAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream, TYPE initVal = (TYPE)0) : 
   Attr(pipo, name, descr, &typeid(TYPE), changesStream), 
-  array<TYPE, SIZE>()
+  make_array<TYPE, SIZE>()
   {
     for(unsigned int i = 0; i < SIZE; i++)
       (*this)[i] = initVal;
@@ -763,12 +763,12 @@ public:
 };
 
 template <unsigned int SIZE>
-class PiPoArrayAttr<enum PiPo::Enumerate, SIZE> : public PiPo::EnumAttr, public array<unsigned int, SIZE>
+class PiPoArrayAttr<enum PiPo::Enumerate, SIZE> : public PiPo::EnumAttr, public make_array<unsigned int, SIZE>
 {
 public:
   PiPoArrayAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream, unsigned int initVal = NULL) : 
   EnumAttr(pipo, name, descr, &typeid(enum PiPo::Enumerate), changesStream),
-  array<unsigned int, SIZE>()
+  make_array<unsigned int, SIZE>()
   {    
     for(unsigned int i = 0; i < this->size; i++)
       this->value[i] = initVal;
