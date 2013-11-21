@@ -72,13 +72,13 @@ public:
     this->pipo = NULL;
   };
   
-  void parse(std::string str, unsigned int &pos)
+  void parse(std::string str, size_t &pos)
   {
     this->clear();
     
-    unsigned int end = str.find_first_of(':', pos);
-    unsigned int open = str.find_first_of('(', pos);
-    unsigned int closed = str.find_first_of(')', pos);
+    size_t end = str.find_first_of(':', pos);
+    size_t open = str.find_first_of('(', pos);
+    size_t closed = str.find_first_of(')', pos);
     
     if(open < std::string::npos && closed < std::string::npos)
     {
@@ -177,10 +177,10 @@ public:
     this->ops.clear();
   }
   
-  unsigned int parse(const char *str)
+  size_t parse(const char *str)
   {
     std::string pipoChainStr = str;
-    unsigned int pos = 0;
+    size_t pos = 0;
     
     this->clear();
     
