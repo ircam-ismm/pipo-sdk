@@ -882,6 +882,11 @@ public:
   };
 
   const char *getStr(unsigned int i) { return NULL; };
+
+  TYPE *getPtr()	// return pointer to first data element
+  {
+      return &((*this)[0]);
+  }
 };
 
 template <>
