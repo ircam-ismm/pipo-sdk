@@ -21,6 +21,7 @@
 
 #ifdef WIN32
 #define strcasecmp _stricmp
+#define M_PI       3.14159265358979323846264338328      /**< pi */
 #endif
 
 typedef float PiPoValue;
