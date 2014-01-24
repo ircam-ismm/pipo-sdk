@@ -42,7 +42,7 @@ public:
       this->receivers.push_back(receiver);
   };
   
-  ~PiPo(void) { };
+  virtual ~PiPo(void) { };
   
   /**
    * @brief Propagates a module's output stream attributes to its reciever.
