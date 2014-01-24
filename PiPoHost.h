@@ -172,7 +172,7 @@ public:
   void clear()
   {
     for(unsigned int i = 0; i < this->ops.size(); i++)
-      this->ops[0].clear();
+      this->ops[i].clear();
 
     this->ops.clear();
   }
