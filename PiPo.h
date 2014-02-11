@@ -130,8 +130,8 @@ public:
    *
    * @return used as return value of the calling method
    */
-  int propagateFinalize(double inputEnd) 
-  { 
+  int propagateFinalize(double inputEnd)
+  {
     int ret = -1;
     
     for(unsigned int i = 0; i < this->receivers.size(); i++)
@@ -306,13 +306,41 @@ public:
    * param unitId (for host) index of the module that initially called streamAttributesChanged().
    * @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
    */
-  virtual int streamAttributesChanged(unsigned int unitId = 0) 
-  { 
+  virtual int streamAttributesChanged(unsigned int unitId = 0)
+  {
     int ret = -1;
     
     for(unsigned int i = 0; i < this->receivers.size(); i++)
     {
-      ret = this->receivers[i]->streamAttributesChanged(unitId + 1); 
+      ret = this->receivers[i]->streamAttributesChanged(unitId + 1);
+      
+      if(ret < 0)
+        break;
+    }
+    
+    return ret;
+  }
+  
+  /**
+   * @brief Signals an error
+   *
+   * PiPo module:
+   * This method is called (with 0) in method setting a module parameter that requires changing the output stream attributes.
+   *
+   * PiPo host:
+   * The implementation of this method by the terminating receiver module provided by a PiPo host
+   * would handle the signaled error.
+   *
+   * param unitId (for host) index of the module that initially called streamAttributesChanged().
+   * @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
+   */
+  virtual int signalError(const char *errorMsg, unsigned int unitId = 0)
+  {
+    int ret = -1;
+    
+    for(unsigned int i = 0; i < this->receivers.size(); i++)
+    {
+      ret = this->receivers[i]->signalError(errorMsg, unitId + 1);
       
       if(ret < 0)
         break;
