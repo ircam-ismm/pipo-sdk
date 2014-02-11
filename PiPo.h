@@ -62,7 +62,7 @@ public:
    */
   int propagateStreamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames) 
   { 
-    int ret = -1;
+    int ret = 0;
     
     for(unsigned int i = 0; i < this->receivers.size(); i++)
     {
