@@ -25,7 +25,7 @@ typedef struct MaxPiPoSt {
   static t_class *max ## pipoClass ## Class = NULL; \
   static void *newMaxObject(t_symbol *s, long ac, t_atom *at) { \
     MaxPiPoT *self = (MaxPiPoT *)object_alloc(max ## pipoClass ## Class); \
-    if(self != NULL) { self->pipo = new pipoClass(); } \
+    if(self != NULL) { self->pipo = new pipoClass(NULL); } \
     return self; } \
   static void freeMaxObject(MaxPiPoT *self) { delete self->pipo; } \
   int main(void) { \

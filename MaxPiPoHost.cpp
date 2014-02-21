@@ -12,7 +12,6 @@
 
 #include <string.h>
 #include <vector>
-#include <new>
 
 using namespace std;
 
@@ -92,7 +91,36 @@ getMaxAttributeList(PiPo *pipo, unsigned int attrId, long *pac, t_atom **pat)
  *  Max PiPo Host Class
  *
  */
-PiPo * 
+MaxPiPoHost::MaxPiPoHost(t_object *ext) : moduleFactory(ext), chain(this, &this->moduleFactory), inputStreamAttrs(), outputStreamAttrs()
+{
+  this->ext = ext;
+  systhread_mutex_new(&this->mutex, SYSTHREAD_MUTEX_RECURSIVE);
+}
+
+MaxPiPoHost::~MaxPiPoHost(void)
+{
+  systhread_mutex_free(this->mutex);
+}
+
+void
+MaxPiPoHost::lock()
+{
+  systhread_mutex_lock(this->mutex);
+}
+
+bool
+MaxPiPoHost::trylock()
+{
+  return (systhread_mutex_trylock(this->mutex) == 0);
+}
+
+void
+MaxPiPoHost::unlock()
+{
+  systhread_mutex_unlock(this->mutex);
+}
+
+PiPo *
 MaxPiPoHost::setChainDescription(const char *str, PiPo *receiver)
 {
   this->chain.clear();
@@ -158,10 +186,10 @@ MaxPiPoHost::copyPiPoAttributes(MaxAttrGetterT getAttrMeth, MaxAttrSetterT setAt
       }
       
       t_object *maxAttr = attribute_new(attrName.c_str(), typeSym, 0, (method)getAttrMeth, (method)setAttrMeth);
-      object_addattr((t_object *)this->maxPiPoHost, maxAttr);
+      object_addattr(this->ext, maxAttr);
       
       if(type == PiPo::Bool)
-        object_attr_addattr_parse((t_object *)this->maxPiPoHost, attrName.c_str(), "style", USESYM(symbol), 0, "onoff");
+        object_attr_addattr_parse(this->ext, attrName.c_str(), "style", USESYM(symbol), 0, "onoff");
       else if(type == PiPo::Enum)
       {      
         vector<const char *> *enumList = attr->getEnumList();
@@ -176,33 +204,35 @@ MaxPiPoHost::copyPiPoAttributes(MaxAttrGetterT getAttrMeth, MaxAttrSetterT setAt
             enumStr += (*enumList)[i];
           }
           
-          object_attr_addattr_parse((t_object *)this->maxPiPoHost, attrName.c_str(), "style", USESYM(symbol), 0, "enumindex");
-          object_attr_addattr_parse((t_object *)this->maxPiPoHost, attrName.c_str(), "enumvals", USESYM(symbol), 0, enumStr.c_str());
+          object_attr_addattr_parse(this->ext, attrName.c_str(), "style", USESYM(symbol), 0, "enumindex");
+          object_attr_addattr_parse(this->ext, attrName.c_str(), "enumvals", USESYM(symbol), 0, enumStr.c_str());
         }
       }
       
-      object_attr_addattr_format((t_object *)this->maxPiPoHost, attrName.c_str(), "label", USESYM(symbol), 0, "s", gensym(label.c_str()));
+      object_attr_addattr_format(this->ext, attrName.c_str(), "label", USESYM(symbol), 0, "s", gensym(label.c_str()));
       
       t_atom a;
       atom_setlong(&a, (iPiPo + 1) * 256 + iAttr);
-      object_attr_addattr_atoms((t_object *)this->maxPiPoHost, attrName.c_str(), "order", USESYM(long), 0, 1, &a);
+      object_attr_addattr_atoms(this->ext, attrName.c_str(), "order", USESYM(long), 0, 1, &a);
     }
   }
 }
 
 void
-MaxPiPoHost::getMaxAttr(PiPoChain *chain, const char *attrName, long *pac, t_atom **pat)
+MaxPiPoHost::getMaxAttr(const char *attrName, long *pac, t_atom **pat)
 {
   if(pac != NULL && pat != NULL) 
   {
     char instanceName[maxWordLen];
     char pipoAttrName[maxWordLen];
     
+    this->lock();
+    
     *pac = 0;
     
     if(getPiPoInstanceAndAttrName(attrName, instanceName, pipoAttrName))
     {
-      PiPo *pipo = chain->getPiPo(instanceName);
+      PiPo *pipo = this->chain.getPiPo(instanceName);
       
       if(pipo != NULL)
       {
@@ -221,18 +251,22 @@ MaxPiPoHost::getMaxAttr(PiPoChain *chain, const char *attrName, long *pac, t_ato
         }
       }
     }
+    
+    this->unlock();
   }
 }
 
 void
-MaxPiPoHost::setMaxAttr(PiPoChain *chain, const char *attrName, long ac, t_atom *at)
+MaxPiPoHost::setMaxAttr(const char *attrName, long ac, t_atom *at)
 {
   char instanceName[maxWordLen];
   char pipoAttrName[maxWordLen];
   
+  this->lock();
+  
   if(getPiPoInstanceAndAttrName(attrName, instanceName, pipoAttrName))
   {
-    PiPo *pipo = chain->getPiPo(instanceName);
+    PiPo *pipo = this->chain.getPiPo(instanceName);
     
     if(pipo != NULL)
     {
@@ -273,56 +307,261 @@ MaxPiPoHost::setMaxAttr(PiPoChain *chain, const char *attrName, long ac, t_atom 
               pipo->streamAttributesChanged();
           }
           else
-            object_error((t_object *)this->maxPiPoHost, "invalid argument for attribute %s", attrName);
+            object_error(this->ext, "invalid argument for attribute %s", attrName);
         }
         else
-          object_error((t_object *)this->maxPiPoHost, "missing argument for attribute %s", attrName);
+          object_error(this->ext, "missing argument for attribute %s", attrName);
         
       }
     }
   }
-}
-
-PiPoChain *
-MaxPiPoHost::getChain(void)
-{
-  return &this->chain;
-}
-
-/*********************************************************
- *
- *  Max PiPo Host External
- *
- */
-void
-maxPiPoHost_init(MaxPiPoHostT *self)
-{
-  new(&self->host) MaxPiPoHost(self);
-  systhread_mutex_new(&self->mutex, SYSTHREAD_MUTEX_RECURSIVE);
+  
+  this->unlock();
 }
 
 void
-maxPiPoHost_deinit(MaxPiPoHostT *self)
+MaxPiPoHost::propagateInputAttributes(void)
 {
-  self->host.~MaxPiPoHost();
-  systhread_mutex_free(self->mutex);  
+  this->lock();
+  
+  PiPo *head = this->chain.getHead();
+  const char *colNameStr[PIPO_MAX_LABELS];
+  const char **labels = NULL;
+  unsigned int numLabels = this->inputStreamAttrs.dims[0];
+  
+  if(numLabels > PIPO_MAX_LABELS)
+    numLabels = PIPO_MAX_LABELS;
+  
+  if(this->inputStreamAttrs.numLabels >= numLabels)
+  {
+    for(unsigned int i = 0; i < numLabels; i++)
+      ;//colNameStr[i] = mysneg(&this->inputStreamAttrs.labels[i]);
+    
+    labels = colNameStr;
+  }
+  
+  head->streamAttributes(this->inputStreamAttrs.hasTimeTags,
+                         this->inputStreamAttrs.rate,
+                         this->inputStreamAttrs.offset,
+                         this->inputStreamAttrs.dims[0],
+                         this->inputStreamAttrs.dims[1],
+                         labels,
+                         this->inputStreamAttrs.hasVarSize,
+                         this->inputStreamAttrs.domain,
+                         this->inputStreamAttrs.maxFrames);
+  
+  this->unlock();
 }
 
 void
-maxPiPoHost_lock(MaxPiPoHostT *self)
+MaxPiPoHost::setOutputAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
 {
-  systhread_mutex_lock(self->mutex);
+  this->lock();
+  
+  if(labels != NULL)
+  {
+    int numLabels = width;
+    
+    if(numLabels > PIPO_MAX_LABELS)
+      numLabels = PIPO_MAX_LABELS;
+    
+    for(int i = 0; i < numLabels; i++)
+      this->outputStreamAttrs.labels[i] = gensym(labels[i]);
+    
+    this->outputStreamAttrs.numLabels = width;
+  }
+  else
+    this->outputStreamAttrs.numLabels = 0;
+  
+  this->outputStreamAttrs.hasTimeTags = hasTimeTags;
+  this->outputStreamAttrs.rate = rate;
+  this->outputStreamAttrs.offset = offset;
+  this->outputStreamAttrs.dims[0] = width;
+  this->outputStreamAttrs.dims[1] = size;
+  this->outputStreamAttrs.hasVarSize = hasVarSize;
+  this->outputStreamAttrs.domain = domain;
+  this->outputStreamAttrs.maxFrames = maxFrames;
+  
+  this->lock();
+}
+
+void
+MaxPiPoHost::streamAttributesChanged(PiPo *pipo)
+{
+  this->propagateInputAttributes();
+}
+
+void
+MaxPiPoHost::signalError(PiPo *pipo, std::string *errorMsg)
+{
+  object_error(this->ext, errorMsg->c_str());
+}
+
+void
+MaxPiPoHost::setInputDims(int width, int size, bool propagate)
+{
+  this->lock();
+  
+  this->inputStreamAttrs.dims[0] = width;
+  this->inputStreamAttrs.dims[1] = size;
+  
+  if(propagate)
+    this->propagateInputAttributes();
+  
+  this->unlock();
+}
+
+void
+MaxPiPoHost::setInputLabels(long ac, t_atom *at, bool propagate)
+{
+  this->lock();
+  
+  if(ac > PIPO_MAX_LABELS)
+    ac = PIPO_MAX_LABELS;
+  
+  this->inputStreamAttrs.numLabels = ac;
+  
+  for(int i = 0; i < ac; i++)
+  {
+    if(atom_issym(at + i))
+      this->inputStreamAttrs.labels[i] = atom_getsym(at + i);
+    else
+    {
+      this->inputStreamAttrs.numLabels = 0;
+      break;
+    }
+  }
+  
+  if(propagate)
+    this->propagateInputAttributes();
+  
+  this->unlock();
+}
+
+void
+MaxPiPoHost::setInputHasTimeTags(int hasTimeTags, bool propagate)
+{
+  this->lock();
+  
+  this->inputStreamAttrs.hasTimeTags = hasTimeTags;
+  
+  if(propagate)
+    this->propagateInputAttributes();
+  
+  this->unlock();
+}
+
+#define MIN_SAMPLERATE (1.0 / 31536000000.0) /* once a year */
+#define MAX_SAMPLERATE (96000000000.0)
+
+void
+MaxPiPoHost::setInputFrameRate(double sampleRate, bool propagate)
+{
+  if(sampleRate <= MIN_SAMPLERATE)
+    this->inputStreamAttrs.rate = MIN_SAMPLERATE;
+  else if(sampleRate >= MAX_SAMPLERATE)
+    this->inputStreamAttrs.rate = MAX_SAMPLERATE;
+  else
+    this->inputStreamAttrs.rate = sampleRate;
+  
+  if(propagate)
+    this->propagateInputAttributes();
+}
+
+void
+MaxPiPoHost::setInputFrameOffset(double sampleOffset, bool propagate)
+{
+  this->inputStreamAttrs.offset = sampleOffset;
+
+  if(propagate)
+    this->propagateInputAttributes();
+}
+
+void
+MaxPiPoHost::setInputMaxFrames(int maxFrames, bool propagate)
+{
+  this->inputStreamAttrs.maxFrames = maxFrames;
+
+  if(propagate)
+    this->propagateInputAttributes();
+}
+
+void
+MaxPiPoHost::getInputDims(int &width, int &size)
+{
+  width = this->inputStreamAttrs.dims[0];
+  size = this->inputStreamAttrs.dims[1];
+}
+
+void
+MaxPiPoHost::getInputLabels(int &num, t_atom *array)
+{
+  int numLabels = this->inputStreamAttrs.numLabels;
+  
+  if(num > numLabels)
+    num = numLabels;
+  
+  for(int i = 0; i < num; i++)
+    atom_setsym(array + i, this->inputStreamAttrs.labels[i]);
 }
 
 bool
-maxPiPoHost_trylock(MaxPiPoHostT *self)
+MaxPiPoHost::getInputHasTimeTags()
 {
-  return (systhread_mutex_trylock(self->mutex) == 0);
+  return this->inputStreamAttrs.hasTimeTags;
+}
+
+double
+MaxPiPoHost::getInputFrameRate(void)
+{
+  return this->inputStreamAttrs.rate;
+}
+
+double
+MaxPiPoHost::getInputFrameOffset(void)
+{
+  return this->inputStreamAttrs.offset;
 }
 
 void
-maxPiPoHost_unlock(MaxPiPoHostT *self)
+MaxPiPoHost::getOutputDims(int &width, int &size)
 {
-  systhread_mutex_unlock(self->mutex);
+  width = this->outputStreamAttrs.dims[0];
+  size = this->outputStreamAttrs.dims[1];
 }
 
+void
+MaxPiPoHost::getOutputLabels(int &num, t_atom *array)
+{
+  int numLabels = this->outputStreamAttrs.numLabels;
+  
+  if(num > numLabels)
+    num = numLabels;
+  
+  for(int i = 0; i < num; i++)
+    atom_setsym(array + i, this->outputStreamAttrs.labels[i]);
+}
+
+bool
+MaxPiPoHost::getOutputHasTimeTags()
+{
+  return this->outputStreamAttrs.hasTimeTags;
+}
+
+double
+MaxPiPoHost::getOutputFrameRate(void)
+{
+  return this->outputStreamAttrs.rate;
+}
+
+double
+MaxPiPoHost::getOutputFrameOffset(void)
+{
+  return this->outputStreamAttrs.offset;
+}
+
+int
+MaxPiPoHost::getOutputMaxFrames()
+{
+  return this->outputStreamAttrs.maxFrames;
+}
