@@ -130,12 +130,12 @@ class PiPoChain : public PiPo
   PiPoModuleFactory *moduleFactory;
 
 public:
-  PiPoChain(PiPoModuleFactory *moduleFactory = NULL) : PiPo(), ops()
+  PiPoChain(PiPo::Parent *parent, PiPoModuleFactory *moduleFactory = NULL) : PiPo(parent), ops()
   { 
     this->moduleFactory = moduleFactory;
   };  
   
-  PiPoChain(const PiPoChain &other) : PiPo(), ops()
+  PiPoChain(const PiPoChain &other) : PiPo(other), ops()
   { 
     this->moduleFactory = NULL;
     this->connect(NULL);

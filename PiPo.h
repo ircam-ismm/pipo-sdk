@@ -21,26 +21,46 @@
 
 #ifdef WIN32
 #define strcasecmp _stricmp
-#define M_PI       3.14159265358979323846264338328      /**< pi */
+#define M_PI 3.14159265358979323846264338328 /**< pi */
 #endif
 
 typedef float PiPoValue;
 
 class PiPo
 {
+  /***********************************************
+   *
+   *  PiPo Parent
+   *
+   */
 public:
-  class Attr;
+  class Parent
+  {
+  public:
+    virtual void streamAttributesChanged(PiPo *pipo) { };
+    virtual void signalError(PiPo *pipo, std::string *errorMsg) { };
+  };
   
+  class Attr;
+
 private:
+  Parent *parent;
   std::vector<PiPo *> receivers; /**< list of receivers */
   std::vector<Attr *> attrs; /**< list of attributes */
   
 public:
-  PiPo(PiPo *receiver = NULL) : receivers(), attrs() 
-  { 
+  PiPo(Parent *parent, PiPo *receiver = NULL) : receivers(), attrs()
+  {
+    this->parent = parent;
+    
     if(receiver != NULL)
       this->receivers.push_back(receiver);
   };
+
+  PiPo(const PiPo &other)
+  {
+    this->parent = other.parent;
+  }
   
   virtual ~PiPo(void) { };
   
@@ -293,60 +313,16 @@ public:
     return this->propagateFinalize(inputEnd); 
   };
 
-  /**
-   * @brief Signals that the output stream parameters of a given module have changed
-   *
-   * PiPo module:
-   * This method is called (with 0) in method setting a module parameter that requires changing the output stream attributes.
-   *
-   * PiPo host:
-   * The implementation of this method by the terminating receiver module provided by a PiPo host
-   * would repropagate the input stream attributes by calling streamAttributes() of the first module.
-   *
-   * param unitId (for host) index of the module that initially called streamAttributesChanged().
-   * @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
-   */
-  virtual int streamAttributesChanged(unsigned int unitId = 0)
+  void streamAttributesChanged(void)
   {
-    int ret = -1;
-    
-    for(unsigned int i = 0; i < this->receivers.size(); i++)
-    {
-      ret = this->receivers[i]->streamAttributesChanged(unitId + 1);
-      
-      if(ret < 0)
-        break;
-    }
-    
-    return ret;
+    if(this->parent != NULL)
+      this->parent->streamAttributesChanged(this);
   }
   
-  /**
-   * @brief Signals an error
-   *
-   * PiPo module:
-   * This method is called (with 0) in method setting a module parameter that requires changing the output stream attributes.
-   *
-   * PiPo host:
-   * The implementation of this method by the terminating receiver module provided by a PiPo host
-   * would handle the signaled error.
-   *
-   * param unitId (for host) index of the module that initially called streamAttributesChanged().
-   * @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
-   */
-  virtual int signalError(const char *errorMsg, unsigned int unitId = 0)
+  void signalError(std::string *errorMsg)
   {
-    int ret = -1;
-    
-    for(unsigned int i = 0; i < this->receivers.size(); i++)
-    {
-      ret = this->receivers[i]->signalError(errorMsg, unitId + 1);
-      
-      if(ret < 0)
-        break;
-    }
-    
-    return ret;
+    if(this->parent != NULL)
+      this->parent->signalError(this, errorMsg);
   }
   
   /***********************************************
