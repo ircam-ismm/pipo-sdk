@@ -219,7 +219,7 @@ MaxPiPoHost::copyPiPoAttributes(MaxAttrGetterT getAttrMeth, MaxAttrSetterT setAt
 }
 
 void
-MaxPiPoHost::getMaxAttr(const char *attrName, long *pac, t_atom **pat)
+MaxPiPoHost::getMaxAttr(const char *attrName, long *pac, t_atom **pat, PiPoChain *chain)
 {
   if(pac != NULL && pat != NULL) 
   {
@@ -227,12 +227,15 @@ MaxPiPoHost::getMaxAttr(const char *attrName, long *pac, t_atom **pat)
     char pipoAttrName[maxWordLen];
     
     this->lock();
+   
+    if(chain == NULL)
+      chain = &this->chain;
     
     *pac = 0;
     
     if(getPiPoInstanceAndAttrName(attrName, instanceName, pipoAttrName))
     {
-      PiPo *pipo = this->chain.getPiPo(instanceName);
+      PiPo *pipo = chain->getPiPo(instanceName);
       
       if(pipo != NULL)
       {
@@ -257,16 +260,19 @@ MaxPiPoHost::getMaxAttr(const char *attrName, long *pac, t_atom **pat)
 }
 
 void
-MaxPiPoHost::setMaxAttr(const char *attrName, long ac, t_atom *at)
+MaxPiPoHost::setMaxAttr(const char *attrName, long ac, t_atom *at, PiPoChain *chain)
 {
   char instanceName[maxWordLen];
   char pipoAttrName[maxWordLen];
   
   this->lock();
   
+  if(chain == NULL)
+    chain = &this->chain;
+  
   if(getPiPoInstanceAndAttrName(attrName, instanceName, pipoAttrName))
   {
-    PiPo *pipo = this->chain.getPiPo(instanceName);
+    PiPo *pipo = chain->getPiPo(instanceName);
     
     if(pipo != NULL)
     {

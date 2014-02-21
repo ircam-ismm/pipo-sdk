@@ -124,14 +124,15 @@ public:
   bool trylock(void);
   void unlock(void);
 
+  PiPoChain *getChain(void) { return &this->chain; };
   PiPo *setChainDescription(const char *str, PiPo *receiver);
   
   typedef t_max_err (*MaxAttrGetterT)(t_object *ext, void *attr, long *pac, t_atom **pat);
   typedef t_max_err (*MaxAttrSetterT)(t_object *ext, void *attr, long ac, t_atom *at);
   void copyPiPoAttributes(MaxAttrGetterT getAttrMeth, MaxAttrSetterT setAttrMeth);
 
-  void getMaxAttr(const char *attrName, long *pac, t_atom **pat);
-  void setMaxAttr(const char *attrName, long ac, t_atom *at);
+  void getMaxAttr(const char *attrName, long *pac, t_atom **pat, PiPoChain *chain = NULL);
+  void setMaxAttr(const char *attrName, long ac, t_atom *at, PiPoChain *chain = NULL);
   
   void propagateInputAttributes(void);
   void setOutputAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames);
