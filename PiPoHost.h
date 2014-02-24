@@ -41,21 +41,21 @@ class PiPoOp
   PiPoModule *module;
   
 public:
-  PiPoOp(unsigned int index) : pipoName(), instanceName()
+  PiPoOp(unsigned int index = 0) : pipoName(), instanceName()
   {
     this->index = index;
     this->pipo = NULL;
     this->module = NULL;
   };
   
-  PiPoOp(const PiPoOp &other) : pipoName(), instanceName()
-  { 
-    this->index = other.index;
-    this->pipoName = other.pipoName;
-    this->instanceName = other.instanceName;
-    this->pipo = other.pipo;
-    this->module = other.module;
-  };
+//  PiPoOp(const PiPoOp &other) : pipoName(), instanceName()
+//  { 
+//    this->index = other.index;
+//    this->pipoName = other.pipoName;
+//    this->instanceName = other.instanceName;
+//    this->pipo = other.pipo;
+//    this->module = other.module;
+//  };
   
   ~PiPoOp(void) { };
 
@@ -97,7 +97,7 @@ public:
       pos = std::string::npos;
   };
   
-  bool instantiate(PiPoModuleFactory *moduleFactory)
+  bool instantiate(PiPo::Parent *parent, PiPoModuleFactory *moduleFactory)
   {
     this->pipo = NULL;
     this->module = NULL;
@@ -105,15 +105,22 @@ public:
     if(moduleFactory != NULL)
       this->pipo = moduleFactory->create(index, this->pipoName, this->instanceName, this->module);
     
-    return (this->pipo != NULL);
+    if(this->pipo != NULL)
+    {
+      this->pipo->setParent(parent);
+      return true;
+    }
+    
+    return false;
   };
 
-  void clone(PiPoModuleFactory *moduleFactory, const PiPoOp &other)
+  void clone(unsigned int index, PiPo::Parent *parent, PiPoModuleFactory *moduleFactory, const PiPoOp &other)
   {
+    this->index = index;
     this->pipoName = other.pipoName;
     this->instanceName = other.instanceName;
     
-    this->instantiate(moduleFactory);
+    this->instantiate(parent, moduleFactory);
     
     if(this->pipo != NULL)
       this->pipo->cloneAttrs(other.pipo);
@@ -127,11 +134,13 @@ public:
 class PiPoChain : public PiPo
 {
   std::vector<PiPoOp> ops;
+  PiPo::Parent *parent;
   PiPoModuleFactory *moduleFactory;
 
 public:
   PiPoChain(PiPo::Parent *parent, PiPoModuleFactory *moduleFactory = NULL) : PiPo(parent), ops()
-  { 
+  {
+    this->parent = parent;
     this->moduleFactory = moduleFactory;
   };  
   
@@ -143,15 +152,15 @@ public:
   
   const PiPoChain& operator=(const PiPoChain &other)
   {
+    unsigned int numOps = other.ops.size();
+    
     this->moduleFactory = other.moduleFactory;
     
     this->ops.clear();
+    this->ops.resize(numOps);
     
-    for(unsigned int i = 0; i < other.ops.size(); i++)
-    {
-      this->ops.resize(i + 1, i); 
-      this->ops[i].clone(this->moduleFactory, other.ops[i]);
-    }
+    for(unsigned int i = 0; i < numOps; i++)
+      this->ops[i].clone(i, this->parent, this->moduleFactory, other.ops[i]);
     
     this->connect(NULL);
     this->moduleFactory = NULL;
@@ -199,7 +208,7 @@ public:
     {
       for(unsigned int i = 0; i < this->ops.size(); i++)
       {
-        if(!this->ops[i].instantiate(this->moduleFactory))
+        if(!this->ops[i].instantiate(this->parent, this->moduleFactory))
         {
           this->clear();
           return false; 
