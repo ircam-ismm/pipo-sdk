@@ -295,9 +295,6 @@ MaxPiPoHost::setMaxAttr(const char *attrName, long ac, t_atom *at, PiPoChain *ch
               else                
                 attr->set(i, 0);
             }
-            
-            if(attr->doesChangeStream())
-              pipo->streamAttributesChanged();
           }
           else if(atom_issym(at))
           {
@@ -308,9 +305,6 @@ MaxPiPoHost::setMaxAttr(const char *attrName, long ac, t_atom *at, PiPoChain *ch
               else
                 attr->set(i, (const char *)NULL);
             }
-            
-            if(attr->doesChangeStream())
-              pipo->streamAttributesChanged();
           }
           else
             object_error(this->ext, "invalid argument for attribute %s", attrName);
@@ -392,7 +386,7 @@ MaxPiPoHost::setOutputAttributes(bool hasTimeTags, double rate, double offset, u
 }
 
 void
-MaxPiPoHost::streamAttributesChanged(PiPo *pipo)
+MaxPiPoHost::streamAttributesChanged(PiPo *pipo, PiPo::Attr *attr)
 {
   this->propagateInputAttributes();
 }

@@ -137,7 +137,7 @@ public:
   void propagateInputAttributes(void);
   void setOutputAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames);
 
-  void streamAttributesChanged(PiPo *pipo);
+  void streamAttributesChanged(PiPo *pipo, PiPo::Attr *attr);
   void signalError(PiPo *pipo, std::string *errorMsg);
   
   void setInputDims(int width, int size, bool propagate = true);
