@@ -114,7 +114,7 @@ public:
     return false;
   };
 
-  void clone(unsigned int index, PiPo::Parent *parent, PiPoModuleFactory *moduleFactory, const PiPoOp &other)
+  void set(unsigned int index, PiPo::Parent *parent, PiPoModuleFactory *moduleFactory, const PiPoOp &other)
   {
     this->index = index;
     this->pipoName = other.pipoName;
@@ -160,7 +160,7 @@ public:
     this->ops.resize(numOps);
     
     for(unsigned int i = 0; i < numOps; i++)
-      this->ops[i].clone(i, this->parent, this->moduleFactory, other.ops[i]);
+      this->ops[i].set(i, this->parent, this->moduleFactory, other.ops[i]);
     
     this->connect(NULL);
     this->moduleFactory = NULL;

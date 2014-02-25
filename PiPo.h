@@ -320,7 +320,7 @@ public:
     return this->propagateFinalize(inputEnd);
   };
   
-  void attributeChanged(Attr *attr)
+  void streamAttributesChanged(Attr *attr)
   {
     if(this->parent != NULL)
       this->parent->streamAttributesChanged(this, attr);
@@ -399,16 +399,16 @@ public:
     virtual unsigned int setSize(unsigned int size) = 0;
     virtual unsigned int getSize(void) = 0;
     
-    virtual void set(unsigned int i, int val) = 0;
-    virtual void set(unsigned int i, double val) = 0;
-    virtual void set(unsigned int i, const char *val) = 0;
+    virtual void set(unsigned int i, int val, bool silently = false) = 0;
+    virtual void set(unsigned int i, double val, bool silently = false) = 0;
+    virtual void set(unsigned int i, const char *val, bool silently = false) = 0;
     virtual int getInt(unsigned int i) = 0;
     virtual double getDbl(unsigned int i) = 0;
     virtual const char *getStr(unsigned int i) = 0;
     
     virtual std::vector<const char *> *getEnumList(void) { return NULL; };
     
-    void changed(void) { this->pipo->attributeChanged(this); };
+    void changed(bool silently = false) { if (!silently && this->changesStream) this->pipo->streamAttributesChanged(this); };
     void rename(const char *name) { this->name = name; };
   };
   
@@ -524,13 +524,13 @@ public:
     return NULL;
   };
   
-  bool setAttr(unsigned int index, int value)
+  bool setAttr(unsigned int index, int value, bool silently = false)
   {
     Attr *attr = getAttr(index);
     
     if(attr != NULL)
     {
-      attr->set(0, value);
+      attr->set(0, value, silently);
       
       return true;
     }
@@ -538,7 +538,7 @@ public:
     return false;
   }
   
-  bool setAttr(unsigned int index, int *values, unsigned int numValues)
+  bool setAttr(unsigned int index, int *values, unsigned int numValues, bool silently = false)
   {
     Attr *attr = getAttr(index);
     
@@ -550,7 +550,7 @@ public:
         numValues = size;
       
       for(unsigned int i = 0; i < numValues; i++)
-        attr->set(i, values[i]);
+        attr->set(i, values[i], silently);
       
       return true;
     }
@@ -558,13 +558,13 @@ public:
     return false;
   }
   
-  bool setAttr(unsigned int index, double val)
+  bool setAttr(unsigned int index, double val, bool silently = false)
   {
     Attr *attr = getAttr(index);
     
     if(attr != NULL)
     {
-      attr->set(0, val);
+      attr->set(0, val, silently);
       
       return true;
     }
@@ -572,7 +572,7 @@ public:
     return false;
   }
   
-  bool setAttr(unsigned int index, double *values, unsigned int numValues)
+  bool setAttr(unsigned int index, double *values, unsigned int numValues, bool silently = false)
   {
     Attr *attr = getAttr(index);
     
@@ -584,7 +584,9 @@ public:
         numValues = size;
       
       for(unsigned int i = 0; i < numValues; i++)
-        attr->set(i, values[i]);
+        attr->set(i, values[i], true);
+      
+      attr->changed(silently);
       
       return true;
     }
@@ -644,7 +646,7 @@ public:
     this->value = initVal;
   }
   
-  void set(TYPE value) { this->value = value; this->changed(); };
+  void set(TYPE value, bool silently = false) { this->value = value; this->changed(silently); };
   TYPE get(void) { return this->value; };
   
   void clone(Attr *other) { *this = *(static_cast<PiPoScalarAttr<TYPE> *>(other)); };
@@ -652,9 +654,9 @@ public:
   unsigned int setSize(unsigned int size) { return this->getSize(); };
   unsigned int getSize(void) { return 1; };
   
-  void set(unsigned int i, int val) { if(i == 0) this->value = (TYPE)val; this->changed(); };
-  void set(unsigned int i, double val) { if(i == 0) this->value = (TYPE)val; this->changed(); };
-  void set(unsigned int i, const char *val) { };
+  void set(unsigned int i, int val, bool silently = false) { if(i == 0) this->value = (TYPE)val; this->changed(silently); };
+  void set(unsigned int i, double val, bool silently = false) { if(i == 0) this->value = (TYPE)val; this->changed(silently); };
+  void set(unsigned int i, const char *val, bool silently = false) { };
   
   int getInt(unsigned int i = 0) { return (int)this->value; };
   double getDbl(unsigned int i = 0) { return (double)this->value; };
@@ -674,18 +676,18 @@ public:
     this->value = initVal;
   };
   
-  void set(unsigned int value) { this->value = clipEnumIndex(value); this->changed(); };
-  void set(const char *value) { this->value = this->getEnumIndex(value); this->changed(); };
-  unsigned int get(void) { return this->value; this->changed(); };
+  void set(unsigned int value, bool silently = false) { this->value = clipEnumIndex(value); this->changed(silently); };
+  void set(const char *value, bool silently = false) { this->value = this->getEnumIndex(value); this->changed(silently); };
+  unsigned int get(void) { return this->value; };
   
   void clone(Attr *other) { *this = *(static_cast<PiPoScalarAttr<enum PiPo::Enumerate> *>(other)); };
   
   unsigned int setSize(unsigned int size) { return this->getSize(); };
   unsigned int getSize(void) { return 1; };
   
-  void set(unsigned int i, int val) { if(i == 0) this->value = clipEnumIndex((unsigned int)val); this->changed(); };
-  void set(unsigned int i, double val) { if(i == 0) this->value = clipEnumIndex((unsigned int)val); this->changed(); };
-  void set(unsigned int i, const char *val) { if(i == 0) this->value = getEnumIndex(val); this->changed(); };
+  void set(unsigned int i, int val, bool silently = false) { if(i == 0) this->value = clipEnumIndex((unsigned int)val); this->changed(silently); };
+  void set(unsigned int i, double val, bool silently = false) { if(i == 0) this->value = clipEnumIndex((unsigned int)val); this->changed(silently); };
+  void set(unsigned int i, const char *val, bool silently = false) { if(i == 0) this->value = getEnumIndex(val); this->changed(silently); };
   
   int getInt(unsigned int i = 0) { return (int)this->value; };
   double getDbl(unsigned int i = 0) { return (double)this->value; };
@@ -726,23 +728,23 @@ public:
   unsigned int setSize(unsigned int size) { return this->getSize(); };
   unsigned int getSize(void) { return SIZE; }
   
-  void set(unsigned int i, int val)
+  void set(unsigned int i, int val, bool silently = false)
   {
     if(i < SIZE)
       (*this)[i] = (TYPE)val;
     
-    this->changed();
+    this->changed(silently);
   };
   
-  void set(unsigned int i, double val)
+  void set(unsigned int i, double val, bool silently = false)
   {
     if(i < SIZE)
       (*this)[i] = (TYPE)val;
     
-    this->changed();
+    this->changed(silently);
   };
   
-  void set(unsigned int i, const char *val) { };
+  void set(unsigned int i, const char *val, bool silently = false) { };
   
   int getInt(unsigned int i)
   {
@@ -788,28 +790,28 @@ public:
   unsigned int setSize(unsigned int size) { return this->getSize(); };
   unsigned int getSize(void) { return SIZE; }
   
-  void set(unsigned int i, int val)
+  void set(unsigned int i, int val, bool silently = false)
   {
     if(i < SIZE)
       (*this)[i] = (unsigned int)val;
     
-    this->changed();
+    this->changed(silently);
   };
   
-  void set(unsigned int i, double val)
+  void set(unsigned int i, double val, bool silently = false)
   {
     if(i < SIZE)
       (*this)[i] = (unsigned int)val;
     
-    this->changed();
+    this->changed(silently);
   };
   
-  void set(unsigned int i, const char *val)
+  void set(unsigned int i, const char *val, bool silently = false)
   {
     if(i < SIZE)
       (*this)[i] = getEnumIndex(val);
     
-    this->changed();
+    this->changed(silently);
   };
   
   int getInt(unsigned int i)
@@ -860,27 +862,27 @@ public:
   unsigned int setSize(unsigned int size) { this->resize(size, (TYPE)0); this->nomSize = size; return size; };
   unsigned int getSize(void) { return this->nomSize; }
   
-  void set(unsigned int i, int val)
+  void set(unsigned int i, int val, bool silently = false)
   {
     if (i >= this->size())
       setSize(i + 1);
     
     (*this)[i] = (TYPE)val;
     
-    this->changed();
+    this->changed(silently);
   };
   
-  void set(unsigned int i, double val)
+  void set(unsigned int i, double val, bool silently = false)
   {
     if (i >= this->size())
       setSize(i + 1);
     
     (*this)[i] = (TYPE)val;
     
-    this->changed();
+    this->changed(silently);
   };
   
-  void set(unsigned int i, const char *val) { };
+  void set(unsigned int i, const char *val, bool silently = false) { };
   
   int getInt(unsigned int i)
   {
@@ -923,32 +925,34 @@ public:
   unsigned int setSize(unsigned int size) { this->resize(size, 0); return size; };
   unsigned int getSize(void) { return this->size(); }
   
-  void set(unsigned int i, int val)
+  void set(unsigned int i, int val, bool silently = false)
   {
     if (i >= this->size())
       setSize(i + 1);
     
     (*this)[i] = (unsigned int)val;
     
-    this->changed();
+    this->changed(silently);
   };
   
-  void set(unsigned int i, double val)
+  void set(unsigned int i, double val, bool silently = false)
   {
     if (i >= this->size())
       setSize(i + 1);
     
     (*this)[i] = (unsigned int)val;
     
-    this->changed();
+    this->changed(silently);
   };
   
-  void set(unsigned int i, const char *val)
+  void set(unsigned int i, const char *val, bool silently = false)
   {
     if (i >= this->size())
       setSize(i + 1);
     
     (*this)[i] = getEnumIndex(val);
+    
+    this->changed(silently);
   };
   
   int getInt(unsigned int i)
