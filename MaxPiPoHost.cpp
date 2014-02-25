@@ -260,7 +260,7 @@ MaxPiPoHost::getMaxAttr(const char *attrName, long *pac, t_atom **pat, PiPoChain
 }
 
 void
-MaxPiPoHost::setMaxAttr(const char *attrName, long ac, t_atom *at, PiPoChain *chain)
+MaxPiPoHost::setMaxAttr(const char *attrName, long ac, t_atom *at, PiPoChain *chain, bool silently)
 {
   char instanceName[maxWordLen];
   char pipoAttrName[maxWordLen];
@@ -289,22 +289,26 @@ MaxPiPoHost::setMaxAttr(const char *attrName, long ac, t_atom *at, PiPoChain *ch
             for(int i = 0; i < ac; i++)
             {
               if(atom_islong(at + i))
-                attr->set(i, (int)atom_getlong(at + i));
+                attr->set(i, (int)atom_getlong(at + i), true);
               else if(atom_isfloat(at + i))
-                attr->set(i, (double)atom_getfloat(at + i));
+                attr->set(i, (double)atom_getfloat(at + i), true);
               else                
-                attr->set(i, 0);
+                attr->set(i, 0, true);
             }
+            
+            attr->changed(silently);
           }
           else if(atom_issym(at))
           {
             for(int i = 0; i < ac; i++)
             {
               if(atom_issym(at + i))
-                attr->set(i, (const char *)mysneg(atom_getsym(at + i)));
+                attr->set(i, (const char *)mysneg(atom_getsym(at + i)), true);
               else
-                attr->set(i, (const char *)NULL);
+                attr->set(i, (const char *)NULL, true);
             }
+            
+            attr->changed(silently);
           }
           else
             object_error(this->ext, "invalid argument for attribute %s", attrName);

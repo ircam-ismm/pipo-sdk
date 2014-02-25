@@ -132,7 +132,7 @@ public:
   void copyPiPoAttributes(MaxAttrGetterT getAttrMeth, MaxAttrSetterT setAttrMeth);
 
   void getMaxAttr(const char *attrName, long *pac, t_atom **pat, PiPoChain *chain = NULL);
-  void setMaxAttr(const char *attrName, long ac, t_atom *at, PiPoChain *chain = NULL);
+  void setMaxAttr(const char *attrName, long ac, t_atom *at, PiPoChain *chain = NULL, bool silently = false);
   
   void propagateInputAttributes(void);
   void setOutputAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames);
