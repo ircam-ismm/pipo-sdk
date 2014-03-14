@@ -386,7 +386,7 @@ MaxPiPoHost::setOutputAttributes(bool hasTimeTags, double rate, double offset, u
   this->outputStreamAttrs.domain = domain;
   this->outputStreamAttrs.maxFrames = maxFrames;
   
-  this->lock();
+  this->unlock();
 }
 
 void
