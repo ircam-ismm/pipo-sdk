@@ -5,7 +5,7 @@
  * 
  * @brief Plugin Interface for Processing Objects
  * 
- * Copyright (C) 2012 by IMTR IRCAM – Centre Pompidou, Paris, France.
+ * Copyright (C) 2012-2014 by IRCAM – Centre Pompidou, Paris, France.
  * All rights reserved.
  * 
  */
