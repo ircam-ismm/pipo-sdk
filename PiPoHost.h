@@ -59,6 +59,12 @@ public:
   
   ~PiPoOp(void) { };
 
+  void setParent(PiPo::Parent *parent)
+  {
+    if(this->pipo != NULL)
+      this->pipo->setParent(parent);
+  };
+  
   void clear(void)
   {
     if(this->module != NULL)
@@ -154,6 +160,7 @@ public:
   {
     unsigned int numOps = other.ops.size();
     
+    this->parent = other.parent;
     this->moduleFactory = other.moduleFactory;
     
     this->ops.clear();
@@ -173,10 +180,18 @@ public:
     this->clear();
   };
   
+  void setParent(PiPo::Parent *parent)
+  {
+    this->parent = parent;
+    
+    for(unsigned int i = 0; i < this->ops.size(); i++)
+      this->ops[i].setParent(parent);
+  };
+  
   int getSize()
   {
     return this->ops.size();
-  }
+  };
   
   void clear()
   {
@@ -184,7 +199,7 @@ public:
       this->ops[i].clear();
 
     this->ops.clear();
-  }
+  };
   
   size_t parse(const char *str)
   {
