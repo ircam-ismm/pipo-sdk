@@ -649,7 +649,7 @@ public:
   void set(TYPE value, bool silently = false) { this->value = value; this->changed(silently); };
   TYPE get(void) { return this->value; };
   
-  void clone(Attr *other) { PiPo *pipo = this->pipo; *this = *(static_cast<PiPoScalarAttr<TYPE> *>(other)); this->pipo = pipo; };
+  void clone(Attr *other) { this->value = (dynamic_cast<PiPoScalarAttr<TYPE> *>(other))->value; };
   
   unsigned int setSize(unsigned int size) { return this->getSize(); };
   unsigned int getSize(void) { return 1; };
@@ -680,7 +680,7 @@ public:
   void set(const char *value, bool silently = false) { this->value = this->getEnumIndex(value); this->changed(silently); };
   unsigned int get(void) { return this->value; };
   
-  void clone(Attr *other) { PiPo *pipo = this->pipo; *this = *(static_cast<PiPoScalarAttr<enum PiPo::Enumerate> *>(other)); this->pipo = pipo; };
+  void clone(Attr *other) { this->value = (dynamic_cast<PiPoScalarAttr<enum PiPo::Enumerate> *>(other))->value; };
 
   unsigned int setSize(unsigned int size) { return this->getSize(); };
   unsigned int getSize(void) { return 1; };
@@ -701,7 +701,7 @@ public:
  */
 /* waiting for C++11 */
 template< class TYPE, std::size_t SIZE>
-class make_array
+class arrayClass
 {
   TYPE values[SIZE];
   static const int size = SIZE;
@@ -712,18 +712,18 @@ public:
 };
 
 template <typename TYPE, unsigned int SIZE>
-class PiPoArrayAttr : public PiPo::Attr, public make_array<TYPE, SIZE>
+class PiPoArrayAttr : public PiPo::Attr, public arrayClass<TYPE, SIZE>
 {
 public:
   PiPoArrayAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream, TYPE initVal = (TYPE)0) :
   Attr(pipo, name, descr, &typeid(TYPE), changesStream),
-  make_array<TYPE, SIZE>()
+  arrayClass<TYPE, SIZE>()
   {
     for(unsigned int i = 0; i < SIZE; i++)
       (*this)[i] = initVal;
   }
   
-  void clone(Attr *other) { PiPo *pipo = this->pipo; *this = *(static_cast<PiPoArrayAttr<TYPE, SIZE> *>(other)); this->pipo = pipo; };
+  void clone(Attr *other) { *(dynamic_cast<arrayClass<TYPE, SIZE> *>(this)) = *(dynamic_cast<arrayClass<TYPE, SIZE> *>(other)); };
 
   unsigned int setSize(unsigned int size) { return this->getSize(); };
   unsigned int getSize(void) { return SIZE; }
@@ -772,12 +772,12 @@ public:
 };
 
 template <unsigned int SIZE>
-class PiPoArrayAttr<enum PiPo::Enumerate, SIZE> : public PiPo::EnumAttr, public make_array<unsigned int, SIZE>
+class PiPoArrayAttr<enum PiPo::Enumerate, SIZE> : public PiPo::EnumAttr, public arrayClass<unsigned int, SIZE>
 {
 public:
   PiPoArrayAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream, unsigned int initVal = NULL) :
   EnumAttr(pipo, name, descr, &typeid(enum PiPo::Enumerate), changesStream),
-  make_array<unsigned int, SIZE>()
+  arrayClass<unsigned int, SIZE>()
   {
     for(unsigned int i = 0; i < this->size; i++)
       this->value[i] = initVal;
@@ -785,8 +785,8 @@ public:
   
   ~PiPoArrayAttr(void) { free(this->value); }
   
-  void clone(Attr *other) { PiPo *pipo = this->pipo; *this = *(static_cast<PiPoArrayAttr<enum PiPo::Enumerate, SIZE> *>(other)); this->pipo = pipo; };
-  
+  void clone(Attr *other) { *(dynamic_cast<arrayClass<unsigned int, SIZE> *>(this)) = *(dynamic_cast<arrayClass<unsigned int, SIZE> *>(other)); };
+
   unsigned int setSize(unsigned int size) { return this->getSize(); };
   unsigned int getSize(void) { return SIZE; }
   
@@ -847,20 +847,17 @@ public:
 template <typename TYPE>
 class PiPoVarSizeAttr : public PiPo::Attr, public std::vector<TYPE>
 {
-  unsigned int nomSize;
-  
 public:
   PiPoVarSizeAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream, unsigned int size = 0, TYPE initVal = (TYPE)0) :
   Attr(pipo, name, descr, &typeid(TYPE), changesStream),
   std::vector<TYPE>(size, initVal)
   {
-    this->nomSize = size;
   }
   
-  void clone(Attr *other) { PiPo *pipo = this->pipo; *this = *(static_cast<PiPoVarSizeAttr<TYPE> *>(other)); this->pipo = pipo; };
-  
-  unsigned int setSize(unsigned int size) { this->resize(size, (TYPE)0); this->nomSize = size; return size; };
-  unsigned int getSize(void) { return this->nomSize; }
+  void clone(Attr *other) { *(dynamic_cast<std::vector<TYPE> *>(this)) = *(dynamic_cast<std::vector<TYPE> *>(other)); };
+
+  unsigned int setSize(unsigned int size) { this->resize(size, (TYPE)0); return size; };
+  unsigned int getSize(void) { return this->size(); }
   
   void set(unsigned int i, int val, bool silently = false)
   {
@@ -905,7 +902,7 @@ public:
   TYPE *getPtr()	// return pointer to first data element
   {
     return &((*this)[0]);
-  }
+  };
 };
 
 template <>
@@ -920,8 +917,8 @@ public:
       (*this)[i] = initVal;
   };
   
-  void clone(Attr *other) { PiPo *pipo = this->pipo; *this = *(static_cast<PiPoVarSizeAttr<enum PiPo::Enumerate> *>(other)); this->pipo = pipo; };
-  
+  void clone(Attr *other) { *(dynamic_cast<std::vector<unsigned int> *>(this)) = *(dynamic_cast<std::vector<unsigned int> *>(other)); };
+
   unsigned int setSize(unsigned int size) { this->resize(size, 0); return size; };
   unsigned int getSize(void) { return this->size(); }
   
