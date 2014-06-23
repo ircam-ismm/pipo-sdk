@@ -649,7 +649,7 @@ public:
   void set(TYPE value, bool silently = false) { this->value = value; this->changed(silently); };
   TYPE get(void) { return this->value; };
   
-  void clone(Attr *other) { *this = *(static_cast<PiPoScalarAttr<TYPE> *>(other)); };
+  void clone(Attr *other) { PiPo *pipo = this->pipo; *this = *(static_cast<PiPoScalarAttr<TYPE> *>(other)); this->pipo = pipo; };
   
   unsigned int setSize(unsigned int size) { return this->getSize(); };
   unsigned int getSize(void) { return 1; };
@@ -680,8 +680,8 @@ public:
   void set(const char *value, bool silently = false) { this->value = this->getEnumIndex(value); this->changed(silently); };
   unsigned int get(void) { return this->value; };
   
-  void clone(Attr *other) { *this = *(static_cast<PiPoScalarAttr<enum PiPo::Enumerate> *>(other)); };
-  
+  void clone(Attr *other) { PiPo *pipo = this->pipo; *this = *(static_cast<PiPoScalarAttr<enum PiPo::Enumerate> *>(other)); this->pipo = pipo; };
+
   unsigned int setSize(unsigned int size) { return this->getSize(); };
   unsigned int getSize(void) { return 1; };
   
@@ -723,8 +723,8 @@ public:
       (*this)[i] = initVal;
   }
   
-  void clone(Attr *other) { *this = *(static_cast<PiPoArrayAttr<TYPE, SIZE> *>(other)); };
-  
+  void clone(Attr *other) { PiPo *pipo = this->pipo; *this = *(static_cast<PiPoArrayAttr<TYPE, SIZE> *>(other)); this->pipo = pipo; };
+
   unsigned int setSize(unsigned int size) { return this->getSize(); };
   unsigned int getSize(void) { return SIZE; }
   
@@ -785,7 +785,7 @@ public:
   
   ~PiPoArrayAttr(void) { free(this->value); }
   
-  void clone(Attr *other) { *this = *(static_cast<PiPoArrayAttr<enum PiPo::Enumerate, SIZE> *>(other)); };
+  void clone(Attr *other) { PiPo *pipo = this->pipo; *this = *(static_cast<PiPoArrayAttr<enum PiPo::Enumerate, SIZE> *>(other)); this->pipo = pipo; };
   
   unsigned int setSize(unsigned int size) { return this->getSize(); };
   unsigned int getSize(void) { return SIZE; }
@@ -857,7 +857,7 @@ public:
     this->nomSize = size;
   }
   
-  void clone(Attr *other) { *this = *(static_cast<PiPoVarSizeAttr<TYPE> *>(other)); };
+  void clone(Attr *other) { PiPo *pipo = this->pipo; *this = *(static_cast<PiPoVarSizeAttr<TYPE> *>(other)); this->pipo = pipo; };
   
   unsigned int setSize(unsigned int size) { this->resize(size, (TYPE)0); this->nomSize = size; return size; };
   unsigned int getSize(void) { return this->nomSize; }
@@ -920,7 +920,7 @@ public:
       (*this)[i] = initVal;
   };
   
-  void clone(Attr *other) { *this = *(static_cast<PiPoVarSizeAttr<enum PiPo::Enumerate> *>(other)); };
+  void clone(Attr *other) { PiPo *pipo = this->pipo; *this = *(static_cast<PiPoVarSizeAttr<enum PiPo::Enumerate> *>(other)); this->pipo = pipo; };
   
   unsigned int setSize(unsigned int size) { this->resize(size, 0); return size; };
   unsigned int getSize(void) { return this->size(); }
