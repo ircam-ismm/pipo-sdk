@@ -451,7 +451,7 @@ public:
       if(tag != NULL && this->enumMap.find(tag) != this->enumMap.end())
         return this->enumMap[tag];
       
-      return 0;
+      return -1;
     };
     
     const char *getEnumTag(unsigned int idx)
@@ -661,6 +661,36 @@ public:
   int getInt(unsigned int i = 0) { return (int)this->value; };
   double getDbl(unsigned int i = 0) { return (double)this->value; };
   const char *getStr(unsigned int i = 0) { return NULL; };
+};
+
+template <>
+class PiPoScalarAttr<const char *> : public PiPo::Attr
+{
+private:
+  const char * value;
+  
+public:
+  PiPoScalarAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream, const char * initVal = (const char *)0) : 
+  Attr(pipo, name, descr, &typeid(const char *), changesStream)
+  {
+    this->value = initVal;
+  }
+  
+  void set(const char * value) { this->value = value; };
+  const char *get(void) { return this->value; };
+  
+  void clone(Attr *other) { *this = *(static_cast<PiPoScalarAttr<const char *> *>(other)); };
+  
+  unsigned int setSize(unsigned int size) { return this->getSize(); };
+  unsigned int getSize(void) { return 1; };
+  
+  void set(unsigned int i, int val, bool silently = false) {  };
+  void set(unsigned int i, double val, bool silently = false) {  };
+  void set(unsigned int i, const char *val, bool silently = false) { if(i == 0) this->value = val; this->changed(silently); };
+  
+  int getInt(unsigned int i = 0) { return 0; };
+  double getDbl(unsigned int i = 0) { return 0; };  
+  const char *getStr(unsigned int i = 0) { return this->value; };
 };
 
 template <>
