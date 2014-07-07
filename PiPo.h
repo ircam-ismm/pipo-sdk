@@ -40,7 +40,7 @@ public:
   {
   public:
     virtual void streamAttributesChanged(PiPo *pipo, PiPo::Attr *attr) { };
-    virtual void signalError(PiPo *pipo, std::string *errorMsg) { };
+    virtual void signalError(PiPo *pipo, std::string errorMsg) { };
   };
   
 private:
@@ -326,7 +326,7 @@ public:
       this->parent->streamAttributesChanged(this, attr);
   }
   
-  void signalError(std::string *errorMsg)
+  void signalError(std::string errorMsg)
   {
     if(this->parent != NULL)
       this->parent->signalError(this, errorMsg);
