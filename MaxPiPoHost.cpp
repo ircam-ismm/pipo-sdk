@@ -336,7 +336,7 @@ MaxPiPoHost::propagateInputAttributes(void)
   if(numLabels > PIPO_MAX_LABELS)
     numLabels = PIPO_MAX_LABELS;
   
-  if(this->inputStreamAttrs.numLabels >= numLabels)
+  if(this->inputStreamAttrs.numLabels > 0 && this->inputStreamAttrs.numLabels >= numLabels)
   {
     for(unsigned int i = 0; i < numLabels; i++)
       ;//colNameStr[i] = mysneg(&this->inputStreamAttrs.labels[i]);
