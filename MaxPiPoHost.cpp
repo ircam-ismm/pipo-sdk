@@ -280,6 +280,12 @@ MaxPiPoHost::setMaxAttr(const char *attrName, long ac, t_atom *at, PiPoChain *ch
       
       if(attr != NULL)
       {
+        for(int i = 0; i < ac; i++)
+        {
+          if(!atom_isnum(at + i) && !atom_issym(at + i))
+            ac = i;
+        }
+        
         if(ac > 0)
         {
           attr->setSize(ac);
@@ -292,7 +298,7 @@ MaxPiPoHost::setMaxAttr(const char *attrName, long ac, t_atom *at, PiPoChain *ch
                 attr->set(i, (int)atom_getlong(at + i), true);
               else if(atom_isfloat(at + i))
                 attr->set(i, (double)atom_getfloat(at + i), true);
-              else                
+              else
                 attr->set(i, 0, true);
             }
             
@@ -329,30 +335,41 @@ MaxPiPoHost::propagateInputAttributes(void)
   this->lock();
   
   PiPo *head = this->chain.getHead();
-  const char *colNameStr[PIPO_MAX_LABELS];
-  const char **labels = NULL;
-  unsigned int numLabels = this->inputStreamAttrs.dims[0];
   
-  if(numLabels > PIPO_MAX_LABELS)
-    numLabels = PIPO_MAX_LABELS;
-  
-  if(this->inputStreamAttrs.numLabels > 0 && this->inputStreamAttrs.numLabels >= numLabels)
+  if(head != NULL)
   {
-    for(unsigned int i = 0; i < numLabels; i++)
-      ;//colNameStr[i] = mysneg(&this->inputStreamAttrs.labels[i]);
+    const char *colNameStr[PIPO_MAX_LABELS];
+    const char **labels = NULL;
+    unsigned int numCols = this->inputStreamAttrs.dims[0];
+    unsigned int numLabels = this->inputStreamAttrs.numLabels;
     
-    labels = colNameStr;
+    if(numLabels > PIPO_MAX_LABELS)
+      numLabels = PIPO_MAX_LABELS;
+    
+    if(numLabels > numCols)
+      numLabels = numCols;
+    
+    if(numLabels > 0)
+    {
+      for(unsigned int i = 0; i < numLabels; i++)
+        colNameStr[i] = mysneg(this->inputStreamAttrs.labels[i]);
+      
+      for(unsigned int i = numLabels; i < numCols; i++)
+        colNameStr[i] = "unnamed";
+      
+      labels = colNameStr;
+    }
+    
+    head->streamAttributes(this->inputStreamAttrs.hasTimeTags,
+                           this->inputStreamAttrs.rate,
+                           this->inputStreamAttrs.offset,
+                           this->inputStreamAttrs.dims[0],
+                           this->inputStreamAttrs.dims[1],
+                           labels,
+                           this->inputStreamAttrs.hasVarSize,
+                           this->inputStreamAttrs.domain,
+                           this->inputStreamAttrs.maxFrames);
   }
-  
-  head->streamAttributes(this->inputStreamAttrs.hasTimeTags,
-                         this->inputStreamAttrs.rate,
-                         this->inputStreamAttrs.offset,
-                         this->inputStreamAttrs.dims[0],
-                         this->inputStreamAttrs.dims[1],
-                         labels,
-                         this->inputStreamAttrs.hasVarSize,
-                         this->inputStreamAttrs.domain,
-                         this->inputStreamAttrs.maxFrames);
   
   this->unlock();
 }
@@ -431,7 +448,7 @@ MaxPiPoHost::setInputLabels(long ac, t_atom *at, bool propagate)
       this->inputStreamAttrs.labels[i] = atom_getsym(at + i);
     else
     {
-      this->inputStreamAttrs.numLabels = 0;
+      this->inputStreamAttrs.numLabels = i;
       break;
     }
   }
