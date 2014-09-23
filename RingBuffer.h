@@ -13,18 +13,18 @@
 #define _RINGBUFFER_
 
 template <class T>
-class Ring
+class RingBuffer
 {
 public:
   std::vector<T> vector;
   unsigned int width;
   unsigned int size;
-  unsigned int capacity;
   unsigned int index;
   bool filled;
     
 public:
-Ring(void) : vector()
+  RingBuffer (void) 
+  : vector()
   {
     this->width = 1;
     this->size = 0;
@@ -32,7 +32,7 @@ Ring(void) : vector()
     this->filled = false;  
   };
     
-  void resize(int width, int size)
+  void resize (int width, int size)
   {
     this->vector.resize(width * size);
     this->width = width;
@@ -41,35 +41,35 @@ Ring(void) : vector()
     this->filled = false;
   };
     
-  void reset(void)
+  void reset (void)
   {
     this->index = 0;
     this->filled = false;
   };
     
-  int input(T *values, unsigned int num)
+  int input (T *values, unsigned int num)
   {  
-    float *ringValues = &this->vector[this->index * this->width];
+    T *ringValues = &this->vector[this->index * this->width];
       
-    if(num > this->width)
+    if (num > this->width)
       num = this->width;
       
     /* copy frame */
     memcpy(ringValues, values, num * sizeof(T));
       
     /* zero pad this values */
-    if(num < this->width)
+    if (num < this->width)
       memset(ringValues + num, 0, (this->width - num) * sizeof(T));
       
     this->index++;
       
-    if(this->index >= this->size)
+    if (this->index >= this->size)
     {
       filled = true;
       this->index = 0;
     }      
       
-    if(this->filled)
+    if (this->filled)
       return this->size;
     else
       return this->index;    
