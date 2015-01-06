@@ -47,7 +47,7 @@ public:
     this->filled = false;
   };
     
-  int input (T *values, unsigned int num)
+  int input (T *values, unsigned int num, PiPoValue scale = 1.0)
   {  
     T *ringValues = &this->vector[this->index * this->width];
       
@@ -55,7 +55,13 @@ public:
       num = this->width;
       
     /* copy frame */
-    memcpy(ringValues, values, num * sizeof(T));
+    if (scale == 1.0)	/*TODO: some polymorphism and template magic to avoid this if clause */
+      memcpy(ringValues, values, num * sizeof(T));
+    else
+    {
+      for (unsigned int j = 0; j < num; j++)
+	ringValues[j] = values[j] * scale;
+    }
       
     /* zero pad this values */
     if (num < this->width)
