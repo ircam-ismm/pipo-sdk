@@ -24,10 +24,81 @@
 #define M_PI 3.14159265358979323846264338328 /**< pi */
 #endif
 
+
 typedef float PiPoValue;
 
 class PiPo
 {
+
+/** @mainpage 
+
+PiPo is a simple plugin API for modules processing streams of multi-dimensional data such as audio, audio descriptors, or gesture and motion data. The current version of the interface is limited to unary operations. Each PiPo module receives and produces a single stream. The elements of a stream are time-tagged or regularly sampled scalars, vectors, or two-dimensional matrices. 
+
+More information http://imtr.ircam.fr/imtr/PiPo
+
+\section sec_api  PiPo API Overview
+
+The PiPo API consists of an abstract class of a few virtual methods for propagating stream attributes (see below), frames, and additional processing control through a series of modules:
+
+- Propagating stream attributes
+- Propagating frames
+- Reset stream processing
+- Finalize stream processing
+- Propagate the change of a parameter requiring redefining the output stream attributes 
+
+
+\subsection sec_impl Implementation of a New PiPo Module
+
+The minimal module must derive from the class PiPo and implement at least the \ref streamAttributes and \ref frames methods:
+
+- In \ref streamAttributes, all initialisation can be done, as all input stream parameters (attributes) are known. The output stream parameters are passed on to the receiving module via \ref propagateStreamAttributes.
+- In \ref frames, only data processing and, when needed, buffering should be done.  Output frames are passed on with \ref propagateFrames.
+
+If the module can produce additional output data after the end of the input data, it must implement \ref finalize, from within which more calls to \ref propagateFrames can be made, followed by a mandatory call to \ref propagateFinalize.
+
+If the module keeps internal state or buffering, it should implement the \ref reset method to put itself into a clean state.
+
+The utility function \ref signalError can be used to pass an error message to the host.
+
+
+\subsection sec_attr Module Attributes or Parameters
+
+The template class PiPo::Attr permits to define scalar, enum, or variable or fixed size vector attributes of a pipo module that are exposed to the host environment.
+
+The are initialised in the module constructor with a short name, a description, a flag if a change of value means the fundamental stream parameters must be reset (if true, \ref streamAttributes will be called again for the whole chain), and a default value.
+
+Their value can be queried in \ref streamAttributes or \ref frames (in real-time hosts, an attributes value can change over time) with PiPo::Attr::get().
+
+\subsection sec_example Example of a Minimal PiPo Module
+
+todo...
+
+
+\section sec_api_details PiPo API Details
+
+\subsection sec_stream_attr PiPo Stream Attributes
+
+PiPo streams are a sequences of frames characterized by a set of attributes. A PiPo module defines the attributes of its output stream when receiving the attributes of the input stream.
+
+Each module can configure its internal state depending on the attributes of the input stream (e.g. memory allocation and pre-calculated state variables) before propagating its output stream attributes to the next module.
+
+This way, the attributes of the input stream are propagated through a series of PiPo modules before starting the actual stream processing.
+
+In summary, a PiPo stream is described by the following attributes:
+
+- a boolean representing whether the elements of the stream are time-tagged
+- frame rate (highest average rate for time-tagged streams)
+- lag of the output stream relative to the input
+- frame width (also number of channels or matrix columns)
+- frame size (or number of matrix rows)
+- labels (for the frame channels or columns)
+- a boolean representing whether the frames have a variable size (respecting the given frame size as maximum)
+- extent of a frame in the given domain (e.g. duration or frequency range)
+- maximum number of frames in a block exchanged between two modules 
+
+*/
+
+    
 public:
   class Attr;
   
@@ -44,24 +115,14 @@ public:
     virtual void signalError(PiPo *pipo, std::string errorMsg) { };
   };
   
-/** @mainpage 
-
-PiPo is a simple plugin API for modules processing streams of multi-dimensional data such as audio, audio descriptors, or gesture and motion data. The current version of the interface is limited to unary operations. Each PiPo module receives and produces a single stream. The elements of a stream are time-tagged or regularly sampled scalars, vectors, or two-dimensional matrices. 
-
-\section impl Implementation of a New PiPo Module
-
-derive your new module class from PiPo and implement the \ref streamAttributes and \ref frames() methods.
-
-
-*/
-
 private:
   Parent *parent;
   std::vector<PiPo *> receivers; /**< list of receivers */
   std::vector<Attr *> attrs; /**< list of attributes */
   
 public:
-  PiPo(Parent *parent, PiPo *receiver = NULL) : receivers(), attrs()
+  PiPo(Parent *parent, PiPo *receiver = NULL)
+  : receivers(), attrs()
   {
     this->parent = parent;
     
@@ -270,14 +331,14 @@ public:
    * An implementation of this method may call propagateFrames(), typically like this:
    *
    * \code
-   *	return this->propagateFrames(time, weight, values, size, num); }
+   *	return this->propagateFrames(time, weight, values, size, num);
    * \endcode
    *
    * PiPo host:
    * A terminating receiver module provided by a PiPo host handles the received frames and usally returns 0.
    *
    * @param time time-tag for a single frame or a block of frames
-   * @param weight weighth associated to frame or block
+   * @param weight weight associated to frame or block
    * @param values interleaved frames values, row by row (interleaving channels or columns), frame by frame
    * @param size size of each of all frames (number of channels for audio)
    * @param num number of frames (number of samples for audio input)
