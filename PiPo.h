@@ -28,14 +28,15 @@ typedef float PiPoValue;
 
 class PiPo
 {
+public:
+  class Attr;
+  
   /***********************************************
    *
    *  PiPo Parent
    *
    */
-public:
-  class Attr;
-  
+
   class Parent
   {
   public:
@@ -43,6 +44,17 @@ public:
     virtual void signalError(PiPo *pipo, std::string errorMsg) { };
   };
   
+/** @mainpage 
+
+PiPo is a simple plugin API for modules processing streams of multi-dimensional data such as audio, audio descriptors, or gesture and motion data. The current version of the interface is limited to unary operations. Each PiPo module receives and produces a single stream. The elements of a stream are time-tagged or regularly sampled scalars, vectors, or two-dimensional matrices. 
+
+\section impl Implementation of a New PiPo Module
+
+derive your new module class from PiPo and implement the \ref streamAttributes and \ref frames() methods.
+
+
+*/
+
 private:
   Parent *parent;
   std::vector<PiPo *> receivers; /**< list of receivers */
@@ -130,8 +142,9 @@ public:
    * This method is called in the frames() method of a PiPo module.
    *
    * @param time time-tag for a single frame or a block of frames
+   * @param weight weight for this frame (currently unused)
    * @param values interleaved frames values, row by row (interleaving channels or columns), frame by frame
-   * @param size size of eaqch of all frames
+   * @param size size of each frame (number of rows)
    * @param num number of frames
    * @return used as return value of the calling method
    */
@@ -214,7 +227,9 @@ public:
    * PiPo module:
    * Any implementation of this method requires a propagateStreamAttributes() method call and returns its return value, typically like this:
    *
-   * \code{return this->propagateStreamAttributes(hasTimeTags, rate, offset, width, size, labels, hasVarSize, domain, maxFrames);}
+   * \code 
+   *	return this->propagateStreamAttributes(hasTimeTags, rate, offset, width, size, labels, hasVarSize, domain, maxFrames);
+   * \endcode
    *
    * PiPo host:
    * A terminating receiver module provided by a PiPo host handles the final output stream attributes and usally returns 0.
@@ -254,7 +269,9 @@ public:
    * PiPo module:
    * An implementation of this method may call propagateFrames(), typically like this:
    *
-   * \code{return this->propagateFrames(time, weight, values, size, num); }
+   * \code
+   *	return this->propagateFrames(time, weight, values, size, num); }
+   * \endcode
    *
    * PiPo host:
    * A terminating receiver module provided by a PiPo host handles the received frames and usally returns 0.
@@ -280,7 +297,7 @@ public:
    * return 0 to the call segment(0.0, end) without calling propagateFrames().
    * This permits the host to check whether a module implements the segment method or not.
    *
-   * \code{
+   * \code
    
    if(this->started)
    {
@@ -295,7 +312,8 @@ public:
    }
    
    return 0;
-   
+
+   * \endcode
    *
    * @param time time of segment start of end
    * @param start flag, true for segment start, false for segment end
@@ -325,12 +343,16 @@ public:
     if(this->parent != NULL)
       this->parent->streamAttributesChanged(this, attr);
   }
-  
+
+  /** signal error message to be output by the host
+   */
   void signalError(std::string errorMsg)
   {
     if(this->parent != NULL)
       this->parent->signalError(this, errorMsg);
   }
+
+
   
   /***********************************************
    *
@@ -627,6 +649,8 @@ public:
     this->attrs[index]->clone(attr);
   };
 };
+
+
 
 /***********************************************
  *
