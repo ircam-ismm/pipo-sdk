@@ -16,6 +16,9 @@
 
 class PiPoGain : public PiPo
 {
+private:
+  std::vector<PiPoValue> buffer;
+
 public:
   PiPoScalarAttr<double> factor;
   
@@ -26,12 +29,14 @@ public:
   
   ~PiPoGain (void)
   { }
-  
+
   int streamAttributes (bool hasTimeTags, double rate, double offset,
                         unsigned int width, unsigned int size,
                         const char **labels, bool hasVarSize,
                         double domain, unsigned int maxFrames)
   {
+    // a general pipo must not work in place, we need to create an output buffer
+    buffer.resize(width * size);
     return propagateStreamAttributes(hasTimeTags, rate, offset, width, size,
                                      labels, hasVarSize, domain, maxFrames);
   }
@@ -39,18 +44,19 @@ public:
   int frames (double time, double weight, PiPoValue *values,
               unsigned int size, unsigned int num)
   {
-    double f = factor.get();    // get gain factor here, as it could change while running
-    PiPoValue *ptr = values;    // work in-place
-      
-    for (unsigned int i = 0; i < num; i++)
+    int    ret = 0;
+    double f   = factor.get();    // get gain factor here, as it could change while running
+    
+    for (unsigned int i = 0; i < num  &&  ret >= 0; i++)
     {
       for (unsigned int j = 0; j < size; j++)
-        ptr[j] = ptr[j] * f;
-          
-      ptr += size;
+	buffer[j] = values[j] * f;
+
+      ret = propagateFrames(time, weight, &buffer[0], size, 1);
+      values += size;
     }
     
-    return propagateFrames(time, weight, values, size, num);
+    return ret;
   }
 };
 

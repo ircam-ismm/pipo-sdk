@@ -5,7 +5,7 @@
 			"major" : 7,
 			"minor" : 0,
 			"revision" : 2,
-			"architecture" : "x64",
+			"architecture" : "x86",
 			"modernui" : 1
 		}
 ,
@@ -38,6 +38,81 @@
 		"subpatcher_template" : "",
 		"boxes" : [ 			{
 				"box" : 				{
+					"id" : "obj-15",
+					"maxclass" : "message",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 139.0, 306.0, 49.0, 22.0 ],
+					"style" : "",
+					"text" : "clearall"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-14",
+					"maxclass" : "button",
+					"numinlets" : 1,
+					"numoutlets" : 1,
+					"outlettype" : [ "bang" ],
+					"patching_rect" : [ 34.0, 344.0, 24.0, 24.0 ],
+					"style" : ""
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-12",
+					"maxclass" : "message",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 33.0, 266.0, 203.0, 22.0 ],
+					"style" : "",
+					"text" : "readappend jongly.aif @name audio"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"fontface" : 0,
+					"fontname" : "Arial",
+					"fontsize" : 12.0,
+					"id" : "obj-9",
+					"maxclass" : "newobj",
+					"numinlets" : 1,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 33.0, 306.0, 83.0, 22.0 ],
+					"saved_object_attributes" : 					{
+						"embed" : 0,
+						"externalfiles" : 1
+					}
+,
+					"style" : "",
+					"text" : "mubu mydata"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"fontface" : 0,
+					"fontname" : "Arial",
+					"fontsize" : 12.0,
+					"id" : "obj-7",
+					"maxclass" : "newobj",
+					"numinlets" : 2,
+					"numoutlets" : 4,
+					"outlettype" : [ "", "", "int", "" ],
+					"patching_rect" : [ 33.0, 381.0, 489.0, 22.0 ],
+					"style" : "",
+					"text" : "mubu.process mydata audio gain @gain.factor 0.5 @name output @info gui \"fgcolor blue\""
+				}
+
+			}
+, 			{
+				"box" : 				{
 					"format" : 6,
 					"id" : "obj-10",
 					"maxclass" : "flonum",
@@ -45,7 +120,7 @@
 					"numoutlets" : 2,
 					"outlettype" : [ "", "bang" ],
 					"parameter_enable" : 0,
-					"patching_rect" : [ 257.0, 113.0, 50.0, 22.0 ],
+					"patching_rect" : [ 250.0, 52.0, 50.0, 22.0 ],
 					"style" : ""
 				}
 
@@ -57,9 +132,9 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 111.0, 248.0, 135.0, 22.0 ],
+					"patching_rect" : [ 104.0, 187.0, 135.0, 22.0 ],
 					"style" : "",
-					"text" : "1.998"
+					"text" : "88. 88. 6."
 				}
 
 			}
@@ -74,7 +149,7 @@
 					"numoutlets" : 2,
 					"outlettype" : [ "", "bang" ],
 					"parameter_enable" : 0,
-					"patching_rect" : [ 125.0, 94.0, 50.0, 22.0 ],
+					"patching_rect" : [ 118.0, 33.0, 50.0, 22.0 ],
 					"style" : ""
 				}
 
@@ -88,7 +163,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 125.0, 144.0, 51.0, 22.0 ],
+					"patching_rect" : [ 118.0, 83.0, 51.0, 22.0 ],
 					"style" : "",
 					"text" : "$1 $1 3"
 				}
@@ -103,7 +178,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 257.0, 144.0, 83.0, 22.0 ],
+					"patching_rect" : [ 250.0, 83.0, 83.0, 22.0 ],
 					"style" : "",
 					"text" : "gain.factor $1"
 				}
@@ -120,7 +195,7 @@
 					"numoutlets" : 2,
 					"outlettype" : [ "", "bang" ],
 					"parameter_enable" : 0,
-					"patching_rect" : [ 40.0, 248.0, 50.0, 22.0 ],
+					"patching_rect" : [ 33.0, 187.0, 50.0, 22.0 ],
 					"style" : ""
 				}
 
@@ -136,7 +211,7 @@
 					"numoutlets" : 2,
 					"outlettype" : [ "", "bang" ],
 					"parameter_enable" : 0,
-					"patching_rect" : [ 40.0, 144.0, 50.0, 22.0 ],
+					"patching_rect" : [ 33.0, 83.0, 50.0, 22.0 ],
 					"style" : ""
 				}
 
@@ -151,7 +226,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 3,
 					"outlettype" : [ "", "float", "" ],
-					"patching_rect" : [ 40.0, 200.0, 141.0, 22.0 ],
+					"patching_rect" : [ 33.0, 139.0, 141.0, 22.0 ],
 					"style" : "",
 					"text" : "pipo gain @gain.factor 2"
 				}
@@ -182,6 +257,33 @@
 					"disabled" : 0,
 					"hidden" : 0,
 					"source" : [ "obj-10", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-9", 0 ],
+					"disabled" : 0,
+					"hidden" : 0,
+					"source" : [ "obj-12", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-7", 0 ],
+					"disabled" : 0,
+					"hidden" : 0,
+					"source" : [ "obj-14", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-9", 0 ],
+					"disabled" : 0,
+					"hidden" : 0,
+					"source" : [ "obj-15", 0 ]
 				}
 
 			}
@@ -224,6 +326,14 @@
  ],
 		"dependency_cache" : [ 			{
 				"name" : "pipo.mxo",
+				"type" : "iLaX"
+			}
+, 			{
+				"name" : "mubu.mxo",
+				"type" : "iLaX"
+			}
+, 			{
+				"name" : "mubu.mxo",
 				"type" : "iLaX"
 			}
  ],
