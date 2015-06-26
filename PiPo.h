@@ -89,10 +89,10 @@ In summary, a PiPo stream is described by the following attributes:
 - a boolean representing whether the elements of the stream are time-tagged
 - frame rate (highest average rate for time-tagged streams)
 - lag of the output stream relative to the input
-- frame width (also number of channels or matrix columns)
-- frame size (or number of matrix rows)
+- frame width (also number of channels or data matrix columns)
+- frame height (or number of matrix rows)
 - labels (for the frame channels or columns)
-- a boolean representing whether the frames have a variable size (respecting the given frame size as maximum)
+- a boolean representing whether the frames have a variable height (respecting the given frame height as maximum)
 - extent of a frame in the given domain (e.g. duration or frequency range)
 - maximum number of frames in a block exchanged between two modules 
 
@@ -152,21 +152,21 @@ public:
    * @param hasTimeTags a boolean representing whether the elements of the stream are time-tagged
    * @param rate the frame rate (highest average rate for time-tagged streams)
    * @param offset the lag of the output stream relative to the input
-   * @param width the frame width (also number of channels or matrix columns)
-   * @param size the frame size (or number of matrix rows)
+   * @param width the frame width (also number of channels or data matrix columns)
+   * @param height the frame height (or number of matrix rows)
    * @param labels optional labels for the frames' channels or columns
-   * @param hasVarSize a boolean representing whether the frames have a variable size (respecting the given frame size as maximum)
+   * @param hasVarSize a boolean representing whether the frames have a variable height (respecting the given frame height as maximum)
    * @param domain extent of a frame in the given domain (e.g. duration or frequency range)
    * @param maxFrames maximum number of frames in a block exchanged between two modules
    * @return used as return value of the calling method
    */
-  int propagateStreamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
+  int propagateStreamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
   {
     int ret = 0;
     
     for(unsigned int i = 0; i < this->receivers.size(); i++)
     {
-      ret = this->receivers[i]->streamAttributes(hasTimeTags, rate, offset, width, size, labels, hasVarSize, domain, maxFrames);
+      ret = this->receivers[i]->streamAttributes(hasTimeTags, rate, offset, width, height, labels, hasVarSize, domain, maxFrames);
       
       if(ret < 0)
         break;
@@ -205,7 +205,7 @@ public:
    * @param time time-tag for a single frame or a block of frames
    * @param weight weight for this frame (currently unused)
    * @param values interleaved frames values, row by row (interleaving channels or columns), frame by frame
-   * @param size size of each frame (number of rows)
+   * @param size total size of each frame (number of values = width * height)
    * @param num number of frames
    * @return used as return value of the calling method
    */
@@ -289,7 +289,7 @@ public:
    * Any implementation of this method requires a propagateStreamAttributes() method call and returns its return value, typically like this:
    *
    * \code 
-   *	return this->propagateStreamAttributes(hasTimeTags, rate, offset, width, size, labels, hasVarSize, domain, maxFrames);
+   *	return this->propagateStreamAttributes(hasTimeTags, rate, offset, width, height, labels, hasVarSize, domain, maxFrames);
    * \endcode
    *
    * PiPo host:
@@ -298,15 +298,15 @@ public:
    * @param hasTimeTags a boolean representing whether the elements of the stream are time-tagged
    * @param rate the frame rate (highest average rate for time-tagged streams, sample rate for audio input)
    * @param offset the lag of the output stream relative to the input
-   * @param width the frame width (also number of channels for audio or matrix columns)
-   * @param size the frame size (or number of matrix rows, always 1 for audio)
+   * @param width the frame width (number of channels for audio or data matrix columns)
+   * @param height the frame height (or number of matrix rows, always 1 for audio)
    * @param labels optional labels for the frames' channels or columns
-   * @param hasVarSize a boolean representing whether the frames have a variable size (respecting the given frame size as maximum)
+   * @param hasVarSize a boolean representing whether the frames have a variable height (respecting the given frame height as maximum)
    * @param domain extent of a frame in the given domain (e.g. duration or frequency range)
    * @param maxFrames maximum number of frames in a block exchanged between two modules (window size for audio)
    * @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
    */
-  virtual int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames) = 0;
+  virtual int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames) = 0;
   
   /**
    * @brief Resets processing (optional)
@@ -340,7 +340,7 @@ public:
    * @param time time-tag for a single frame or a block of frames
    * @param weight weight associated to frame or block
    * @param values interleaved frames values, row by row (interleaving channels or columns), frame by frame
-   * @param size size of each of all frames (number of channels for audio)
+   * @param size total size of each of all frames (size = number of elements = width * height = number of channels for audio)
    * @param num number of frames (number of samples for audio input)
    * @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
    */
