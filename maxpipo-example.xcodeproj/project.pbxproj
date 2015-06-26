@@ -7,9 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		21A040441B3C03B4008E9540 /* maxpipo-example-debug.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 21A040411B3C03B4008E9540 /* maxpipo-example-debug.xcconfig */; };
-		21A040451B3C03B4008E9540 /* maxpipo-example-release.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 21A040421B3C03B4008E9540 /* maxpipo-example-release.xcconfig */; };
-		21A040461B3C03B4008E9540 /* maxpipo-example-shared.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 21A040431B3C03B4008E9540 /* maxpipo-example-shared.xcconfig */; };
 		21A040491B3C041A008E9540 /* pipo.gain.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 21A040481B3C041A008E9540 /* pipo.gain.cpp */; };
 /* End PBXBuildFile section */
 
@@ -141,9 +138,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				21A040461B3C03B4008E9540 /* maxpipo-example-shared.xcconfig in Resources */,
-				21A040451B3C03B4008E9540 /* maxpipo-example-release.xcconfig in Resources */,
-				21A040441B3C03B4008E9540 /* maxpipo-example-debug.xcconfig in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
