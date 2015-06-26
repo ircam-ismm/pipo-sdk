@@ -31,32 +31,32 @@ public:
   { }
 
   int streamAttributes (bool hasTimeTags, double rate, double offset,
-                        unsigned int width, unsigned int size,
+                        unsigned int width, unsigned int height,
                         const char **labels, bool hasVarSize,
                         double domain, unsigned int maxFrames)
   {
-    // a general pipo must not work in place, we need to create an output buffer
-    buffer.resize(width * size);
-    return propagateStreamAttributes(hasTimeTags, rate, offset, width, size,
+    // A general pipo can not work in place, we need to create an output buffer
+    buffer.resize(width * height * maxFrames);
+    return propagateStreamAttributes(hasTimeTags, rate, offset, width, height,
                                      labels, hasVarSize, domain, maxFrames);
   }
   
   int frames (double time, double weight, PiPoValue *values,
               unsigned int size, unsigned int num)
   {
-    int    ret = 0;
-    double f   = factor.get();    // get gain factor here, as it could change while running
-    
-    for (unsigned int i = 0; i < num  &&  ret >= 0; i++)
+    double f = factor.get(); // get gain factor here, as it could change while running
+    PiPoValue *ptr = &buffer[0];
+	
+    for (unsigned int i = 0; i < num; i++)
     {
       for (unsigned int j = 0; j < size; j++)
-	buffer[j] = values[j] * f;
+	ptr[j] = values[j] * f;
 
-      ret = propagateFrames(time, weight, &buffer[0], size, 1);
+      ptr    += size;
       values += size;
     }
     
-    return ret;
+    return propagateFrames(time, weight, &buffer[0], size, num);
   }
 };
 
