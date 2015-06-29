@@ -413,9 +413,9 @@ MaxPiPoHost::streamAttributesChanged(PiPo *pipo, PiPo::Attr *attr)
 }
 
 void
-MaxPiPoHost::signalError(PiPo *pipo, std::string *errorMsg)
+MaxPiPoHost::signalError(PiPo *pipo, std::string errorMsg)
 {
-  object_error(this->ext, errorMsg->c_str());
+  object_error(this->ext, errorMsg.c_str());
 }
 
 void
