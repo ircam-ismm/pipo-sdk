@@ -588,7 +588,7 @@ public:
     
     const char *getEnumTag(unsigned int idx)
     {
-      if(idx < this->enumList.size())
+      if (idx >= 0  &&  idx < this->enumList.size())
         return this->enumList[idx];
       
       return NULL;
@@ -607,9 +607,7 @@ public:
   };
   
   /**
-   * @brief Gets number of attributes
-   *
-   * @return number of attributes
+   * @brief att attribute
    */
   void addAttr(PiPo *pipo, const char *name, const char *descr, Attr *attr, bool clear = false)
   {
@@ -860,7 +858,7 @@ public:
 
 /***********************************************
  *
- *  Array Attribute
+ *  Fixed Size Array Attribute
  *
  */
 /* waiting for C++11 */
