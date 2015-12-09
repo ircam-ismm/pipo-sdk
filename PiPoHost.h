@@ -257,7 +257,7 @@ public:
     return false;
   };
   
-  void setReceiver(PiPo *receiver)
+  void setReceiver(PiPo *receiver, bool add = false)
   {
     if(this->ops.size() > 0)
     {
