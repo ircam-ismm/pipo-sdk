@@ -1,14 +1,18 @@
 /**
- *
- * @file PiPoHost.h
- * @author Norbert.Schnell@ircam.fr
- * 
- * @brief Plugin Interface for Processing Objects
- * 
- * Copyright (C) 2012-2014 by IRCAM – Centre Pompidou, Paris, France.
- * All rights reserved.
- * 
- */
+ 
+@file PiPoHost.h
+@author Norbert.Schnell@ircam.fr
+ 
+@brief Plugin Interface for Processing Objects host class
+ 
+A PiPo host is built around the class PiPoChain that represents a sequence of PiPo modules piping data into each other. 
+See details of the steps there.
+
+Copyright (C) 2012-2014 by IRCAM – Centre Pompidou, Paris, France.
+All rights reserved.
+
+*/
+
 #ifndef _PIPO_HOST_
 #define _PIPO_HOST_
 
@@ -16,6 +20,8 @@
 #include <string>
 #include <vector>
 
+/** abstract base class for a container of a pipo module for PiPoModuleFactory
+ */
 class PiPoModule
 { 
 public:
@@ -32,10 +38,12 @@ public:
   virtual PiPo *create(unsigned int index, const std::string &pipoName, const std::string &instanceName, PiPoModule *&module) = 0;
 };
 
+/** element of pipo chain, points to pipo pipo
+ */
 class PiPoOp
 { 
   unsigned int index;
-  std::string pipoName;
+  std::string pipoName; /// pipo class name
   std::string instanceName;
   PiPo *pipo;
   PiPoModule *module;
@@ -78,6 +86,8 @@ public:
     this->pipo = NULL;
   };
   
+  /** parse one pipo name, and optional instance name in '(' ')'
+   */
   void parse(std::string str, size_t &pos)
   {
     this->clear();
@@ -137,6 +147,23 @@ public:
   bool isInstanceName(const char *str) { return (this->instanceName.compare(str) == 0); };
 };
 
+/** 
+
+A PiPo host is built around the class PiPoChain that represents a sequence of PiPo modules piping data into each other. 
+
+The PiPoChain is setup with the following steps:
+ 
+1. parse chain definition string by calling parse()
+2. instantiate each PiPoModule in the chain by calling instantiate(), using a PiPoModuleFactory
+3. connect PiPos by calling connect
+ 
+A PiPoChain is itself also a PiPo module, i.e. data processing works the same as for a simple module:
+- the PiPoChain is prepared for processing by calling streamAttributes() on it.
+- data is piped into the PiPoChain with the frames() method.
+
+The host registers as the receiver for the last PiPo module in the PiPoChain.  
+*/
+
 class PiPoChain : public PiPo
 {
   std::vector<PiPoOp> ops;
@@ -180,18 +207,9 @@ public:
     this->clear();
   };
   
-  void setParent(PiPo::Parent *parent)
-  {
-    this->parent = parent;
-    
-    for(unsigned int i = 0; i < this->ops.size(); i++)
-      this->ops[i].setParent(parent);
-  };
-  
-  int getSize()
-  {
-    return this->ops.size();
-  };
+
+  /** @name PiPoChain setup methods */
+  /** @{ */
   
   void clear()
   {
@@ -201,6 +219,10 @@ public:
     this->ops.clear();
   };
   
+  /** parse pipo chain specification from string 
+      
+      creates list of PiPoOp in member ops
+   */
   size_t parse(const char *str)
   {
     std::string pipoChainStr = str;
@@ -216,7 +238,9 @@ public:
     
     return this->ops.size();
   };
-    
+  
+  /** go through list of PiPoOp in ops and instantiate PiPoModule using PiPoModuleFactory
+   */
   bool instantiate(void)
   {
     if(this->ops.size() > 0)
@@ -236,6 +260,10 @@ public:
     return false;
   };
   
+  /** connect each PiPo in PiPoChain after parsing (from end to start)
+
+      @param receiver is terminating PiPo of the host that finally receives data
+   */
   bool connect(PiPo *receiver)
   {
     PiPo *next = getTail();
@@ -256,18 +284,17 @@ public:
     
     return false;
   };
-  
-  void setReceiver(PiPo *receiver, bool add = false)
+
+  /** @} PiPoChain setup methods */
+
+  /** @name PiPoChain query methods */
+  /** @{ */
+
+  int getSize()
   {
-    if(this->ops.size() > 0)
-    {
-      PiPo *tail = this->getTail();
-      
-      if(tail != NULL)
-        tail->setReceiver(receiver);
-    }
+    return this->ops.size();
   };
-  
+
   PiPo *getHead(void)
   {
     if(this->ops.size() > 0)
@@ -320,7 +347,35 @@ public:
     
     return NULL;
   };
+
+  /** @} PiPoChain query methods */
+    
+  /** @name overloaded PiPo methods */
+  /** @{ */
+
+  void setParent(PiPo::Parent *parent)
+  {
+    this->parent = parent;
+    
+    for(unsigned int i = 0; i < this->ops.size(); i++)
+      this->ops[i].setParent(parent);
+  };
   
+  void setReceiver(PiPo *receiver, bool add = false)
+  {
+    if(this->ops.size() > 0)
+    {
+      PiPo *tail = this->getTail();
+      
+      if(tail != NULL)
+        tail->setReceiver(receiver);
+    }
+  };
+    
+  /** @name preparation of processing */
+  /** @{ */
+
+  /** start stream preparation */
   int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
   {
     PiPo *head = this->getHead();
@@ -341,6 +396,11 @@ public:
     return -1;
   };
   
+  /** @} end of preparation of processing methods */
+
+  /** @name processing */
+  /** @{ */
+
   int frames(double time, double weight, float *values, unsigned int size, unsigned int num)
   {
     PiPo *head = this->getHead();
@@ -360,6 +420,9 @@ public:
     
     return -1;
   };
+
+  /** @} end of processing methods */
+  /** @} end of overloaded PiPo methods */
 };
 
 #endif
