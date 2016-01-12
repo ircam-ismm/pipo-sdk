@@ -16,6 +16,8 @@
 #include <vector>
 #include <functional>
 #include <cstring>
+#include <cstdio>
+
 #include <typeinfo>
 #include <map>
 
@@ -194,7 +196,7 @@ public:
   void setParent(Parent *parent) { this->parent = parent; };
   
   /**
-   * @brief Propagates a module's output stream attributes to its reciever.
+   * @brief Propagates a module's output stream attributes to its receiver.
    *
    * This method is called in the streamAttributes() method of a PiPo module.
    *
@@ -247,7 +249,7 @@ public:
   }
   
   /**
-   * @brief Propagates a module's output frames to its reciever.
+   * @brief Propagates a module's output frames to its receiver.
    *
    * This method is called in the frames() method of a PiPo module.
    *
@@ -471,7 +473,40 @@ public:
    */
 public:
   enum Type { Undefined, Bool, Enum, Int, Float, Double, String };
+
+  // dummy enum used for specialization of templates
   enum Enumerate { };
+    
+  // meta-type a la Max :
+  class Atom
+  {
+  private:
+      PiPo::Type type;
+      union _data {
+          const char *str;
+          double dbl;
+          int itg;
+      } data;
+  public:
+      Atom(const char *s)   { this->type = String; this->data.str = s; }
+      Atom(double d)        { this->type = Double; this->data.dbl = d; }
+      Atom(int i)           { this->type = Int; this->data.itg = i; }
+      friend bool operator==(Atom &at1, Atom &at2)
+      {
+          return ((at1.isNumber() && at2.isNumber() && at1.getDouble() == at2.getDouble())
+                  || (at1.type == String && at1.type == at2.type && strcmp(at1.getString(), at2.getString()) == 0));
+      }
+      friend bool operator!=(Atom &at1, Atom &at2)
+      {
+          return !(at1 == at2);
+      }
+      bool          isNumber()  { return (type == Int || type == Double); }
+      bool          isString()  { return type == String; }
+      PiPo::Type    getType()   { return type; }
+      int           getInt()    { return ((type == Int) ? this->data.itg : ((type == Double) ? (int)(this->data.dbl) : 0)); }
+      double        getDouble() { return ((type == Double) ? this->data.dbl : ((type == Int) ? (double)(this->data.itg) : 0.)); }
+      const char *  getString() { return ((type == String) ? this->data.str : ""); }
+  };
   
   class Attr
   {
@@ -799,30 +834,30 @@ template <>
 class PiPoScalarAttr<const char *> : public PiPo::Attr
 {
 private:
-  const char * value;
-  
+    const char * value;
+    
 public:
-  PiPoScalarAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream, const char * initVal = (const char *)0) : 
-  Attr(pipo, name, descr, &typeid(const char *), changesStream)
-  {
-    this->value = initVal;
-  }
-  
-  void set(const char * value) { this->value = value; };
-  const char *get(void) { return this->value; };
-  
-  void clone(Attr *other) { *this = *(static_cast<PiPoScalarAttr<const char *> *>(other)); };
-  
-  unsigned int setSize(unsigned int size) { return this->getSize(); };
-  unsigned int getSize(void) { return 1; };
-  
-  void set(unsigned int i, int val, bool silently = false) {  };
-  void set(unsigned int i, double val, bool silently = false) {  };
-  void set(unsigned int i, const char *val, bool silently = false) { if(i == 0) this->value = val; this->changed(silently); };
-  
-  int getInt(unsigned int i = 0) { return 0; };
-  double getDbl(unsigned int i = 0) { return 0; };  
-  const char *getStr(unsigned int i = 0) { return this->value; };
+    PiPoScalarAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream, const char * initVal = (const char *)0) :
+    Attr(pipo, name, descr, &typeid(const char *), changesStream)
+    {
+        this->value = initVal;
+    }
+    
+    void set(const char * value) { this->value = value; };
+    const char *get(void) { return this->value; };
+    
+    void clone(Attr *other) { *this = *(static_cast<PiPoScalarAttr<const char *> *>(other)); };
+    
+    unsigned int setSize(unsigned int size) { return this->getSize(); };
+    unsigned int getSize(void) { return 1; };
+    
+    void set(unsigned int i, int val, bool silently = false) {  };
+    void set(unsigned int i, double val, bool silently = false) {  };
+    void set(unsigned int i, const char *val, bool silently = false) { if(i == 0) this->value = val; this->changed(silently); };
+    
+    int getInt(unsigned int i = 0) { return 0; };
+    double getDbl(unsigned int i = 0) { return 0; };
+    const char *getStr(unsigned int i = 0) { return this->value; };
 };
 
 template <>
@@ -1067,6 +1102,7 @@ public:
   };
 };
 
+
 template <>
 class PiPoVarSizeAttr<enum PiPo::Enumerate> : public PiPo::EnumAttr, public std::vector<unsigned int>
 {
@@ -1137,6 +1173,83 @@ public:
     
     return NULL;
   };
+};
+
+
+template<>
+class PiPoVarSizeAttr<PiPo::Atom> : public PiPo::Attr, public std::vector<PiPo::Atom>
+{
+public:
+    PiPoVarSizeAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream, unsigned int size = 0, PiPo::Atom initVal = NULL) :
+    Attr(pipo, name, descr, &typeid(const char *), changesStream)
+    {
+        for(unsigned int i = 0; i < this->size(); i++)
+            (*this)[i] = initVal;
+    };
+    
+    void clone(Attr *other) { *(dynamic_cast<std::vector<PiPo::Atom> *>(this)) = *(dynamic_cast<std::vector<PiPo::Atom> *>(other)); };
+    
+    unsigned int setSize(unsigned int size) { this->resize(size, PiPo::Atom(0)); return size; };
+    unsigned int getSize(void) { return this->size(); }
+    
+    void set(unsigned int i, int val, bool silently = false)
+    {
+        if (i >= this->size())
+            setSize(i + 1);
+        
+        (*this)[i] = PiPo::Atom(val);
+        
+        this->changed(silently);
+    };
+    
+    void set(unsigned int i, double val, bool silently = false)
+    {
+        if (i >= this->size())
+            setSize(i + 1);
+        
+        (*this)[i] = PiPo::Atom(val);
+        
+        this->changed(silently);
+    };
+    
+    void set(unsigned int i, const char *val, bool silently = false)
+    {
+        if (i >= this->size())
+            setSize(i + 1);
+        
+        (*this)[i] = PiPo::Atom(val);
+        
+        this->changed(silently);
+    };
+    
+    int getInt(unsigned int i)
+    {
+        if(i >= this->size())
+            i = this->size() - 1;
+        
+        return (*this)[i].getInt();
+    };
+    
+    double getDbl(unsigned int i)
+    {
+        if(i >= this->size())
+            i = this->size() - 1;
+        
+        return (*this)[i].getDouble();
+    };
+    
+    const char *getStr(unsigned int i)
+    {
+        if(i >= this->size())
+            i = this->size() - 1;
+        
+        return (*this)[i].getString();
+    };
+    
+    PiPo::Atom *getPtr()	// return pointer to first data element
+    {
+        return &((*this)[0]);
+    };
 };
 
 #endif
