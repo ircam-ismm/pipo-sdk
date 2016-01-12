@@ -171,9 +171,9 @@ public:
   
 protected:
   Parent *parent;
+  std::vector<PiPo *> receivers; /**< list of receivers */
 
 private:
-  std::vector<PiPo *> receivers; /**< list of receivers */
   std::vector<Attr *> attrs; /**< list of attributes */
   
 public:
