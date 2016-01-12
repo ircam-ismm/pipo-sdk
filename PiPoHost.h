@@ -16,7 +16,7 @@ All rights reserved.
 #ifndef _PIPO_HOST_
 #define _PIPO_HOST_
 
-#include "PiPo.h"
+#include "PiPoSequence.h"
 #include <string>
 #include <vector>
 
@@ -155,7 +155,7 @@ The PiPoChain is setup with the following steps:
  
 1. parse chain definition string by calling parse()
 2. instantiate each PiPoModule in the chain by calling instantiate(), using a PiPoModuleFactory
-3. connect PiPos by calling connect
+3. connect PiPos by calling PiPoSequence::connect()
  
 A PiPoChain is itself also a PiPo module, i.e. data processing works the same as for a simple module:
 - the PiPoChain is prepared for processing by calling streamAttributes() on it.
@@ -164,20 +164,22 @@ A PiPoChain is itself also a PiPo module, i.e. data processing works the same as
 The host registers as the receiver for the last PiPo module in the PiPoChain.  
 */
 
-class PiPoChain : public PiPo
+class PiPoChain : public PiPoSequence  //TODO: shouldn't PiPoChain just contain a member seq_ for the sequence to build, instead of inheriting?
 {
   std::vector<PiPoOp> ops;
-  PiPo::Parent *parent;
+  //PiPo::Parent *parent;	//FIXME: remove? pipo has a parent member already!
   PiPoModuleFactory *moduleFactory;
 
 public:
-  PiPoChain(PiPo::Parent *parent, PiPoModuleFactory *moduleFactory = NULL) : PiPo(parent), ops()
+  PiPoChain(PiPo::Parent *parent, PiPoModuleFactory *moduleFactory = NULL)
+  : PiPoSequence(parent), ops()
   {
     this->parent = parent;
     this->moduleFactory = moduleFactory;
   };  
   
-  PiPoChain(const PiPoChain &other) : PiPo(other), ops()
+  PiPoChain(const PiPoChain &other)
+  : PiPoSequence(other), ops()
   { 
     this->moduleFactory = NULL;
     this->connect(NULL);
@@ -185,11 +187,12 @@ public:
   
   const PiPoChain& operator=(const PiPoChain &other)
   {
-    unsigned int numOps = other.ops.size();
-    
+    PiPoSequence::operator= (other);	// call assignment operator of base class PiPoSequence
+
     this->parent = other.parent;
     this->moduleFactory = other.moduleFactory;
     
+    unsigned int numOps = other.ops.size();
     this->ops.clear();
     this->ops.resize(numOps);
     
@@ -213,12 +216,14 @@ public:
   
   void clear()
   {
+    PiPoSequence::clear();
     for(unsigned int i = 0; i < this->ops.size(); i++)
       this->ops[i].clear();
 
     this->ops.clear();
   };
   
+
   /** parse pipo chain specification from string 
       
       creates list of PiPoOp in member ops
@@ -247,7 +252,11 @@ public:
     {
       for(unsigned int i = 0; i < this->ops.size(); i++)
       {
-        if(!this->ops[i].instantiate(this->parent, this->moduleFactory))
+        if(this->ops[i].instantiate(this->parent, this->moduleFactory))
+	{ // build sequence
+	  this->append(this->ops[i].getPiPo());
+	}
+	else
         {
           this->clear();
           return false; 
@@ -258,32 +267,7 @@ public:
     }
     
     return false;
-  };
-  
-  /** connect each PiPo in PiPoChain after parsing (from end to start)
-
-      @param receiver is terminating PiPo of the host that finally receives data
-   */
-  bool connect(PiPo *receiver)
-  {
-    PiPo *next = getTail();
-    
-    if(next != NULL)
-    {
-      next->setReceiver(receiver);
-      
-      for(int i = this->ops.size() - 2; i >= 0; i--)
-      {
-        PiPo *pipo = this->ops[i].getPiPo();
-        pipo->setReceiver(next);
-        next = pipo;
-      }
-      
-      return true;
-    }
-    
-    return false;
-  };
+  };  
 
   /** @} PiPoChain setup methods */
 
@@ -293,22 +277,6 @@ public:
   int getSize()
   {
     return this->ops.size();
-  };
-
-  PiPo *getHead(void)
-  {
-    if(this->ops.size() > 0)
-      return this->ops[0].getPiPo();
-    
-    return NULL;
-  };
-  
-  PiPo *getTail(void)
-  {
-    if(this->ops.size() > 0)
-      return this->ops[this->ops.size() - 1].getPiPo();
-    
-    return NULL;
   };
   
   int getIndex(const char *instanceName)
@@ -321,14 +289,8 @@ public:
     
     return -1;
   };  
-  
-  PiPo *getPiPo(unsigned int index)
-  {
-    if(index < this->ops.size())
-      return this->ops[index].getPiPo();
-    
-    return NULL;
-  };  
+
+  using PiPoSequence::getPiPo;
   
   PiPo *getPiPo(const char *instanceName)
   {
@@ -352,77 +314,16 @@ public:
     
   /** @name overloaded PiPo methods */
   /** @{ */
-
-  void setParent(PiPo::Parent *parent)
-  {
-    this->parent = parent;
-    
-    for(unsigned int i = 0; i < this->ops.size(); i++)
-      this->ops[i].setParent(parent);
-  };
-  
-  void setReceiver(PiPo *receiver, bool add = false)
-  {
-    if(this->ops.size() > 0)
-    {
-      PiPo *tail = this->getTail();
-      
-      if(tail != NULL)
-        tail->setReceiver(receiver);
-    }
-  };
-    
-  /** @name preparation of processing */
-  /** @{ */
-
-  /** start stream preparation */
-  int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
-  {
-    PiPo *head = this->getHead();
-    
-    if(head != NULL)
-      return head->streamAttributes(hasTimeTags, rate, offset, width, height, labels, hasVarSize, domain, maxFrames);
-    
-    return -1;
-  };
-  
-  int reset(void)
-  {
-    PiPo *head = this->getHead();
-    
-    if(head != NULL)
-      return head->reset();
-    
-    return -1;
-  };
-  
-  /** @} end of preparation of processing methods */
-
-  /** @name processing */
-  /** @{ */
-
-  int frames(double time, double weight, float *values, unsigned int size, unsigned int num)
-  {
-    PiPo *head = this->getHead();
-    
-    if(head != NULL)
-      return head->frames(time, weight, values, size, num);
-    
-    return -1;
-  };
-  
-  int finalize(double inputEnd)
-  {
-    PiPo *head = this->getHead();
-    
-    if(head != NULL)
-      return head->finalize(inputEnd);
-    
-    return -1;
-  };
-
-  /** @} end of processing methods */
+  /** @name all preparation and processing methods are inherited from PiPoSequence:
+      streamAttributes(), reset(), frames(), finalize() */
   /** @} end of overloaded PiPo methods */
 };
+
+/** EMACS **
+ * Local variables:
+ * mode: c
+ * c-basic-offset:2
+ * End:
+ */
 
 #endif
