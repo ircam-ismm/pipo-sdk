@@ -156,18 +156,23 @@ public:
   /***********************************************
    *
    *  PiPo Parent
-   *
+   * TODO: rename PiPoHost ?
    */
 
   class Parent
   {
   public:
+    /** called by pipo when an attribute with "changesstream" is set */
     virtual void streamAttributesChanged(PiPo *pipo, PiPo::Attr *attr) { };
+    
+    /** called by pipo to signal error in parameters */
     virtual void signalError(PiPo *pipo, std::string errorMsg) { };
   };
   
-private:
+protected:
   Parent *parent;
+
+private:
   std::vector<PiPo *> receivers; /**< list of receivers */
   std::vector<Attr *> attrs; /**< list of attributes */
   
@@ -351,7 +356,7 @@ public:
    * @param offset the lag of the output stream relative to the input
    * @param width the frame width (number of channels for audio or data matrix columns)
    * @param height the frame height (or number of matrix rows, always 1 for audio)
-   * @param labels optional labels for the frames' channels or columns
+   * @param labels optional labels for the frames' channels or columns (can be NULL)
    * @param hasVarSize a boolean representing whether the frames have a variable height (respecting the given frame height as maximum)
    * @param domain extent of a frame in the given domain (e.g. duration or frequency range)
    * @param maxFrames maximum number of frames in a block exchanged between two modules (window size for audio)
@@ -623,7 +628,7 @@ public:
     
     const char *getEnumTag(unsigned int idx)
     {
-      if (idx >= 0  &&  idx < this->enumList.size())
+      if (idx < this->enumList.size())
         return this->enumList[idx];
       
       return NULL;
