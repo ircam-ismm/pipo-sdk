@@ -1185,11 +1185,11 @@ template<>
 class PiPoVarSizeAttr<PiPo::Atom> : public PiPo::Attr, public std::vector<PiPo::Atom>
 {
 public:
-    PiPoVarSizeAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream, unsigned int size = 0, PiPo::Atom initVal = NULL) :
+    PiPoVarSizeAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream, unsigned int size = 0, int initVal = 0) :
     Attr(pipo, name, descr, &typeid(const char *), changesStream)
     {
         for(unsigned int i = 0; i < this->size(); i++)
-            (*this)[i] = initVal;
+            (*this)[i] = PiPo::Atom(initVal);
     };
     
     void clone(Attr *other) { *(dynamic_cast<std::vector<PiPo::Atom> *>(this)) = *(dynamic_cast<std::vector<PiPo::Atom> *>(other)); };
