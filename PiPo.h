@@ -29,6 +29,74 @@
 
 typedef float PiPoValue;
 
+
+//TODO: unify with maxpipohost.h
+#define PIPO_MAX_LABELS 1024
+
+struct PiPoStreamAttributes
+{
+  int hasTimeTags;
+  double rate;
+  double offset;
+  unsigned int dims[2];	// width, height (by pipo convention)
+  const char **labels;
+  unsigned int numLabels;
+  bool hasVarSize;
+  double domain;
+  unsigned int maxFrames;
+  unsigned int labels_alloc; //< allocated size of labels
+  
+  PiPoStreamAttributes (int numlabels = -1)
+  {
+    init(numlabels);
+  }
+
+  void init (int _numlab = -1)
+  {
+    this->hasTimeTags = false;
+    this->rate = 1000.0;
+    this->offset = 0.0;
+    this->dims[0] = 1;	// width
+    this->dims[1] = 1;	// height
+    this->labels = NULL;
+    this->numLabels = 0;
+    this->labels_alloc = _numlab > 0  ?  _numlab  :  0;
+    this->hasVarSize = false;
+    this->domain = 0.0;
+    this->maxFrames = 1;
+
+    if (_numlab >= 0)
+      labels = new const char *[_numlab];
+  };
+
+  ~PiPoStreamAttributes()
+  {
+    if (labels)
+      delete [] labels;
+  };
+
+  /** append string pointer array to labels array
+   */
+  void concat_labels (const char **_labels, unsigned int _width)
+  {
+    if (this->numLabels + _width > this->labels_alloc)
+    {
+      printf("Warning: PiPoStreamAttributes::concat_labels: label overflow prevented (trying to concat %d to %d used of %d)\n", _width, this->numLabels, this->labels_alloc);
+	_width = this->labels_alloc - this->numLabels;
+    }
+      
+    if (_labels != NULL)
+      memcpy(this->labels + this->numLabels, _labels, _width * sizeof(const char *));
+    else
+      for (int i = 0; i < _width; i++)
+	this->labels[i + this->numLabels] = "unnamed";	//TODO: invent numbered column, beware of memory!
+    
+    this->numLabels += _width;
+  }
+
+};
+
+
 class PiPo
 {
 
@@ -198,7 +266,7 @@ public:
    *
    * @param parent PiPo parent
    */
-  void setParent(Parent *parent) { this->parent = parent; };
+  virtual void setParent(Parent *parent) { this->parent = parent; };
   
   /**
    * @brief Propagates a module's output stream attributes to its receiver.
@@ -334,7 +402,6 @@ public:
       
       if(receiver != NULL)
         this->receivers.push_back(receiver);
-      
     };
   }
   
@@ -467,6 +534,8 @@ public:
   {
     if(this->parent != NULL)
       this->parent->signalError(this, errorMsg);
+    else
+      printf("PiPo::signalError (not parent): %s\n", errorMsg.c_str());
   }
 
 
@@ -1256,5 +1325,13 @@ public:
         return &((*this)[0]);
     };
 };
+
+
+/** EMACS **
+ * Local variables:
+ * mode: c
+ * c-basic-offset:2
+ * End:
+ */
 
 #endif

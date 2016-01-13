@@ -20,14 +20,14 @@ private:
 public:
   PiPoSequence (PiPo::Parent *parent)
   : PiPo(parent), seq_()
-  { };  
+  { }  
 
   // copy constructor
   PiPoSequence (const PiPoSequence &other)
   : PiPo(other), seq_(other.seq_)
   { 
     connect(NULL);
-  };  
+  }  
 
   //todo: varargs constructor PiPoSequence (PiPo::Parent *parent, PiPo *pipos ...)
   
@@ -38,17 +38,24 @@ public:
     connect(NULL);
 
     return *this;
-  };
+  }
   
-  ~PiPoSequence (void) { };
+  ~PiPoSequence (void) { }
   
 
   /** @name PiPoSequence setup methods */
   /** @{ */
-  
-  void append (PiPo *pipo)
+
+  /** append module \p pipo to sequential data flow graph
+   */
+  void add (PiPo *pipo)
   {
     seq_.push_back(pipo);
+  }
+
+  void add (PiPo &pipo)
+  {
+    add(&pipo);
   }
 
   
@@ -58,7 +65,7 @@ public:
       seq_[i] = NULL;
 
     seq_.clear();
-  };
+  }
   
 
   /** connect each PiPo in PiPoSequence (from end to start)
@@ -84,7 +91,7 @@ public:
     }
     
     return false;
-  };
+  }
 
   /** @} PiPoSequence setup methods */
 
@@ -94,7 +101,7 @@ public:
   int getSize()
   {
     return seq_.size();
-  };
+  }
 
   PiPo *getHead ()
   {
@@ -102,7 +109,7 @@ public:
       return seq_[0];
     
     return NULL;
-  };
+  }
   
   PiPo *getTail ()
   {
@@ -110,7 +117,7 @@ public:
       return seq_[seq_.size() - 1];
     
     return NULL;
-  };
+  }
   
   PiPo *getPiPo (unsigned int index)
   {
@@ -118,28 +125,28 @@ public:
       return seq_[index];
     
     return NULL;
-  };  
+  }  
 
   /** @} PiPoSequence query methods */
     
   /** @name overloaded PiPo methods */
   /** @{ */
 
-  void setParent (PiPo::Parent *parent)
+  virtual void setParent (PiPo::Parent *parent)
   {
     this->parent = parent;
     
     for (unsigned int i = 0; i < seq_.size(); i++)
       seq_[i]->setParent(parent);
-  };
+  }
   
-  void setReceiver (PiPo *receiver, bool add = false)
+  virtual void setReceiver (PiPo *receiver, bool add = false)
   {
     PiPo *tail = getTail();
       
     if (tail != NULL)
-      tail->setReceiver(receiver);
-  };
+      tail->setReceiver(receiver, add);
+  }
     
   /** @name preparation of processing */
   /** @{ */
@@ -153,7 +160,7 @@ public:
       return head->streamAttributes(hasTimeTags, rate, offset, width, height, labels, hasVarSize, domain, maxFrames);
     
     return -1;
-  };
+  }
   
   int reset ()
   {
@@ -163,7 +170,7 @@ public:
       return head->reset();
     
     return -1;
-  };
+  }
   
   /** @} end of preparation of processing methods */
 
@@ -178,7 +185,7 @@ public:
       return head->frames(time, weight, values, size, num);
     
     return -1;
-  };
+  }
   
   int finalize (double inputEnd)
   {
@@ -188,7 +195,7 @@ public:
       return head->finalize(inputEnd);
     
     return -1;
-  };
+  }
 
   /** @} end of processing methods */
   /** @} end of overloaded PiPo methods */

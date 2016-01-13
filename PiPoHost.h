@@ -20,6 +20,7 @@ All rights reserved.
 #include <string>
 #include <vector>
 
+
 /** abstract base class for a container of a pipo module for PiPoModuleFactory
  */
 class PiPoModule
@@ -253,8 +254,8 @@ public:
       for(unsigned int i = 0; i < this->ops.size(); i++)
       {
         if(this->ops[i].instantiate(this->parent, this->moduleFactory))
-	{ // build sequence
-	  this->append(this->ops[i].getPiPo());
+	{ // build sequence by appending modules
+	  this->add(this->ops[i].getPiPo());
 	}
 	else
         {
