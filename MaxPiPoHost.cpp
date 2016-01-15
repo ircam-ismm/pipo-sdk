@@ -409,6 +409,12 @@ MaxPiPoHost::signalError(PiPo *pipo, std::string errorMsg)
 }
 
 void
+MaxPiPoHost::signalWarning(PiPo *pipo, std::string errorMsg)
+{
+  object_warn(this->ext, errorMsg.c_str());
+}
+
+void
 MaxPiPoHost::setInputDims(int width, int size, bool propagate)
 {
   this->lock();

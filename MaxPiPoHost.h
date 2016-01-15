@@ -139,6 +139,7 @@ public:
 
   void streamAttributesChanged(PiPo *pipo, PiPo::Attr *attr);
   void signalError(PiPo *pipo, std::string errorMsg);
+  void signalWarning(PiPo *pipo, std::string errorMsg);
   
   void setInputDims(int width, int size, bool propagate = true);
   void setInputLabels(long ac, t_atom *at, bool propagate = true);
