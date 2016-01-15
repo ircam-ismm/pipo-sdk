@@ -130,6 +130,8 @@ If the module keeps internal state or buffering, it should implement the \ref re
 
 The utility function \ref signalError can be used to pass an error message to the host.
 
+The utility function \ref signalWarning can be used to pass a warning message to the host.
+
 
 \subsection sec_attr Module Attributes or Parameters
 
@@ -235,6 +237,9 @@ public:
     
     /** called by pipo to signal error in parameters */
     virtual void signalError(PiPo *pipo, std::string errorMsg) { };
+
+    /** called by pipo to signal warning in parameters */
+    virtual void signalWarning(PiPo *pipo, std::string errorMsg) { };
   };
   
 protected:
@@ -536,6 +541,16 @@ public:
       this->parent->signalError(this, errorMsg);
     else
       printf("PiPo::signalError (not parent): %s\n", errorMsg.c_str());
+  }
+
+    /** signal warning message to be output by the host
+   */
+  void signalWarning(std::string errorMsg)
+  {
+    if(this->parent != NULL)
+      this->parent->signalWarning(this, errorMsg);
+    else
+      printf("PiPo::signalWarning (not parent): %s\n", errorMsg.c_str());
   }
 
 
