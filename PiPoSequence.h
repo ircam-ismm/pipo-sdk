@@ -20,7 +20,22 @@ private:
 public:
   PiPoSequence (PiPo::Parent *parent)
   : PiPo(parent), seq_()
-  { }  
+  { }
+
+  /** varargs constructor with a list of pipos that will be connected:
+
+        PiPoSequence (PiPo::Parent *parent, PiPo &pipos ...) 
+        seq(parent, pipo1, pipo2, ...);
+
+      (using C++11 variadic templates)
+   */
+  template<typename ...Args>
+  PiPoSequence (PiPo::Parent *parent, Args&... pipos)
+    : PiPo(parent), seq_{&pipos ...} // use C++11 initilizer_list syntax and variadic templates
+  {
+    // set parents of all pipos?
+    connect(NULL);
+  }
 
   // copy constructor
   PiPoSequence (const PiPoSequence &other)
@@ -28,8 +43,6 @@ public:
   { 
     connect(NULL);
   }  
-
-  //todo: varargs constructor PiPoSequence (PiPo::Parent *parent, PiPo *pipos ...)
   
   const PiPoSequence& operator=(const PiPoSequence &other)
   {
@@ -48,14 +61,17 @@ public:
 
   /** append module \p pipo to sequential data flow graph
    */
-  void add (PiPo *pipo)
+  void add (PiPo *pipo, bool autoconnect = true)
   {
     seq_.push_back(pipo);
+    
+    if (autoconnect  &&  seq_.size() > 1)
+      seq_[seq_.size() - 2]->setReceiver(pipo); // connect previous to just added pipo
   }
 
-  void add (PiPo &pipo)
+  void add (PiPo &pipo, bool autoconnect = true)
   {
-    add(&pipo);
+    add(&pipo, autoconnect);
   }
 
   
