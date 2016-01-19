@@ -44,7 +44,7 @@ struct PiPoStreamAttributes
   bool hasVarSize;
   double domain;
   unsigned int maxFrames;
-  unsigned int labels_alloc; //< allocated size of labels
+  int labels_alloc; //< allocated size of labels, -1 for no (outside) allocation
   
   PiPoStreamAttributes (int numlabels = -1)
   {
@@ -60,7 +60,7 @@ struct PiPoStreamAttributes
     this->dims[1] = 1;	// height
     this->labels = NULL;
     this->numLabels = 0;
-    this->labels_alloc = _numlab > 0  ?  _numlab  :  0;
+    this->labels_alloc = _numlab;
     this->hasVarSize = false;
     this->domain = 0.0;
     this->maxFrames = 1;
@@ -71,7 +71,7 @@ struct PiPoStreamAttributes
 
   ~PiPoStreamAttributes()
   {
-    if (labels)
+    if (labels  &&  labels_alloc > 0)
       delete [] labels;
   };
 
@@ -79,6 +79,12 @@ struct PiPoStreamAttributes
    */
   void concat_labels (const char **_labels, unsigned int _width)
   {
+    if (this->labels_alloc < 0)
+    {
+      printf("Warning: PiPoStreamAttributes::concat_labels: can't concat %d labels to char ** with %d labels allocated from the outside\n", _width, this->numLabels);
+      _width = 0;
+    }
+    
     if (this->numLabels + _width > this->labels_alloc)
     {
       printf("Warning: PiPoStreamAttributes::concat_labels: label overflow prevented (trying to concat %d to %d used of %d)\n", _width, this->numLabels, this->labels_alloc);
