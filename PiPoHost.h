@@ -168,6 +168,9 @@ The host registers as the receiver for the last PiPo module in the PiPoChain.
 class PiPoChain : public PiPoSequence  //TODO: shouldn't PiPoChain just contain a member seq_ for the sequence to build, instead of inheriting?
 {
   std::vector<PiPoOp> ops;
+  // these vectors of pointers seem necessary in copyPiPoAttributes
+  std::vector<std::string *> attrNames;
+  std::vector<std::string *> attrDescrs;
   //PiPo::Parent *parent;	//FIXME: remove? pipo has a parent member already!
   PiPoModuleFactory *moduleFactory;
 
@@ -207,7 +210,13 @@ public:
   };
   
   ~PiPoChain(void) 
-  { 
+  {
+    for(unsigned int i = 0; i < attrNames.size(); i++) {
+        delete attrNames[i];
+    }
+    for(unsigned int i = 0; i < attrDescrs.size(); i++) {
+        delete attrDescrs[i];
+    }
     this->clear();
   };
   
@@ -254,21 +263,50 @@ public:
       for(unsigned int i = 0; i < this->ops.size(); i++)
       {
         if(this->ops[i].instantiate(this->parent, this->moduleFactory))
-	{ // build sequence by appending modules
-	  this->add(this->ops[i].getPiPo());
-	}
-	else
+        { // build sequence by appending modules
+          this->add(this->ops[i].getPiPo());
+        }
+        else
         {
           this->clear();
           return false; 
         }
       }
-      
       return true;
     }
     
     return false;
-  };  
+  };
+    
+  void copyPiPoAttributes()
+  {
+    for(int iPiPo = 0; iPiPo < this->getSize(); iPiPo++)
+    {
+      PiPo *pipo = this->getPiPo(iPiPo);
+            
+      const char *instanceName = this->getInstanceName(iPiPo);
+      unsigned int numAttrs = pipo->getNumAttrs();
+            
+      for(unsigned int iAttr = 0; iAttr < numAttrs; iAttr++)
+      {
+        PiPo::Attr *attr = pipo->getAttr(iAttr);
+        
+        std::string *attrName = new std::string(instanceName);
+        *attrName += ".";
+        *attrName += attr->getName();
+
+        std::string *attrDescr = new std::string(attr->getDescr());
+        *attrDescr += " (";
+        *attrDescr += instanceName;
+        *attrDescr += ")";
+
+        attrNames.push_back(attrName);
+        attrDescrs.push_back(attrDescr);
+        
+        this->addAttr(this, attrNames[attrNames.size() - 1]->c_str(), attrDescrs[attrDescrs.size() - 1]->c_str(), attr);
+      }
+    }
+  }
 
   /** @} PiPoChain setup methods */
 
