@@ -783,6 +783,23 @@ public:
     
     return NULL;
   };
+
+    /**
+   * @brief Gets PiPo attribute by qualified name
+   *
+   * @param piponame pipo module name in pipo chain
+   * @param name attribute name
+   * @return reference to PiPo attribute (NULL for invalid attribute name)
+   */
+  Attr *getAttr(const char *piponame, const char *name)
+  {
+    std::string qname(piponame);
+
+    qname += ".";
+    qname += name;
+
+    return getAttr(qname.c_str());
+  };
   
   bool setAttr(unsigned int index, int value, bool silently = false)
   {
