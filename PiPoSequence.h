@@ -10,6 +10,9 @@
  * 
  */
 
+#ifndef _PIPO_SEQUENCE_
+#define _PIPO_SEQUENCE_
+
 #include "PiPo.h"
 
 class PiPoSequence : public PiPo
@@ -223,3 +226,5 @@ public:
  * c-basic-offset:2
  * End:
  */
+
+#endif /* _PIPO_SEQUENCE_ */
