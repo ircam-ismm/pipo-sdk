@@ -175,24 +175,26 @@ class PiPoChain : public PiPoSequence  //TODO: shouldn't PiPoChain just contain 
   PiPoModuleFactory *moduleFactory;
 
 public:
+  // constructor
   PiPoChain(PiPo::Parent *parent, PiPoModuleFactory *moduleFactory = NULL)
   : PiPoSequence(parent), ops()
   {
     this->parent = parent;
     this->moduleFactory = moduleFactory;
   };  
-  
+
+private:
+  // copy constructor: hidden until needed and tested
   PiPoChain(const PiPoChain &other)
-  : PiPoSequence(other), ops()
+  : PiPoSequence(NULL), ops()
   { 
-    this->moduleFactory = NULL;
-    this->connect(NULL);
+    *this = other;
   };  
-  
+
+public:
+  // assignment operator
   const PiPoChain& operator=(const PiPoChain &other)
   {
-    PiPoSequence::operator= (other);	// call assignment operator of base class PiPoSequence
-
     this->parent = other.parent;
     this->moduleFactory = other.moduleFactory;
     
@@ -200,8 +202,11 @@ public:
     this->ops.clear();
     this->ops.resize(numOps);
     
-    for(unsigned int i = 0; i < numOps; i++)
-      this->ops[i].set(i, this->parent, this->moduleFactory, other.ops[i]);
+    for (unsigned int i = 0; i < numOps; i++)
+    {
+      this->ops[i].set(i, this->parent, this->moduleFactory, other.ops[i]); // clone pipos by re-instantiating them
+      this->add(this->ops[i].getPiPo(), false); // rebuild PiPoSequence to point to cloned pipos
+    }
     
     this->connect(NULL);
     this->moduleFactory = NULL;
@@ -329,7 +334,7 @@ public:
     return -1;
   };  
 
-  using PiPoSequence::getPiPo;
+  using PiPoSequence::getPiPo;	// make getPiPo(unsigned int index) visible for this class PiPoChain
   
   PiPo *getPiPo(const char *instanceName)
   {

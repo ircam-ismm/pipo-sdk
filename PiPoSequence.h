@@ -21,6 +21,7 @@ private:
   std::vector<PiPo *> seq_;
 
 public:
+  // constructor
   PiPoSequence (PiPo::Parent *parent)
   : PiPo(parent), seq_()
   { }
@@ -46,7 +47,8 @@ public:
   { 
     connect(NULL);
   }  
-  
+
+  // assignment operator
   const PiPoSequence& operator=(const PiPoSequence &other)
   {
     parent = other.parent;
@@ -117,12 +119,12 @@ public:
   /** @name PiPoChain query methods */
   /** @{ */
 
-  int getSize()
+  int getSize() const
   {
     return seq_.size();
   }
 
-  PiPo *getHead ()
+  PiPo *getHead () const
   {
     if (seq_.size() > 0)
       return seq_[0];
@@ -130,7 +132,7 @@ public:
     return NULL;
   }
   
-  PiPo *getTail ()
+  PiPo *getTail () const
   {
     if (seq_.size() > 0)
       return seq_[seq_.size() - 1];
@@ -138,8 +140,10 @@ public:
     return NULL;
   }
   
-  PiPo *getPiPo (unsigned int index)
+  PiPo *getPiPo (unsigned int index) const
   {
+    //printf("%s(%d) -> %p\n", __PRETTY_FUNCTION__, index, seq_[index]);
+    
     if (index < seq_.size())
       return seq_[index];
     
