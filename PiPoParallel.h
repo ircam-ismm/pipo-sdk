@@ -43,8 +43,9 @@ private:
     PiPoMerge (const PiPoMerge &other)
     : PiPo(other.parent), count_(other.count_), numpar_(other.numpar_), sa_(other.sa_)
     {
+#if defined(__GNUC__) && defined(DEBUG)
       printf("\n•••••• %s: COPY CONSTRUCTOR\n", __PRETTY_FUNCTION__); //db
-
+#endif
       memcpy(paroffset_, other.paroffset_, numpar_ * sizeof(int));
       memcpy(parwidth_, other.parwidth_, numpar_ * sizeof(int));
       values_ = (PiPoValue *) malloc(sa_.maxFrames * sa_.dims[0] * sa_.dims[1] * sizeof(PiPoValue));
@@ -54,8 +55,9 @@ private:
     // assignment operator
     PiPoMerge &operator= (const PiPoMerge &other)
     {
+#if defined(__GNUC__) && defined(DEBUG)
       printf("\n•••••• %s: ASSIGNMENT OPERATOR\n", __PRETTY_FUNCTION__); //db
-
+#endif
       count_ = other.count_;
       numpar_ = other.numpar_;
       sa_ = other.sa_;
