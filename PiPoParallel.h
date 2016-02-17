@@ -39,8 +39,38 @@ private:
     : PiPo(parent), count_(0), numpar_(0), sa_(1024), values_(NULL)
     { }
 
+    // copy constructor
+    PiPoMerge (const PiPoMerge &other)
+    : PiPo(other.parent), count_(other.count_), numpar_(other.numpar_), sa_(other.sa_)
+    {
+      printf("\n•••••• %s: COPY CONSTRUCTOR\n", __PRETTY_FUNCTION__); //db
+
+      memcpy(paroffset_, other.paroffset_, numpar_ * sizeof(int));
+      memcpy(parwidth_, other.parwidth_, numpar_ * sizeof(int));
+      values_ = (PiPoValue *) malloc(sa_.maxFrames * sa_.dims[0] * sa_.dims[1] * sizeof(PiPoValue));
+      memcpy(values_, other.values_, sa_.maxFrames * sa_.dims[0] * sa_.dims[1] * sizeof(PiPoValue));
+    }
+
+    // assignment operator
+    PiPoMerge &operator= (const PiPoMerge &other)
+    {
+      printf("\n•••••• %s: ASSIGNMENT OPERATOR\n", __PRETTY_FUNCTION__); //db
+
+      count_ = other.count_;
+      numpar_ = other.numpar_;
+      sa_ = other.sa_;
+      
+      memcpy(paroffset_, other.paroffset_, numpar_ * sizeof(int));
+      memcpy(parwidth_, other.parwidth_, numpar_ * sizeof(int));
+      values_ = (PiPoValue *) malloc(sa_.maxFrames * sa_.dims[0] * sa_.dims[1] * sizeof(PiPoValue));
+      memcpy(values_, other.values_, sa_.maxFrames * sa_.dims[0] * sa_.dims[1] * sizeof(PiPoValue));
+
+      return *this;
+    }
+
+  public:
     void start (int numpar)
-    { // on start, record number of calls to expect from parallel pipos, each received stream call decrements count, on 0 merging has to be performed
+    { // on start, record number of calls to expect from parallel pipos, each received stream call increments count_, when numpar_ is reached, merging has to be performed
       numpar_ = numpar;
       count_  = 0;
     }
@@ -141,13 +171,15 @@ public:
   : PiPo(parent), merge(parent)
   { }
 
+  //todo: varargs constructor PiPoParallel (PiPo::Parent *parent, PiPo *pipos ...)
+
+private:
   // copy constructor
   PiPoParallel (const PiPoParallel &other)
   : PiPo(other), merge(other.merge)
   { }
 
-  //todo: varargs constructor PiPoParallel (PiPo::Parent *parent, PiPo *pipos ...)
-  
+  // assignment operator
   const PiPoParallel& operator= (const PiPoParallel &other)
   {
     parent = other.parent;
@@ -156,6 +188,7 @@ public:
     return *this;
   }
   
+public:
   ~PiPoParallel (void) { }
   
 
