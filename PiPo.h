@@ -228,6 +228,7 @@ In summary, a PiPo stream is described by the following attributes:
     
 public:
   class Attr;
+  template<class, std::size_t> class AttrArray; // declare this helper template as PiPo::AttrArray
   
   /***********************************************
    *
@@ -1010,7 +1011,7 @@ public:
  */
 /* waiting for C++11 */
 template< class TYPE, std::size_t SIZE>
-class arrayClass
+class PiPo::AttrArray
 {
   TYPE values[SIZE];
   static const int size = SIZE;
@@ -1021,18 +1022,17 @@ public:
 };
 
 template <typename TYPE, unsigned int SIZE>
-class PiPoArrayAttr : public PiPo::Attr, public arrayClass<TYPE, SIZE>
+class PiPoArrayAttr : public PiPo::Attr, public PiPo::AttrArray<TYPE, SIZE>
 {
 public:
   PiPoArrayAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream, TYPE initVal = (TYPE)0) :
   Attr(pipo, name, descr, &typeid(TYPE), changesStream),
-  arrayClass<TYPE, SIZE>()
+  PiPo::AttrArray<TYPE, SIZE>()
   {
     for(unsigned int i = 0; i < SIZE; i++)
       (*this)[i] = initVal;
-  }
-  
-  void clone(Attr *other) { *(dynamic_cast<arrayClass<TYPE, SIZE> *>(this)) = *(dynamic_cast<arrayClass<TYPE, SIZE> *>(other)); };
+  } 
+  void clone(Attr *other) { *(dynamic_cast<PiPo::AttrArray<TYPE, SIZE> *>(this)) = *(dynamic_cast<PiPo::AttrArray<TYPE, SIZE> *>(other)); };
 
   unsigned int setSize(unsigned int size) { return this->getSize(); };
   unsigned int getSize(void) { return SIZE; }
@@ -1081,12 +1081,12 @@ public:
 };
 
 template <unsigned int SIZE>
-class PiPoArrayAttr<enum PiPo::Enumerate, SIZE> : public PiPo::EnumAttr, public arrayClass<unsigned int, SIZE>
+class PiPoArrayAttr<enum PiPo::Enumerate, SIZE> : public PiPo::EnumAttr, public PiPo::AttrArray<unsigned int, SIZE>
 {
 public:
   PiPoArrayAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream, unsigned int initVal = NULL) :
   EnumAttr(pipo, name, descr, &typeid(enum PiPo::Enumerate), changesStream),
-  arrayClass<unsigned int, SIZE>()
+  PiPo::AttrArray<unsigned int, SIZE>()
   {
     for(unsigned int i = 0; i < this->size; i++)
       this->value[i] = initVal;
@@ -1094,7 +1094,7 @@ public:
   
   ~PiPoArrayAttr(void) { free(this->value); }
   
-  void clone(Attr *other) { *(dynamic_cast<arrayClass<unsigned int, SIZE> *>(this)) = *(dynamic_cast<arrayClass<unsigned int, SIZE> *>(other)); };
+  void clone(Attr *other) { *(dynamic_cast<PiPo::AttrArray<unsigned int, SIZE> *>(this)) = *(dynamic_cast<PiPo::AttrArray<unsigned int, SIZE> *>(other)); };
 
   unsigned int setSize(unsigned int size) { return this->getSize(); };
   unsigned int getSize(void) { return SIZE; }
