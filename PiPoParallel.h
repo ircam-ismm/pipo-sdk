@@ -1,15 +1,31 @@
 /**
- *
- * @file PiPoParallel.h
- * @author Diemo.Schwarz@ircam.fr
- * 
- * @brief PiPo dataflow graph class that encapsulates a parallel section of pipo modules.
- * 
- * Copyright (C) 2016 by ISMM IRCAM – Centre Pompidou, Paris, France.
- * All rights reserved.
- * 
- */
 
+@file PiPoParallel.h
+@author Diemo.Schwarz@ircam.fr
+
+@brief PiPo dataflow graph class that encapsulates a parallel section of pipo modules.
+
+@copyright
+
+Copyright (c) 2012–2016 by IRCAM – Centre Pompidou, Paris, France.
+All rights reserved.
+
+@par License (BSD 3-clause)
+
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+
+- Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+
+- Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+
+- Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+*/
+
+#include <assert.h> //db
+#include <stdlib.h> //db
 #include "PiPo.h"
 
 #define PIPO_DEBUG 2
@@ -21,12 +37,14 @@ private:
    */
   class PiPoMerge : public PiPo
   {
+  private:
 #   define		 MAX_PAR 64
     int			 count_;
     int			 numpar_;
     PiPoStreamAttributes sa_;	// combined stream attributes
     int			 paroffset_[MAX_PAR]; // cumulative column offsets in output array
     int			 parwidth_[MAX_PAR];  // column widths of parallel pipos
+    int			 framesize_;		// output frame size = width * maxheight
 
     // working variables for merging of frames
     PiPoValue		*values_;
@@ -36,20 +54,20 @@ private:
 
   public:
     PiPoMerge (PiPo::Parent *parent)
-    : PiPo(parent), count_(0), numpar_(0), sa_(1024), values_(NULL)
+    : PiPo(parent), count_(0), numpar_(0), sa_(1024), framesize_(0), values_(NULL)
     { }
 
     // copy constructor
     PiPoMerge (const PiPoMerge &other)
-    : PiPo(other.parent), count_(other.count_), numpar_(other.numpar_), sa_(other.sa_)
+    : PiPo(other.parent), count_(other.count_), numpar_(other.numpar_), sa_(other.sa_), framesize_(other.framesize_)
     {
 #if defined(__GNUC__) && defined(DEBUG)
       printf("\n•••••• %s: COPY CONSTRUCTOR\n", __PRETTY_FUNCTION__); //db
 #endif
       memcpy(paroffset_, other.paroffset_, numpar_ * sizeof(int));
       memcpy(parwidth_, other.parwidth_, numpar_ * sizeof(int));
-      values_ = (PiPoValue *) malloc(sa_.maxFrames * sa_.dims[0] * sa_.dims[1] * sizeof(PiPoValue));
-      memcpy(values_, other.values_, sa_.maxFrames * sa_.dims[0] * sa_.dims[1] * sizeof(PiPoValue));
+      values_ = (PiPoValue *) malloc(sa_.maxFrames * framesize_ * sizeof(PiPoValue));
+      memcpy(values_, other.values_, sa_.maxFrames * framesize_ * sizeof(PiPoValue));
     }
 
     // assignment operator
@@ -58,22 +76,23 @@ private:
 #if defined(__GNUC__) && defined(DEBUG)
       printf("\n•••••• %s: ASSIGNMENT OPERATOR\n", __PRETTY_FUNCTION__); //db
 #endif
-      count_ = other.count_;
-      numpar_ = other.numpar_;
-      sa_ = other.sa_;
+      count_     = other.count_;
+      numpar_    = other.numpar_;
+      sa_        = other.sa_;
+      framesize_ = other.framesize_;
       
       memcpy(paroffset_, other.paroffset_, numpar_ * sizeof(int));
       memcpy(parwidth_, other.parwidth_, numpar_ * sizeof(int));
-      values_ = (PiPoValue *) malloc(sa_.maxFrames * sa_.dims[0] * sa_.dims[1] * sizeof(PiPoValue));
-      memcpy(values_, other.values_, sa_.maxFrames * sa_.dims[0] * sa_.dims[1] * sizeof(PiPoValue));
+      values_ = (PiPoValue *) malloc(sa_.maxFrames * framesize_ * sizeof(PiPoValue));
+      memcpy(values_, other.values_, sa_.maxFrames * framesize_ * sizeof(PiPoValue));
 
       return *this;
     }
 
   public:
-    void start (int numpar)
+    void start (size_t numpar)
     { // on start, record number of calls to expect from parallel pipos, each received stream call increments count_, when numpar_ is reached, merging has to be performed
-      numpar_ = numpar;
+      numpar_ = (int) numpar;
       count_  = 0;
     }
 
@@ -109,13 +128,14 @@ private:
 	paroffset_[count_] = paroffset_[count_ - 1] + parwidth_[count_ - 1];
 	parwidth_[count_] = width;
 
-	//TODO: check maxframes, should not differ
+	//TODO: check maxframes, height, should not differ
 	//TODO: option to transpose column vectors
       }
       
       if (++count_ == numpar_)
       { // last parallel pipo, now reserve memory and pass merged stream attributes onwards
-	values_ = (PiPoValue *) realloc(values_, sa_.maxFrames * sa_.dims[0] * sa_.dims[1] * sizeof(PiPoValue)); // alloc space for maxmal block size
+        framesize_ = sa_.dims[0] * sa_.dims[1];
+	values_ = (PiPoValue *) realloc(values_, sa_.maxFrames * framesize_ * sizeof(PiPoValue)); // alloc space for maxmal block size
 	
 	return propagateStreamAttributes(sa_.hasTimeTags, sa_.rate, sa_.offset, sa_.dims[0], sa_.dims[1], sa_.labels, sa_.hasVarSize, sa_.domain, sa_.maxFrames);
       }
@@ -141,12 +161,17 @@ private:
 	numrows_   = size / parwidth_[0];	// number of rows
 	numframes_ = num;
       }
+      assert(count_ < numpar_);
+      assert(size / parwidth_[count_] == 1);
       
       for (int i = 0; i < numframes_; i++)   // for all frames
 	for (int k = 0; k < numrows_; k++)   // for all rows to be kept
+        {
+          printf("merge::frames %p\n  values_ %p + %d + %d + %d,\n  values %p + %d,\n  size %d\n",
+                 this, values_, i * framesize_, k * sa_.dims[0], paroffset_[count_], values, i * size, parwidth_[count_] * sizeof(PiPoValue));
 	  //TODO: zero pad if num rows here: size / parwidth_[count_] < numrows_
-	  memcpy(values_ + paroffset_[count_], values, parwidth_[count_] * sizeof(PiPoValue));
-      
+	  memcpy(values_ + i * framesize_ + k * sa_.dims[0] + paroffset_[count_], values + i * size, parwidth_[count_] * sizeof(PiPoValue));
+        }
       if (++count_ == numpar_) // last parallel pipo: pass on to receiver(s)
 	return propagateFrames(time_, 0 /*weight to disappear*/, values_, numrows_ * sa_.dims[0], numframes_);
       else

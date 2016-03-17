@@ -7,7 +7,7 @@
 
 @copyright
 
-Copyright (c) 2012-2016 by IRCAM – Centre Pompidou, Paris, France.
+Copyright (c) 2012–2016 by IRCAM – Centre Pompidou, Paris, France.
 All rights reserved.
 
 @par License (BSD 3-clause)
