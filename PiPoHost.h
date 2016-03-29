@@ -197,15 +197,13 @@ public:
     this->moduleFactory = moduleFactory;
   };  
 
-private:
-  // copy constructor: hidden until needed and tested
+  // copy constructor: invoking assignment operator
   PiPoChain(const PiPoChain &other)
   : PiPoSequence(NULL), ops()
   { 
     *this = other;
   };  
 
-public:
   // assignment operator
   const PiPoChain& operator=(const PiPoChain &other)
   {
