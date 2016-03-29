@@ -40,6 +40,7 @@ public:
   : PiPo(parent), seq_()
   { }
 
+#if __cplusplus > 199711L // check for C++11
   /** varargs constructor with a list of pipos that will be connected:
 
         PiPoSequence (PiPo::Parent *parent, PiPo &pipos ...) 
@@ -54,7 +55,8 @@ public:
     // set parents of all pipos?
     connect(NULL);
   }
-
+#endif
+  
   // copy constructor
   PiPoSequence (const PiPoSequence &other)
   : PiPo(other), seq_(other.seq_)
@@ -214,7 +216,7 @@ public:
   /** @name processing */
   /** @{ */
 
-  int frames (double time, double weight, float *values, unsigned int size, unsigned int num)
+  int frames (double time, double weight, PiPoValue *values, unsigned int size, unsigned int num)
   {
     PiPo *head = getHead();
     
