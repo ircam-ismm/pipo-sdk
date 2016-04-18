@@ -28,7 +28,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include <stdlib.h> //db
 #include "PiPo.h"
 
-#define PIPO_DEBUG 2
+#define PIPO_DEBUG DEBUG*1
 
 class PiPoParallel : public PiPo
 {
@@ -61,7 +61,7 @@ private:
     PiPoMerge (const PiPoMerge &other)
     : PiPo(other.parent), count_(other.count_), numpar_(other.numpar_), sa_(other.sa_), framesize_(other.framesize_)
     {
-#if defined(__GNUC__) && defined(DEBUG)
+#if defined(__GNUC__) && defined(PIPO_DEBUG >= 2)
       printf("\n•••••• %s: COPY CONSTRUCTOR\n", __PRETTY_FUNCTION__); //db
 #endif
       memcpy(paroffset_, other.paroffset_, numpar_ * sizeof(int));
@@ -73,7 +73,7 @@ private:
     // assignment operator
     PiPoMerge &operator= (const PiPoMerge &other)
     {
-#if defined(__GNUC__) && defined(DEBUG)
+#if defined(__GNUC__) && defined(PIPO_DEBUG >= 2)
       printf("\n•••••• %s: ASSIGNMENT OPERATOR\n", __PRETTY_FUNCTION__); //db
 #endif
       count_     = other.count_;
@@ -172,8 +172,8 @@ private:
       for (int i = 0; i < numframes_; i++)   // for all frames
 	for (int k = 0; k < numrows_; k++)   // for all rows to be kept
         {
-          printf("merge::frames %p\n  values_ %p + %d + %d + %d,\n  values %p + %d,\n  size %d\n",
-                 this, values_, i * framesize_, k * sa_.dims[0], paroffset_[count_], values, i * size, parwidth_[count_] * sizeof(PiPoValue));
+          //printf("merge::frames %p\n  values_ %p + %d + %d + %d,\n  values %p + %d,\n  size %d\n",
+          //       this, values_, i * framesize_, k * sa_.dims[0], paroffset_[count_], values, i * size, parwidth_[count_] * sizeof(PiPoValue));
 	  //TODO: zero pad if num rows here: size / parwidth_[count_] < numrows_
 	  memcpy(values_ + i * framesize_ + k * sa_.dims[0] + paroffset_[count_], values + i * size, parwidth_[count_] * sizeof(PiPoValue));
         }
@@ -197,13 +197,14 @@ private:
   }; // end class PiPoMerge
 
   PiPoMerge merge;
-  
+
 public:
+  // constructor
   PiPoParallel (PiPo::Parent *parent)
   : PiPo(parent), merge(parent)
   { }
 
-  //todo: varargs constructor PiPoParallel (PiPo::Parent *parent, PiPo *pipos ...)
+  //TODO: varargs constructor PiPoParallel (PiPo::Parent *parent, PiPo *pipos ...)
 
 private:
   // copy constructor
@@ -219,8 +220,9 @@ private:
 
     return *this;
   }
-  
+
 public:
+  // destructor
   ~PiPoParallel (void) { }
   
 
@@ -280,7 +282,7 @@ public:
   /** @name processing */
   /** @{ */
 
-  int frames (double time, double weight, float *values, unsigned int size, unsigned int num)
+  int frames (double time, double weight, PiPoValue *values, unsigned int size, unsigned int num)
   {
     merge.start(receivers.size());
     return PiPo::propagateFrames(time, weight, values, size, num);
