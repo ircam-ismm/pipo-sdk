@@ -153,7 +153,7 @@ private:
     }
 
     
-    int frames (double time, double weight, float *values, unsigned int size, unsigned int num)
+    int frames (double time, double weight, PiPoValue *values, unsigned int size, unsigned int num)
     { // collect data from parallel pipos
       if (count_ == 0)
       { // for parallel pipo determines time tag, num. rows and frames
@@ -161,7 +161,12 @@ private:
 	numrows_   = size / parwidth_[0];	// number of rows
 	numframes_ = num;
       }
-      assert(count_ < numpar_);
+      
+      if(count_ >= numpar_)
+      {
+        printf("%s: ARGH! count_ %d >= numpar_ %d\n", __PRETTY_FUNCTION__, count_, numpar_);
+        count_ = numpar_ - 1;
+      }
       assert(size / parwidth_[count_] == 1);
       
       for (int i = 0; i < numframes_; i++)   // for all frames
@@ -241,7 +246,7 @@ public:
   /** @name overloaded PiPo methods */
   /** @{ */
 
-  virtual void setParent (PiPo::Parent *parent)
+  void setParent (PiPo::Parent *parent)
   {
     this->parent = parent;
     
@@ -249,7 +254,7 @@ public:
       receivers[i]->setParent(parent);
   }
   
-  virtual void setReceiver (PiPo *receiver, bool add = false)
+  void setReceiver (PiPo *receiver, bool add = false)
   {
     merge.setReceiver(receiver, add);
   }
