@@ -82,6 +82,7 @@ class MaxPiPoHost : public PiPo::Parent
   
 #define PIPO_MAX_LABELS 64
   
+  //TODO: unify with pipohost.h
   class PiPoStreamAttributes
   {
   public:
@@ -89,7 +90,7 @@ class MaxPiPoHost : public PiPo::Parent
     double rate;
     double offset;
     unsigned int dims[2];
-    t_symbol *labels[PIPO_MAX_LABELS];
+    t_symbol *labels[PIPO_MAX_LABELS]; //TODO: abstract from t_symbol
     unsigned int numLabels;
     bool hasVarSize;
     double domain;
@@ -134,6 +135,7 @@ public:
   void getMaxAttr(const char *attrName, long *pac, t_atom **pat, PiPoChain *chain = NULL);
   void setMaxAttr(const char *attrName, long ac, t_atom *at, PiPoChain *chain = NULL, bool silently = false);
   
+  /**  call streamAttributes on first pipo in chain --> generic host */
   void propagateInputAttributes(void);
   void setOutputAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames);
 
@@ -141,6 +143,7 @@ public:
   void signalError(PiPo *pipo, std::string errorMsg);
   void signalWarning(PiPo *pipo, std::string errorMsg);
   
+  //TODO: to pipohost
   void setInputDims(int width, int size, bool propagate = true);
   void setInputLabels(long ac, t_atom *at, bool propagate = true);
   void setInputHasTimeTags(int hasTimeTags, bool propagate = true);
