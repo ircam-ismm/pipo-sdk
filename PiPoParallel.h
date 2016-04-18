@@ -61,7 +61,7 @@ private:
     PiPoMerge (const PiPoMerge &other)
     : PiPo(other.parent), count_(other.count_), numpar_(other.numpar_), sa_(other.sa_), framesize_(other.framesize_)
     {
-#if defined(__GNUC__) && defined(PIPO_DEBUG >= 2)
+#if defined(__GNUC__) &&  PIPO_DEBUG >= 2
       printf("\n•••••• %s: COPY CONSTRUCTOR\n", __PRETTY_FUNCTION__); //db
 #endif
       memcpy(paroffset_, other.paroffset_, numpar_ * sizeof(int));
@@ -73,7 +73,7 @@ private:
     // assignment operator
     PiPoMerge &operator= (const PiPoMerge &other)
     {
-#if defined(__GNUC__) && defined(PIPO_DEBUG >= 2)
+#if defined(__GNUC__) &&  PIPO_DEBUG >= 2
       printf("\n•••••• %s: ASSIGNMENT OPERATOR\n", __PRETTY_FUNCTION__); //db
 #endif
       count_     = other.count_;
