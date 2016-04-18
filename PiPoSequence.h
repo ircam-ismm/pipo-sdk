@@ -171,7 +171,7 @@ public:
   /** @name overloaded PiPo methods */
   /** @{ */
 
-  virtual void setParent (PiPo::Parent *parent)
+  void setParent (PiPo::Parent *parent)
   {
     this->parent = parent;
     
@@ -179,7 +179,7 @@ public:
       seq_[i]->setParent(parent);
   }
   
-  virtual void setReceiver (PiPo *receiver, bool add = false)
+  void setReceiver (PiPo *receiver, bool add = false)
   {
     PiPo *tail = getTail();
       
