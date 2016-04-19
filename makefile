@@ -1,4 +1,4 @@
 
-../doc/html/index.html: PiPo.h ../build/doxygen/pipo.doxygen
-	cd ../build/doxygen  &&  doxygen pipo.doxygen
+doc/html/index.html: include/PiPo.h include/PiPoParallel.h include/PiPoSequence.h doc/pipo.doxygen makefile
+	cd doc  &&  doxygen pipo.doxygen
 
