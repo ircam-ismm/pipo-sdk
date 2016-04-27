@@ -41,12 +41,15 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #define M_PI 3.14159265358979323846264338328 /**< pi */
 #endif
 
+//TODO: unify with maxpipohost.h
+#define PIPO_MAX_LABELS 1024
+
+#ifndef PIPO_SDK_VERSION
+#define PIPO_SDK_VERSION 0.2;
+#endif
 
 typedef float PiPoValue;
 
-
-//TODO: unify with maxpipohost.h
-#define PIPO_MAX_LABELS 1024
 
 struct PiPoStreamAttributes
 {
@@ -270,6 +273,7 @@ protected:
 
 private:
   std::vector<Attr *> attrs; /**< list of attributes */
+  static const float constexpr sdk_version = PIPO_SDK_VERSION;
   
 public:
   PiPo(Parent *parent, PiPo *receiver = NULL)
@@ -287,6 +291,10 @@ public:
   }
   
   virtual ~PiPo(void) { };
+
+  /** get version of SDK as a major.minor float (so that host can check if a pipo was compiled with correct version of PiPo.h)
+   */
+  static float getVersion() { return PiPo::sdk_version; };
   
   /**
    * @brief Sets PiPo parent.

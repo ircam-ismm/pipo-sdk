@@ -34,6 +34,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include <string>
 #include <vector>
 
+const float PIPO_MIN_SDK_VERSION_REQUIRED = 0.2;
 
 /** abstract base class for a container of a pipo module for PiPoModuleFactory
  */
@@ -137,7 +138,10 @@ public:
       this->pipo = moduleFactory->create(index, this->pipoName, this->instanceName, this->module);
     
     if(this->pipo != NULL)
-    {
+    { // check if version of created pipo is compatible with host
+      if (this->pipo->getVersion() < PIPO_MIN_SDK_VERSION_REQUIRED)
+        return false;
+
       this->pipo->setParent(parent);
       return true;
     }
