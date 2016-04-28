@@ -128,7 +128,7 @@ class PiPo
 
 PiPo is a simple plugin API for modules processing streams of multi-dimensional data such as audio, audio descriptors, or gesture and motion data. The current version of the interface is limited to unary operations. Each PiPo module receives and produces a single stream. The elements of a stream are time-tagged or regularly sampled scalars, vectors, or two-dimensional matrices. 
 
-More information http://imtr.ircam.fr/imtr/PiPo
+More information http://ismm.ircam.fr/PiPo
 
 \section sec_api  PiPo API Overview
 
