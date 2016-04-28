@@ -68,20 +68,26 @@ In summary, a PiPo stream is described by the following attributes:
 
 #### PiPo Module Parameters
 
-The current version of PiPo does not specify any particular API for declaring and accessing module parameters such as the mode and parameters of a particular filter. For now, classes extending the PiPo base class simply implement additional methods for setting and getting module parameters.
+The PiPo SDK comes with a template class [PiPo::Attr](http://recherche.ircam.fr/equipes/temps-reel/mubu/pipo/sdk-doc-v0.1/class_pi_po_1_1_attr.html) permits to define scalar, enum, or variable or fixed size vector attributes of a pipo module that are exposed to the host environment.
 
 Since certain parameter changes may also change the attributes of a module’s output stream, PiPo provides a mechanism for signaling these changes through the following modules to the processing environment (i.e. the PiPo host).
 
-Nevertheless, for MAX/MSP PiPo currently includes a few macros to extend a PiPo class to a Max/MSP external that can declare the modules parameters as Max/MSP attributes and implement the required setters and getters.
+For MAX/MSP PiPo includes a binding to extend a PiPo class to a Max/MSP external that then declares the module's parameters as Max/MSP attributes and implement the required setters and getters.
 
-A futur extension of PiPo may integrate an API formalizing the declaration, inspection, and handling of module parameters that allows for completely sharing this part of the code between different platforms.
+## PiPo API
 
-### PiPo API
+### Module API
 
-The PiPo API consists of an abstract class of a few virtual methods for propagating stream attributes (see above), frames, and additional processing control through a series of modules:
+The PiPo Module API consists of the abstract class [PiPo](http://recherche.ircam.fr/equipes/temps-reel/mubu/pipo/sdk-doc-v0.1/class_pi_po.html) in [PiPo.h](include/PiPo.h) of a few virtual methods for propagating stream attributes (see above), frames, and additional processing control through a series of modules:
 
 - Propagating stream attributes
 - Propagating frames
 - Reset stream processing
 - Finalize stream processing
 - Propagate the change of a parameter requiring redefining the output stream attributes
+
+See the doc extraced from [PiPo.h](include/PiPo.h) at: http://recherche.ircam.fr/equipes/temps-reel/mubu/pipo/sdk-doc-v0.1/
+
+### Host API
+
+Classes supporting implementation of PiPo hosts are found in directory [host](host).
