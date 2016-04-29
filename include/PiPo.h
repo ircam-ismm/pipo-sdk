@@ -45,7 +45,8 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #define PIPO_MAX_LABELS 1024
 
 #ifndef PIPO_SDK_VERSION
-#define PIPO_SDK_VERSION 0.2;
+#define PIPO_SDK_VERSION 0.2
+
 #endif
 
 typedef float PiPoValue;
@@ -273,8 +274,9 @@ protected:
 
 private:
   std::vector<Attr *> attrs; /**< list of attributes */
+#ifndef WIN32
   static const float constexpr sdk_version = PIPO_SDK_VERSION;
-  
+#endif
 public:
   PiPo(Parent *parent, PiPo *receiver = NULL)
   : receivers(), attrs()
@@ -294,8 +296,15 @@ public:
 
   /** get version of SDK as a major.minor float (so that host can check if a pipo was compiled with correct version of PiPo.h)
    */
-  static float getVersion() { return PiPo::sdk_version; };
-  
+
+  static float getVersion() 
+  {
+#ifdef WIN32
+	  return PIPO_SDK_VERSION;
+#else
+	  return PiPo::sdk_version;
+#endif
+  };
   /**
    * @brief Sets PiPo parent.
    *

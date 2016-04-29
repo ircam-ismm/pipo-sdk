@@ -164,8 +164,12 @@ private:
       
       if(count_ >= numpar_)
       {
+#ifdef WIN32
+		printf("%s: ARGH! count_ %d >= numpar_ %d\n", __FUNCSIG__, count_, numpar_);
+#else
         printf("%s: ARGH! count_ %d >= numpar_ %d\n", __PRETTY_FUNCTION__, count_, numpar_);
-        count_ = numpar_ - 1;
+#endif
+		count_ = numpar_ - 1;
       }
       assert(size / parwidth_[count_] == 1);
       
