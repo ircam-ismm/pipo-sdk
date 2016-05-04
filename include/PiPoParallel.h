@@ -89,6 +89,12 @@ private:
       return *this;
     }
 
+    // destructor
+    ~PiPoMerge ()
+    {
+      free(values_);
+    }
+
   public:
     void start (size_t numpar)
     { // on start, record number of calls to expect from parallel pipos, each received stream call increments count_, when numpar_ is reached, merging has to be performed
@@ -171,7 +177,7 @@ private:
 #endif
 		count_ = numpar_ - 1;
       }
-      assert(size / parwidth_[count_] == 1);
+      //assert(size / parwidth_[count_] == 1);
       
       for (int i = 0; i < numframes_; i++)   // for all frames
 	for (int k = 0; k < numrows_; k++)   // for all rows to be kept
