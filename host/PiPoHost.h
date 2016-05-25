@@ -140,8 +140,13 @@ public:
     if(this->pipo != NULL)
     { // check if version of created pipo is compatible with host
       if (this->pipo->getVersion() < PIPO_MIN_SDK_VERSION_REQUIRED)
+      {
+	printf("PiPo Host ERROR: created PiPo %s version %f is smaller than minimum required version %f\n",
+	       this->pipoName.c_str(), this->pipo->getVersion(), PIPO_MIN_SDK_VERSION_REQUIRED);
+        //TODO: clean up: destroy unusable pipo
         return false;
-
+      }
+      
       this->pipo->setParent(parent);
       return true;
     }
