@@ -49,13 +49,18 @@ private:
     // working variables for merging of frames
     PiPoValue		*values_;
     int			 time_;
-    int			 numrows_;
-    int			 numframes_;
+    unsigned int	 numrows_;
+    unsigned int	 numframes_;
 
   public:
     PiPoMerge (PiPo::Parent *parent)
     : PiPo(parent), count_(0), numpar_(0), sa_(1024), framesize_(0), values_(NULL)
-    { }
+    {
+#ifdef DEBUG	// clean memory to make possible memory errors more consistent at least
+      memset(paroffset_, 0, sizeof(*paroffset_) * MAX_PAR);
+      memset(parwidth_,  0, sizeof(*parwidth_) * MAX_PAR);
+#endif
+    }
 
     // copy constructor
     PiPoMerge (const PiPoMerge &other)
@@ -64,6 +69,12 @@ private:
 #if defined(__GNUC__) &&  PIPO_DEBUG >= 2
       printf("\n•••••• %s: COPY CONSTRUCTOR\n", __PRETTY_FUNCTION__); //db
 #endif
+
+#ifdef DEBUG	// clean memory to make possible memory errors more consistent at least
+      memset(paroffset_, 0, sizeof(*paroffset_) * MAX_PAR);
+      memset(parwidth_,  0, sizeof(*parwidth_) * MAX_PAR);
+#endif
+
       memcpy(paroffset_, other.paroffset_, numpar_ * sizeof(int));
       memcpy(parwidth_, other.parwidth_, numpar_ * sizeof(int));
       values_ = (PiPoValue *) malloc(sa_.maxFrames * framesize_ * sizeof(PiPoValue));
@@ -76,6 +87,12 @@ private:
 #if defined(__GNUC__) &&  PIPO_DEBUG >= 2
       printf("\n•••••• %s: ASSIGNMENT OPERATOR\n", __PRETTY_FUNCTION__); //db
 #endif
+
+#ifdef DEBUG	// clean memory to make possible memory errors more consistent at least
+      memset(paroffset_, 0, sizeof(*paroffset_) * MAX_PAR);
+      memset(parwidth_,  0, sizeof(*parwidth_) * MAX_PAR);
+#endif
+
       count_     = other.count_;
       numpar_    = other.numpar_;
       sa_        = other.sa_;
@@ -100,6 +117,11 @@ private:
     { // on start, record number of calls to expect from parallel pipos, each received stream call increments count_, when numpar_ is reached, merging has to be performed
       numpar_ = (int) numpar;
       count_  = 0;
+    }
+
+// TODO: signal end of parallel pipos, accomodates for possibly missing calls down the chain
+    void finish ()
+    {
     }
 
   public:
@@ -161,32 +183,44 @@ private:
     
     int frames (double time, double weight, PiPoValue *values, unsigned int size, unsigned int num)
     { // collect data from parallel pipos
-      if (count_ == 0)
-      { // for parallel pipo determines time tag, num. rows and frames
-	time_      = time;
-	numrows_   = size / parwidth_[0];	// number of rows
-	numframes_ = num;
-      }
-      
-      if(count_ >= numpar_)
+      if (count_ >= numpar_) // bug is still there
       {
 #ifdef WIN32
-		printf("%s: ARGH! count_ %d >= numpar_ %d\n", __FUNCSIG__, count_, numpar_);
+        printf("%s: ARGH! count_ %d >= numpar_ %d\n", __FUNCSIG__, count_, numpar_);
 #else
         printf("%s: ARGH! count_ %d >= numpar_ %d\n", __PRETTY_FUNCTION__, count_, numpar_);
 #endif
-		count_ = numpar_ - 1;
+        count_ = numpar_ - 1;
       }
       //assert(size / parwidth_[count_] == 1);
+
+      int width = parwidth_[count_];
+      unsigned int height = size / width;	// number of input rows
       
-      for (int i = 0; i < numframes_; i++)   // for all frames
-	for (int k = 0; k < numrows_; k++)   // for all rows to be kept
+      if (count_ == 0)
+      { // first parallel pipo determines time tag, num. rows and frames
+	time_      = time;
+	numrows_   = height;
+	numframes_ = num;
+
+	// clear memory just in case one pipo doesn't output data (FIXME: handle this correctly)
+	memset(values_, 0, num * framesize_ * sizeof(PiPoValue));
+      }
+
+      // copy input data to be kept from parallel pipo to merged values_
+      if (num > numframes_)	num = numframes_;
+      if (height > numrows_)	height = numrows_;
+      
+      for (unsigned int i = 0; i < num; i++)   // for all frames present
+	for (unsigned int k = 0; k < height; k++)   // for all rows to be kept
         {
           //printf("merge::frames %p\n  values_ %p + %d + %d + %d,\n  values %p + %d,\n  size %d\n",
           //       this, values_, i * framesize_, k * sa_.dims[0], paroffset_[count_], values, i * size, parwidth_[count_] * sizeof(PiPoValue));
 	  //TODO: zero pad if num rows here: size / parwidth_[count_] < numrows_
-	  memcpy(values_ + i * framesize_ + k * sa_.dims[0] + paroffset_[count_], values + i * size, parwidth_[count_] * sizeof(PiPoValue));
+	  memcpy(values_ + i * framesize_ + k * sa_.dims[0] + paroffset_[count_],
+		 values  + i * size + k * width,  width * sizeof(PiPoValue));
         }
+      
       if (++count_ == numpar_) // last parallel pipo: pass on to receiver(s)
 	return propagateFrames(time_, 0 /*weight to disappear*/, values_, numrows_ * sa_.dims[0], numframes_);
       else
