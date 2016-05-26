@@ -274,9 +274,6 @@ protected:
 
 private:
   std::vector<Attr *> attrs; /**< list of attributes */
-#ifndef WIN32
-  static const float constexpr sdk_version = PIPO_SDK_VERSION;
-#endif
 public:
   PiPo(Parent *parent, PiPo *receiver = NULL)
   : receivers(), attrs()
@@ -299,11 +296,7 @@ public:
 
   static float getVersion() 
   {
-#ifdef WIN32
-	  return PIPO_SDK_VERSION;
-#else
-	  return PiPo::sdk_version;
-#endif
+    return PIPO_SDK_VERSION;
   };
   /**
    * @brief Sets PiPo parent.
