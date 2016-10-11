@@ -274,6 +274,10 @@ protected:
 
 private:
   std::vector<Attr *> attrs; /**< list of attributes */
+#ifndef WIN32
+  static const float constexpr sdk_version = PIPO_SDK_VERSION; /**< pipo SDK version (for inspection) */
+#endif
+  
 public:
   PiPo(Parent *parent, PiPo *receiver = NULL)
   : receivers(), attrs()
@@ -291,12 +295,21 @@ public:
   
   virtual ~PiPo(void) { };
 
-  /** get version of SDK as a major.minor float (so that host can check if a pipo was compiled with correct version of PiPo.h)
+  /** get version of SDK as a major.minor float (so that host can
+   * check if a pipo was compiled with correct version of PiPo.h)
    */
-
-  static float getVersion() 
+#ifdef PIPO_TESTING
+  virtual float getVersion() // only for unit tests: allow to override version to simulate an out-of-date pipo module
+#else
+  static  float getVersion()
+#endif
   {
-    return PIPO_SDK_VERSION;
+    printf("pipo::getVersion -> %f\n", PiPo::sdk_version);
+#ifdef WIN32
+	  return PIPO_SDK_VERSION;
+#else
+	  return PiPo::sdk_version;
+#endif
   };
   /**
    * @brief Sets PiPo parent.
