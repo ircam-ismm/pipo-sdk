@@ -275,7 +275,7 @@ protected:
 private:
   std::vector<Attr *> attrs; /**< list of attributes */
 #ifndef WIN32
-  static const float sdk_version = PIPO_SDK_VERSION; /**< pipo SDK version (for inspection) */
+  constexpr static const float sdk_version = PIPO_SDK_VERSION; /**< pipo SDK version (for inspection) */
 #endif
   
 public:
