@@ -18,11 +18,11 @@
 		21A040431B3C03B4008E9540 /* maxpipo-example-shared.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = "maxpipo-example-shared.xcconfig"; sourceTree = "<group>"; };
 		21A040471B3C0413008E9540 /* PiPoGain.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PiPoGain.h; sourceTree = SOURCE_ROOT; tabWidth = 8; };
 		21A040481B3C041A008E9540 /* pipo.gain.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = pipo.gain.cpp; sourceTree = SOURCE_ROOT; };
-		21EDE8861CCFDE3600F26EDC /* PiPo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PiPo.h; sourceTree = "<group>"; };
-		21EDE8871CCFDE3600F26EDC /* PiPoParallel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PiPoParallel.h; sourceTree = "<group>"; };
-		21EDE8881CCFDE3600F26EDC /* PiPoSequence.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PiPoSequence.h; sourceTree = "<group>"; };
-		21EDE8891CCFDE3600F26EDC /* RingBuffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RingBuffer.h; sourceTree = "<group>"; };
-		21EDE88B1CCFDE4700F26EDC /* MaxPiPo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MaxPiPo.h; sourceTree = "<group>"; };
+		31C6621E1DBE5F8800A543A8 /* PiPo.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = PiPo.h; path = ../../include/PiPo.h; sourceTree = "<group>"; };
+		31C6621F1DBE5F8800A543A8 /* PiPoParallel.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = PiPoParallel.h; path = ../../include/PiPoParallel.h; sourceTree = "<group>"; };
+		31C662201DBE5F8800A543A8 /* PiPoSequence.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = PiPoSequence.h; path = ../../include/PiPoSequence.h; sourceTree = "<group>"; };
+		31C662211DBE5F8900A543A8 /* RingBuffer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = RingBuffer.h; path = ../../include/RingBuffer.h; sourceTree = "<group>"; };
+		31C662221DBE5F9500A543A8 /* MaxPiPo.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = MaxPiPo.h; path = ../../maxpipo/MaxPiPo.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -70,10 +70,10 @@
 		21EDE8851CCFDE3600F26EDC /* include */ = {
 			isa = PBXGroup;
 			children = (
-				21EDE8861CCFDE3600F26EDC /* PiPo.h */,
-				21EDE8871CCFDE3600F26EDC /* PiPoParallel.h */,
-				21EDE8881CCFDE3600F26EDC /* PiPoSequence.h */,
-				21EDE8891CCFDE3600F26EDC /* RingBuffer.h */,
+				31C6621E1DBE5F8800A543A8 /* PiPo.h */,
+				31C6621F1DBE5F8800A543A8 /* PiPoParallel.h */,
+				31C662201DBE5F8800A543A8 /* PiPoSequence.h */,
+				31C662211DBE5F8900A543A8 /* RingBuffer.h */,
 			);
 			name = include;
 			path = ../include;
@@ -82,7 +82,7 @@
 		21EDE88A1CCFDE4700F26EDC /* maxpipo */ = {
 			isa = PBXGroup;
 			children = (
-				21EDE88B1CCFDE4700F26EDC /* MaxPiPo.h */,
+				31C662221DBE5F9500A543A8 /* MaxPiPo.h */,
 			);
 			name = maxpipo;
 			path = ../maxpipo;

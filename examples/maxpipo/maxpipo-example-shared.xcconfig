@@ -4,7 +4,7 @@
     
 
 // where is your Max SDK?
-MAXAPI_DIR = ../../max6.1sdk
+MAXAPI_DIR = ../../../max6.1sdk
 
 // force built mxo to be placed in example project dir
 CONFIGURATION_BUILD_DIR = $(PROJECT_DIR)
