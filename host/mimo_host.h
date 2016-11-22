@@ -32,7 +32,14 @@ class mimo_host : public PiPoChain
 	
     int iterate (int itercount, PiPoValue *data, numframes)
     {
-	return getHead()->train(itercount, data, numframes);
+	int status = 0;
+
+	for (int buf = 0; buf < numbuffers; buf++)
+	    for (int track = 0; track < numtracks; track++)
+		if ((status = getHead()->train(itercount, buf, track, numframes, data, timetags, varsize)) != 0)
+		    return status;
+		    
+	return status;
     }
 }
 
