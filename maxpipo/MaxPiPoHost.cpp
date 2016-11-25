@@ -91,7 +91,10 @@ getMaxAttributeList(PiPo *pipo, unsigned int attrId, long *pac, t_atom **pat)
  *  Max PiPo Host Class
  *
  */
-MaxPiPoHost::MaxPiPoHost(t_object *ext) : moduleFactory(ext), chain(this, &this->moduleFactory), inputStreamAttrs(), outputStreamAttrs()
+MaxPiPoHost::MaxPiPoHost(t_object *ext, const char *prefix)
+: moduleFactory(ext, prefix),
+  chain(this, &this->moduleFactory),
+  inputStreamAttrs(), outputStreamAttrs()
 {
   this->ext = ext;
   systhread_mutex_new(&this->mutex, SYSTHREAD_MUTEX_RECURSIVE);
