@@ -9,6 +9,7 @@
  */
 class mimo_model_data
 {
+public:
     /** output as json string */
     virtual std::string to_json () = 0;
 
@@ -48,12 +49,13 @@ public:
       @param streamattr	array[numtracks] attributes of input data for each input track
       @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
   */
-  virtual int setup (int numbuffers, int numtracks, PiPoStreamAttributes *streamattr[]) = 0;
+  virtual int setup (int numbuffers, int numtracks, PiPoStreamAttributes *streamattr[]) {};
     
-  /** the train method is called for each buffer and each input track, receiving the training data set, and performs one iteration of training.
+  /** the train method performs one iteration of training.
+      It is called for each buffer and each input track, receiving the training data sets.
       The first iteration receives the original data, further iterations the training output data of previous iterations, 
       that each iteration can output by calling propagateTrain().
-      For multi-modal training (with more than one input track), only the call for the last track calls propagateTrain().
+      For multi-modal training (with more than one input track), only the call for the last track may call propagateTrain().
 
       @param itercount		number of current iteration (starts at zero)
       @param bufferindex	index of current input buffer (up to numbuffers - 1)
@@ -68,7 +70,8 @@ public:
 
       virtual int train (int itercount, int bufferindex, int numframes[], PiPoValue *data[], double *timetags[], int *varsize[]) = 0;
   */
-  virtual int train (int itercount, int bufferindex, int trackindex, int numframes, PiPoValue *data, double *timetags, int *varsize) = 0;
+  virtual int train (int itercount, int bufferindex, int trackindex, int numframes, PiPoValue *data, double *timetags, int *varsize) {};
+  virtual int train (int itercount, int bufferindex, int trackindex, int numframes, PiPoValue *data, double starttime, int *varsize) {};
   
   /** return recommended max number of iterations, or 0 for no limit. 
       This can be overridden by the user via an attribute 
@@ -79,7 +82,22 @@ public:
   virtual double getmetric() { return 0; /* whatever */ };
 
   /** return trained model parameters */
-  virtual mimo_model_data *getmodel () = 0;
+  virtual mimo_model_data *getmodel () {};
+
+  int propagateSetup (int numbuffers, int numtracks, PiPoStreamAttributes *streamattr[])
+  {
+    int ret = 0;
+    
+    for(unsigned int i = 0; i < this->receivers.size(); i++)
+    {
+      ret = static_cast<mimo *>(this->receivers[i])->setup(numbuffers, 1, &streamattr[0]);
+      
+      if(ret < 0)
+        break;
+    }
+    
+    return ret;
+  }
 };
 
 
