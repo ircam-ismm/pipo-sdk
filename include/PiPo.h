@@ -70,19 +70,34 @@ struct PiPoStreamAttributes
     init(numlabels);
   }
 
+  PiPoStreamAttributes (bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
+  {
+    this->hasTimeTags	= hasTimeTags;
+    this->rate		= rate;
+    this->offset	= offset;
+    this->dims[0]	= width;
+    this->dims[1]	= height;
+    this->labels	= labels;
+    this->numLabels	= width;
+    this->labels_alloc	= -1;	// signals external memory
+    this->hasVarSize	= hasVarSize;
+    this->domain	= domain;
+    this->maxFrames	= maxFrames;
+  }
+
   void init (int _numlab = -1)
   {
-    this->hasTimeTags = false;
-    this->rate = 1000.0;
-    this->offset = 0.0;
-    this->dims[0] = 1;	// width
-    this->dims[1] = 1;	// height
-    this->labels = NULL;
-    this->numLabels = 0;
-    this->labels_alloc = _numlab;
-    this->hasVarSize = false;
-    this->domain = 0.0;
-    this->maxFrames = 1;
+    this->hasTimeTags	= false;
+    this->rate		= 1000.0;
+    this->offset	= 0.0;
+    this->dims[0]	= 1;	// width
+    this->dims[1]	= 1;	// height
+    this->labels	= NULL;
+    this->numLabels	= 0;
+    this->labels_alloc	= _numlab;
+    this->hasVarSize	= false;
+    this->domain	= 0.0;
+    this->maxFrames	= 1;
 
     if (_numlab >= 0)
       labels = new const char *[_numlab];
@@ -90,7 +105,7 @@ struct PiPoStreamAttributes
 
   ~PiPoStreamAttributes()
   {
-    if (labels  &&  labels_alloc > 0)
+    if (labels  &&  labels_alloc >= 0)
       delete [] labels;
   };
 
@@ -119,6 +134,24 @@ struct PiPoStreamAttributes
     this->numLabels += _width;
   }
 
+  char *to_string (char *str, int len)
+  {
+    snprintf(str, len,
+	     "hasTimeTags\t= %%d\n"
+	     "rate\t\t= %f\n"
+	     "offset\t= %f\n"
+	     "width\t= %d\n"
+	     "height\t= %d\n"
+	     "labels\t= %s...\n"
+	     "labels_alloc\t= %d\n"
+	     "hasVarSize\t= %d\n"
+	     "domain\t= %f\n"
+	     "maxFrames\t= %d\n",
+	     (int) hasTimeTags, rate, offset, dims[0], dims[1],
+	     labels && numLabels > 0  ?  labels[0]  :  "n/a",
+	     (int) hasVarSize, domain, maxFrames);
+    return str;
+  }
 };
 
 
@@ -376,12 +409,12 @@ public:
    *
    * This method is called in the frames() method of a PiPo module.
    *
-   * @param time time-tag for a single frame or a block of frames
-   * @param weight weight for this frame (currently unused)
-   * @param values interleaved frames values, row by row (interleaving channels or columns), frame by frame
-   * @param size total size of each frame (number of values = width * height)
-   * @param num number of frames
-   * @return used as return value of the calling method
+   * @param time	time-tag for a single frame or a block of frames
+   * @param weight	weight for this frame (currently unused)
+   * @param values	interleaved frames values, row by row (interleaving channels or columns), frame by frame
+   * @param size	total size of each frame (number of values = width * height)
+   * @param num		number of frames
+   * @return		used as return value of the calling method
    */
   int propagateFrames(double time, double weight, PiPoValue *values, unsigned int size, unsigned int num)
   {
