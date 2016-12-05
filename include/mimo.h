@@ -3,18 +3,20 @@
 #define _MIMO_H_INCLUDED_
 
 #include "PiPo.h"
-
+#include <memory>
 
 /* interface for a class that holds the mimo module-specific model parameters resulting from training
  */
 class mimo_model_data
 {
 public:
-    /** output as json string */
-    virtual std::string to_json () = 0;
+  /** output as json string */
+  virtual char *to_json (char *out, int size) throw() = 0;
 
-    /** get model from json string */
-    virtual int from_json (std::string json) = 0;
+  /** get model from json string */
+  virtual int from_json (std::string json) = 0;
+
+  // virtual const int foo() = 0;
 };
 
 /*
@@ -25,16 +27,16 @@ public:
   for training.
  */
 
-class mimo : public PiPo
+class Mimo : public PiPo
 {
 public:
   // constructor
-  mimo (PiPo::Parent *parent, mimo *receiver = NULL)
+  Mimo (PiPo::Parent *parent, Mimo *receiver = NULL)
   : PiPo(parent, receiver)
   {
   };
   
-  mimo (const mimo &other)
+  Mimo (const Mimo &other)
   : PiPo(other)
   {
   }
@@ -49,7 +51,7 @@ public:
       @param streamattr	array[numtracks] attributes of input data for each input track
       @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
   */
-  virtual int setup (int numbuffers, int numtracks, PiPoStreamAttributes *streamattr[]) {};
+  virtual int setup (int numbuffers, int numtracks, PiPoStreamAttributes *streamattr[]) = 0;
     
   /** the train method performs one iteration of training.
       It is called for each buffer and each input track, receiving the training data sets.
@@ -70,8 +72,12 @@ public:
 
       virtual int train (int itercount, int bufferindex, int numframes[], PiPoValue *data[], double *timetags[], int *varsize[]) = 0;
   */
-  virtual int train (int itercount, int bufferindex, int trackindex, int numframes, PiPoValue *data, double *timetags, int *varsize) {};
-  virtual int train (int itercount, int bufferindex, int trackindex, int numframes, PiPoValue *data, double starttime, int *varsize) {};
+  virtual int train (int itercount, int bufferindex, int trackindex, int numframes, PiPoValue *data, double *timetags, int *varsize)
+  {
+    return train (itercount, bufferindex, trackindex, numframes, data, timetags && numframes > 0  ?  timetags[0]  :  0.0, varsize);
+  }
+  
+  virtual int train (int itercount, int bufferindex, int trackindex, int numframes, PiPoValue *data, double starttime, int *varsize) = 0;
   
   /** return recommended max number of iterations, or 0 for no limit. 
       This can be overridden by the user via an attribute 
@@ -82,7 +88,7 @@ public:
   virtual double getmetric() { return 0; /* whatever */ };
 
   /** return trained model parameters */
-  virtual mimo_model_data *getmodel () {};
+  virtual mimo_model_data *getmodel () = 0;
 
   int propagateSetup (int numbuffers, int numtracks, PiPoStreamAttributes *streamattr[])
   {
@@ -90,7 +96,22 @@ public:
     
     for(unsigned int i = 0; i < this->receivers.size(); i++)
     {
-      ret = static_cast<mimo *>(this->receivers[i])->setup(numbuffers, 1, &streamattr[0]);
+      ret = dynamic_cast<Mimo *>(this->receivers[i])->setup(numbuffers, 1, &streamattr[0]);
+      
+      if(ret < 0)
+        break;
+    }
+    
+    return ret;
+  }
+
+  int propagateTrain(int itercount, int bufferindex, int trackindex, int numframes, PiPoValue *data, double *timetags, int *varsize)
+  {
+    int ret = 0;
+    
+    for (unsigned int i = 0; i < this->receivers.size(); i++)
+    {
+      ret = dynamic_cast<Mimo *>(this->receivers[i])->train(itercount, bufferindex, trackindex, numframes, data, timetags, varsize);
       
       if(ret < 0)
         break;
