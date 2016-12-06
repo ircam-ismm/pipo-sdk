@@ -18,7 +18,7 @@
 
 typedef struct max_mimo_st {
   t_object head;
-  mimo *mimo;
+  Mimo *mimo;
 } MaxMimoT;
 
 #define MIMO_MAX_CLASS(mimo_name, mimo_class) \
