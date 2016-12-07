@@ -119,7 +119,7 @@ struct PiPoStreamAttributes
       _width = 0;
     }
     
-    if (this->numLabels + _width > this->labels_alloc)
+    if ((int)(this->numLabels + _width) > this->labels_alloc)
     {
       printf("Warning: PiPoStreamAttributes::concat_labels: label overflow prevented (trying to concat %d to %d used of %d)\n", _width, this->numLabels, this->labels_alloc);
 	_width = this->labels_alloc - this->numLabels;
@@ -128,7 +128,7 @@ struct PiPoStreamAttributes
     if (_labels != NULL)
       memcpy(this->labels + this->numLabels, _labels, _width * sizeof(const char *));
     else
-      for (int i = 0; i < _width; i++)
+      for (unsigned int i = 0; i < _width; i++)
 	this->labels[i + this->numLabels] = "unnamed";	//TODO: invent numbered column, beware of memory!
     
     this->numLabels += _width;
@@ -137,7 +137,7 @@ struct PiPoStreamAttributes
   char *to_string (char *str, int len)
   {
     snprintf(str, len,
-	     "hasTimeTags\t= %%d\n"
+	     "hasTimeTags\t= %d\n"
 	     "rate\t\t= %f\n"
 	     "offset\t= %f\n"
 	     "width\t= %d\n"
@@ -148,8 +148,8 @@ struct PiPoStreamAttributes
 	     "domain\t= %f\n"
 	     "maxFrames\t= %d\n",
 	     (int) hasTimeTags, rate, offset, dims[0], dims[1],
-	     labels && numLabels > 0  ?  labels[0]  :  "n/a",
-	     (int) hasVarSize, domain, maxFrames);
+	     ((labels && numLabels > 0)  ?  labels[0]  :  "n/a"),
+	     labels_alloc, (int) hasVarSize, domain, maxFrames);
     return str;
   }
 };
