@@ -119,7 +119,7 @@ struct PiPoStreamAttributes
       _width = 0;
     }
     
-    if ((int)(this->numLabels + _width) > this->labels_alloc)
+    if (this->numLabels + _width > this->labels_alloc)
     {
       printf("Warning: PiPoStreamAttributes::concat_labels: label overflow prevented (trying to concat %d to %d used of %d)\n", _width, this->numLabels, this->labels_alloc);
 	_width = this->labels_alloc - this->numLabels;
@@ -134,22 +134,22 @@ struct PiPoStreamAttributes
     this->numLabels += _width;
   }
 
-  char *to_string (char *str, int len)
+  char *to_string (char *str, int len) const
   {
     snprintf(str, len,
 	     "hasTimeTags\t= %d\n"
-	     "rate\t\t= %f\n"
-	     "offset\t= %f\n"
-	     "width\t= %d\n"
-	     "height\t= %d\n"
-	     "labels\t= %s...\n"
+	     "rate\t\t\t= %f\n"
+	     "offset\t\t= %f\n"
+	     "width\t\t= %d\n"
+	     "height\t\t= %d\n"
+	     "labels\t\t= %s...\n"
 	     "labels_alloc\t= %d\n"
 	     "hasVarSize\t= %d\n"
-	     "domain\t= %f\n"
+	     "domain\t\t= %f\n"
 	     "maxFrames\t= %d\n",
 	     (int) hasTimeTags, rate, offset, dims[0], dims[1],
-	     ((labels && numLabels > 0)  ?  labels[0]  :  "n/a"),
-	     labels_alloc, (int) hasVarSize, domain, maxFrames);
+	     labels && numLabels > 0  ?  labels[0]  :  "n/a", labels_alloc,
+	     (int) hasVarSize, domain, maxFrames);
     return str;
   }
 };
@@ -546,11 +546,12 @@ public:
    * @param time time-tag for a single frame or a block of frames
    * @param weight weight associated to frame or block
    * @param values interleaved frames values, row by row (interleaving channels or columns), frame by frame
+   TODO: should be const!!!
    * @param size total size of each of all frames (size = number of elements = width * height = number of channels for audio)
    * @param num number of frames (number of samples for audio input)
    * @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
    */
-  virtual int frames(double time, double weight, PiPoValue *values, unsigned int size, unsigned int num) = 0;
+  virtual int frames (double time, double weight, PiPoValue *values, unsigned int size, unsigned int num) = 0;
   
   /**
    * @brief Signals segment start or end
