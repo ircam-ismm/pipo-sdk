@@ -10,11 +10,21 @@
 class mimo_model_data
 {
 public:
-  /** output as json string */
+  /** output as json string into out
+      Throws an exception if string would exceed size.
+
+      @param out	string buffer of length \p{size}
+      @param size	size of string buffer
+      @return		returns the out pointer for convenience
+
+      N.B.: the mimo module might be loaded from a dynamic library, so
+      we can't return a complex object such as std::string that
+      internatlly uses heap allocations, since the dylib's heap is a
+      separate one from the main app */
   virtual char *to_json (char *out, int size) throw() = 0;
 
   /** get model from json string */
-  virtual int from_json (std::string json) = 0;
+  virtual int from_json (const char *json_string) = 0;
 
   // virtual const int foo() = 0;
 };
@@ -48,10 +58,11 @@ public:
 
       @param numbuffers	number of buffers with training data
       @param numtracks	number of tracks per input buffer with training data
+      @param bufsizes	array[numbuffers] of numbers of frames for each input buffer
       @param streamattr	array[numtracks] attributes of input data for each input track
       @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
   */
-  virtual int setup (int numbuffers, int numtracks, PiPoStreamAttributes *streamattr[]) = 0;
+  virtual int setup (int numbuffers, int numtracks, int bufsizes[], const PiPoStreamAttributes *streamattr[]) = 0;
     
   /** the train method performs one iteration of training.
       It is called for each buffer and each input track, receiving the training data sets.
@@ -72,12 +83,13 @@ public:
 
       virtual int train (int itercount, int bufferindex, int numframes[], PiPoValue *data[], double *timetags[], int *varsize[]) = 0;
   */
-  virtual int train (int itercount, int bufferindex, int trackindex, int numframes, PiPoValue *data, double *timetags, int *varsize)
-  {
-    return train (itercount, bufferindex, trackindex, numframes, data, timetags && numframes > 0  ?  timetags[0]  :  0.0, varsize);
-  }
+  virtual int train (int itercount, int bufferindex, int trackindex, int numframes, const PiPoValue *data, const double *timetags, const int *varsize) = 0;
   
-  virtual int train (int itercount, int bufferindex, int trackindex, int numframes, PiPoValue *data, double starttime, int *varsize) = 0;
+  virtual int train (int itercount, int bufferindex, int trackindex, int numframes, const PiPoValue *data, const double starttime, const int *varsize)
+  {
+    return train (itercount, bufferindex, trackindex, numframes, data, (const double *) NULL, varsize);
+  }
+
   
   /** return recommended max number of iterations, or 0 for no limit. 
       This can be overridden by the user via an attribute 
@@ -90,13 +102,13 @@ public:
   /** return trained model parameters */
   virtual mimo_model_data *getmodel () = 0;
 
-  int propagateSetup (int numbuffers, int numtracks, PiPoStreamAttributes *streamattr[])
+  int propagateSetup (int numbuffers, int numtracks, int bufsize[], const PiPoStreamAttributes *streamattr[])
   {
     int ret = 0;
     
     for(unsigned int i = 0; i < this->receivers.size(); i++)
     {
-      ret = dynamic_cast<Mimo *>(this->receivers[i])->setup(numbuffers, 1, &streamattr[0]);
+      ret = dynamic_cast<Mimo *>(this->receivers[i])->setup(numbuffers, 1, bufsize, &streamattr[0]);
       
       if(ret < 0)
         break;
@@ -105,7 +117,7 @@ public:
     return ret;
   }
 
-  int propagateTrain(int itercount, int bufferindex, int trackindex, int numframes, PiPoValue *data, double *timetags, int *varsize)
+  int propagateTrain(int itercount, int bufferindex, int trackindex, int numframes, const PiPoValue *data, const double *timetags, const int *varsize)
   {
     int ret = 0;
     
