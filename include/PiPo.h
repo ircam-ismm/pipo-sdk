@@ -337,11 +337,12 @@ public:
   static  float getVersion()
 #endif
   {
-    printf("pipo::getVersion -> %f\n", PiPo::sdk_version);
 #ifdef WIN32
-	  return PIPO_SDK_VERSION;
+	printf("pipo::getVersion -> %f\n", PIPO_SDK_VERSION);
+	return PIPO_SDK_VERSION;
 #else
-	  return PiPo::sdk_version;
+	printf("pipo::getVersion -> %f\n", PiPo::sdk_version);
+    return PiPo::sdk_version;
 #endif
   };
   /**
