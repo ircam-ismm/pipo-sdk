@@ -307,7 +307,7 @@ protected:
 
 private:
   std::vector<Attr *> attrs; /**< list of attributes */
-#ifndef WIN32
+#if __cplusplus >= 201103L  &&  !defined(WIN32)
   constexpr static const float sdk_version = PIPO_SDK_VERSION; /**< pipo SDK version (for inspection) */
 #endif
   
@@ -337,12 +337,12 @@ public:
   static  float getVersion()
 #endif
   {
-#ifdef WIN32
-	printf("pipo::getVersion -> %f\n", PIPO_SDK_VERSION);
-	return PIPO_SDK_VERSION;
-#else
-	printf("pipo::getVersion -> %f\n", PiPo::sdk_version);
+#if __cplusplus >= 201103L  &&  !defined(WIN32)
+    printf("pipo::getVersion -> %f\n", PiPo::sdk_version);
     return PiPo::sdk_version;
+#else
+    printf("pipo::getVersion -> %f\n", PIPO_SDK_VERSION);
+    return PIPO_SDK_VERSION;
 #endif
   };
   /**
