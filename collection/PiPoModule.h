@@ -2,7 +2,7 @@
  *
  * @file PiPoModule.h
  *
- * @brief extension of PiPo for JuceOscPiPoApp
+ * @brief extension of PiPo for use in host apps
  * 
  * Copyright (C) 2012-2016 by IRCAM – Centre Pompidou, Paris, France.
  * All rights reserved.
