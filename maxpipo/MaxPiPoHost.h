@@ -37,8 +37,6 @@ class MaxPiPoHost : public PiPo::Parent
 {
   class MaxPiPoModuleFactory : public PiPoModuleFactory
   { 
-    t_object *ext;
-    
     class MaxPiPoModule : public PiPoModule
     {
       MaxPiPoT *maxPiPo;
@@ -57,16 +55,17 @@ class MaxPiPoHost : public PiPo::Parent
     };
 
   public:
-    MaxPiPoModuleFactory(t_object *ext)
-    { 
+    MaxPiPoModuleFactory(t_object *ext, const char *prefix = "pipo")
+    {
       this->ext = ext;
+      this->prefix = std::string(prefix);
     };
     
     ~MaxPiPoModuleFactory(void) { }
     
     PiPo *create(unsigned int index, const std::string &pipoName, const std::string &instanceName, PiPoModule *&module)
     {
-      std::string pipoClassNameStr = "pipo." + pipoName;
+      std::string pipoClassNameStr = this->prefix + "." + pipoName;
       MaxPiPoT *maxPiPo = (MaxPiPoT *)object_new_typed(CLASS_NOBOX, gensym(pipoClassNameStr.c_str()), 0, NULL);
       
       if(maxPiPo != NULL)
@@ -75,9 +74,13 @@ class MaxPiPoHost : public PiPo::Parent
         return maxPiPo->pipo;
       }
       
-      object_error((t_object *)this->ext, "cannot find external module pipo.%s", pipoName.c_str());
+      object_error((t_object *)this->ext, "cannot find external module %s", pipoClassNameStr.c_str());
       return NULL;
     }
+
+  private:
+    t_object *ext;
+    std::string prefix;
   };
   
 #define PIPO_MAX_LABELS 64
@@ -109,7 +112,8 @@ class MaxPiPoHost : public PiPo::Parent
       this->maxFrames = 1;
     };
   };
-  
+
+protected:
   t_object *ext;
   MaxPiPoModuleFactory moduleFactory;
   PiPoChain chain;
@@ -118,7 +122,7 @@ class MaxPiPoHost : public PiPo::Parent
   t_systhread_mutex mutex;
 
 public:
-  MaxPiPoHost(t_object *ext);
+  MaxPiPoHost(t_object *ext, const char *prefix = "pipo");
   ~MaxPiPoHost(void);
 
   void lock(void);
