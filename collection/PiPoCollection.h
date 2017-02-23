@@ -10,15 +10,16 @@
  * All rights reserved.
  * 
  */
+
 #ifndef _PIPO_COLLECTION_
 #define _PIPO_COLLECTION_
 
 #include <map>
 #include "PiPo.h"
 
-//========================================//
-//============== PiPo factory ============//
-//========================================//
+//============================================================================//
+//============================== PiPo factory ================================//
+//============================================================================//
 
 //------------------------------ PiPoCreatorBase
 class PiPoCreatorBase
@@ -42,12 +43,16 @@ public:
     }
 };
 
-//------------------------------ PiPoCollection : interface with the outside world
-//----------------------------------------------- uses the factory internally
+//============================================================================//
+//============================== PiPo collection =============================//
+//============================================================================//
+
+// interface with the outside world (uses the factory internally)
 
 /**
- * @brief PiPoCollection class : contains all base PiPo classes (with ability to hide
- * them from the outside world) and methods to register new PiPos and get PiPo chains
+ * @brief PiPoCollection class : contains all base PiPo classes
+ * (with ability to hide them from the outside world)
+ * and methods to register new PiPos and get PiPo chains
  *
  * \code
  *
