@@ -66,7 +66,7 @@ class MaxPiPoHost : public PiPo::Parent
     PiPo *create(unsigned int index, const std::string &pipoName, const std::string &instanceName, PiPoModule *&module)
     {
       std::string pipoClassNameStr = this->prefix + "." + pipoName;
-      MaxPiPoT *maxPiPo = (MaxPiPoT *)object_new_typed(CLASS_NOBOX, gensym(pipoClassNameStr.c_str()), 0, NULL);
+      MaxPiPoT *maxPiPo = (MaxPiPoT *)object_new_typed(CLASS_BOX, gensym(pipoClassNameStr.c_str()), 0, NULL);
       
       if(maxPiPo != NULL)
       {
@@ -83,7 +83,7 @@ class MaxPiPoHost : public PiPo::Parent
     std::string prefix;
   };
   
-#define PIPO_MAX_LABELS 64
+//#define PIPO_MAX_LABELS 64
   
   //TODO: unify with pipohost.h
   class PiPoStreamAttributes

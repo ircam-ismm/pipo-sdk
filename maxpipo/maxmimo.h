@@ -30,7 +30,7 @@ typedef struct max_mimo_st {
   static void free_max_object(MaxMimoT *self) { delete self->mimo; } \
   int main(void) { \
     t_class *c = class_new("mimo." mimo_name, (method) new_max_object, (method) free_max_object, (long) sizeof(MaxMimoT), 0L, A_GIMME, 0); \
-    class_register(CLASS_NOBOX, c); \
+    class_register(CLASS_BOX, c); \
     max_ ## mimo_class ## _class = c; \
     return 0; }
 

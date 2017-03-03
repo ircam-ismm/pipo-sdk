@@ -28,9 +28,19 @@ typedef struct MaxPiPoSt {
     if(self != NULL) { self->pipo = new pipoClass(NULL); } \
     return self; } \
   static void freeMaxObject(MaxPiPoT *self) { delete self->pipo; } \
+  static void helpnameMethod(MaxPiPoT *self, char *str){ sprintf(str, "pipo.%s", pipoName);} \
+  static void bangMethod(MaxPiPoT *self, t_symbol *s, short ac, t_atom *at){object_error((t_object *) self, "pipo works only inside a pipo host!!!");} \
+  static void listMethod(MaxPiPoT *self, t_symbol *s, short ac, t_atom *at){object_error((t_object *) self, "pipo works only inside a pipo host!!!");}\
+  static void intMethod(MaxPiPoT *self, long i){object_error((t_object *) self, "pipo works only inside a pipo host!!!");} \
+  static void floatMethod(MaxPiPoT *self, double f){object_error((t_object *) self, "pipo works only inside a pipo host!!!");}\
   int main(void) { \
     t_class *c = class_new("pipo." pipoName, (method)newMaxObject, (method)freeMaxObject, (long)sizeof(MaxPiPoT), 0L, A_GIMME, 0); \
-    class_register(CLASS_NOBOX, c); \
+    class_addmethod(c, (method)helpnameMethod, "helpname", A_CANT, 0);\
+    class_addmethod(c, (method)bangMethod, "bang", 0);\
+    class_addmethod(c, (method)listMethod, "list", A_GIMME, 0);\
+    class_addmethod(c, (method)intMethod, "int", A_LONG, 0);\
+    class_addmethod(c, (method)floatMethod, "float", A_FLOAT, 0);\
+    class_register(CLASS_BOX, c); \
     max ## pipoClass ## Class = c; \
     return 0; }
 
