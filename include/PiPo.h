@@ -1053,7 +1053,7 @@ private:
   unsigned int value;
   
 public:
-  PiPoScalarAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream, unsigned int initVal = NULL) :
+ PiPoScalarAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream, unsigned int initVal = 0) :
   EnumAttr(pipo, name, descr, &typeid(enum PiPo::Enumerate), changesStream)
   {
     this->value = initVal;
@@ -1292,7 +1292,7 @@ template <>
 class PiPoVarSizeAttr<enum PiPo::Enumerate> : public PiPo::EnumAttr, public std::vector<unsigned int>
 {
 public:
-  PiPoVarSizeAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream, unsigned int size = 0, unsigned int initVal = NULL) :
+  PiPoVarSizeAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream, unsigned int size = 0, unsigned int initVal = 0) :
   EnumAttr(pipo, name, descr, &typeid(enum PiPo::Enumerate), changesStream),
   std::vector<unsigned int>(size, 0)
   {
