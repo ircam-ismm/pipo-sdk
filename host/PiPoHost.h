@@ -30,7 +30,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #ifndef _PIPO_HOST_
 #define _PIPO_HOST_
 
-#include "../include/PiPoSequence.h"
+#include "PiPoSequence.h"
 #include <string>
 #include <vector>
 

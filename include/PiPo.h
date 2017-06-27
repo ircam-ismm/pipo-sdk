@@ -1157,7 +1157,7 @@ template <unsigned int SIZE>
 class PiPoArrayAttr<enum PiPo::Enumerate, SIZE> : public PiPo::EnumAttr, public PiPo::AttrArray<unsigned int, SIZE>
 {
 public:
-  PiPoArrayAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream, unsigned int initVal = NULL) :
+  PiPoArrayAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream, unsigned int initVal = 0) :
   EnumAttr(pipo, name, descr, &typeid(enum PiPo::Enumerate), changesStream),
   PiPo::AttrArray<unsigned int, SIZE>()
   {
