@@ -64,13 +64,14 @@ struct PiPoStreamAttributes
   double domain;
   unsigned int maxFrames;
   int labels_alloc; //< allocated size of labels, -1 for no (outside) allocation
+  int ringTail;
   
   PiPoStreamAttributes (int numlabels = -1)
   {
     init(numlabels);
   }
 
-  PiPoStreamAttributes (bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
+  PiPoStreamAttributes (bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames, int ringTail = 0)
   {
     this->hasTimeTags	= hasTimeTags;
     this->rate		= rate;
@@ -83,6 +84,7 @@ struct PiPoStreamAttributes
     this->hasVarSize	= hasVarSize;
     this->domain	= domain;
     this->maxFrames	= maxFrames;
+    this->ringTail      = ringTail;
   }
 
   void init (int _numlab = -1)
@@ -98,6 +100,7 @@ struct PiPoStreamAttributes
     this->hasVarSize	= false;
     this->domain	= 0.0;
     this->maxFrames	= 1;
+    this->ringTail      = 0;
 
     if (_numlab >= 0)
       labels = new const char *[_numlab];
@@ -146,10 +149,11 @@ struct PiPoStreamAttributes
 	     "labels_alloc\t= %d\n"
 	     "hasVarSize\t= %d\n"
 	     "domain\t\t= %f\n"
-	     "maxFrames\t= %d\n",
+	     "maxFrames\t= %d\n"
+             "ringTail\t= %d\n",
 	     (int) hasTimeTags, rate, offset, dims[0], dims[1],
 	     labels && numLabels > 0  ?  labels[0]  :  "n/a", labels_alloc,
-	     (int) hasVarSize, domain, maxFrames);
+	     (int) hasVarSize, domain, maxFrames, ringTail);
     return str;
   }
 };
