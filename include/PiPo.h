@@ -323,7 +323,7 @@ public:
 
     if(receiver != NULL)
       this->receivers.push_back(receiver);
-  };
+  }
 
   PiPo(const PiPo &other)
   {
@@ -348,13 +348,13 @@ public:
     printf("pipo::getVersion -> %f\n", PIPO_SDK_VERSION);
     return PIPO_SDK_VERSION;
 #endif
-  };
+  }
   /**
    * @brief Sets PiPo parent.
    *
    * @param parent PiPo parent
    */
-  virtual void setParent(Parent *parent) { this->parent = parent; };
+  virtual void setParent(Parent *parent) { this->parent = parent; }
 
   /**
    * @brief Propagates a module's output stream attributes to its receiver.
@@ -385,7 +385,7 @@ public:
     }
 
     return ret;
-  };
+  }
 
   /**
    * @brief Propagates the reset control event.
@@ -463,13 +463,13 @@ public:
    *
    * @return receiver PiPo module receiving this module's output stream
    */
-  PiPo *getReceiver(unsigned int index = 0)
+  virtual PiPo *getReceiver(unsigned int index = 0)
   {
     if(index < this->receivers.size())
       return this->receivers[index];
 
     return NULL;
-  };
+  }
 
   /**
    * @brief Sets a PiPo modules receiver (call only by the PiPo host)
