@@ -1,42 +1,14 @@
-/**
+#ifndef _PIPO_OP_
+#define _PIPO_OP_
 
-@file PiPoHost.h
-@author Norbert.Schnell@ircam.fr
-
-@brief Plugin Interface for Processing Objects host class
-
-A PiPo host is built around the class PiPoChain that represents a sequence of PiPo modules piping data into each other.
-See details of the steps there.
-
-@copyright
-
-Copyright (c) 2012–2016 by IRCAM – Centre Pompidou, Paris, France.
-All rights reserved.
-
-@par License (BSD 3-clause)
-
-Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
-
-- Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
-
-- Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
-
-- Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-*/
-
-#ifndef _PIPO_HOST_
-#define _PIPO_HOST_
-
-#include "PiPoSequence.h"
+#include "PiPo.h"
 #include <string>
 #include <vector>
 
 const float PIPO_MIN_SDK_VERSION_REQUIRED = 0.2;
 
-/** abstract base class for a container of a pipo module for PiPoModuleFactory
+/**
+ * abstract base class for a container of a pipo module for PiPoModuleFactory
  */
 class PiPoModule
 {
@@ -54,7 +26,8 @@ public:
   virtual PiPo *create(unsigned int index, const std::string &pipoName, const std::string &instanceName, PiPoModule *&module) = 0;
 };
 
-/** element of pipo chain, points to pipo pipo
+/**
+ * element of pipo chain, points to pipo pipo
  */
 class PiPoOp
 {
@@ -70,7 +43,7 @@ public:
     this->index = index;
     this->pipo = NULL;
     this->module = NULL;
-  };
+  }
 
 //  PiPoOp(const PiPoOp &other) : pipoName(), instanceName()
 //  {
@@ -87,7 +60,7 @@ public:
   {
     if(this->pipo != NULL)
       this->pipo->setParent(parent);
-  };
+  }
 
   void clear(void)
   {
@@ -100,9 +73,10 @@ public:
       delete pipo;
 
     this->pipo = NULL;
-  };
+  }
 
-  /** parse one pipo name, and optional instance name in '(' ')'
+  /**
+   * parse one pipo name, and optional instance name in '(' ')'
    */
   void parse(std::string str, size_t &pos)
   {
@@ -127,7 +101,7 @@ public:
       pos = end + 1;
     else
       pos = std::string::npos;
-  };
+  }
 
   bool instantiate(PiPo::Parent *parent, PiPoModuleFactory *moduleFactory)
   {
@@ -141,8 +115,8 @@ public:
     { // check if version of created pipo is compatible with host
       if (this->pipo->getVersion() < PIPO_MIN_SDK_VERSION_REQUIRED)
       {
-	printf("PiPo Host ERROR: created PiPo %s version %f is smaller than minimum required version %f\n",
-	       this->pipoName.c_str(), this->pipo->getVersion(), PIPO_MIN_SDK_VERSION_REQUIRED);
+        printf("PiPo Host ERROR: created PiPo %s version %f is smaller than minimum required version %f\n",
+        this->pipoName.c_str(), this->pipo->getVersion(), PIPO_MIN_SDK_VERSION_REQUIRED);
         //TODO: clean up: destroy unusable pipo
         return false;
       }
@@ -152,7 +126,7 @@ public:
     }
 
     return false;
-  };
+  }
 
   void set(unsigned int index, PiPo::Parent *parent, PiPoModuleFactory *moduleFactory, const PiPoOp &other)
   {
@@ -164,7 +138,7 @@ public:
 
     if(this->pipo != NULL)
       this->pipo->cloneAttrs(other.pipo);
-  };
+  }
 
   PiPo *getPiPo() { return this->pipo; };
   const char *getInstanceName() { return this->instanceName.c_str(); };
@@ -178,4 +152,4 @@ public:
  * End:
  */
 
-#endif
+#endif /* _PIPO_OP_ */
