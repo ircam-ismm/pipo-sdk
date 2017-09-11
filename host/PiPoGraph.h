@@ -5,6 +5,8 @@
  * @brief PiPo dataflow graph class that parses a graph description string and instantiates
  * the corresponding graph of PiPos (made of PiPoSequence and PiPoParallel instances)
  *
+ * A PiPoGraph is built around the classes
+ *
  * @ingroup pipoapi
  *
  * @copyright
