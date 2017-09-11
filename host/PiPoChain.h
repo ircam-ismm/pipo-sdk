@@ -41,8 +41,9 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #ifndef _PIPO_CHAIN_
 #define _PIPO_CHAIN_
 
-#include "PiPoSequence.h"
 #include "PiPoOp.h"
+#include "PiPoSequence.h"
+
 #include <string>
 #include <vector>
 

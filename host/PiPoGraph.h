@@ -45,9 +45,9 @@
 #include <vector>
 #include <iostream>
 
+#include "PiPoOp.h"
 #include "PiPoSequence.h"
 #include "PiPoParallel.h"
-#include "PiPoHost.h"
 
 
 // NB : this is a work in progress
