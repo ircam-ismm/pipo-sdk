@@ -664,7 +664,7 @@ public:
    *
    */
 public:
-  enum Type { Undefined, Bool, Enum, Int, Float, Double, String };
+  enum Type { Undefined, Bool, Enum, Int, Float, Double, String, Function };
 
   // dummy enum used for specialization of templates
   enum Enumerate { };

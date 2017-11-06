@@ -5,7 +5,8 @@
  * @brief PiPo dataflow graph class that parses a graph description string and instantiates
  * the corresponding graph of PiPos (made of PiPoSequence and PiPoParallel instances)
  *
- * A PiPoGraph is built around the classes
+ * A PiPoGraph is built around the classes PiPoOp, PiPoSequence and PiPoParallel, which are
+ * instantiated and connected according to the results of a parsed graph description string.
  *
  * @ingroup pipoapi
  *
@@ -467,8 +468,6 @@ private:
     if (firstPass) {
       //wire(false);
     }
-
-
 
     /*
     for (unsigned int i = 0; i < this->subGraphs.size(); ++i)

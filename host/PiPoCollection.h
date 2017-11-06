@@ -3,12 +3,12 @@
  * @file PiPoCollection.h
  * @author Norbert.Schnell@ircam.fr
  * @author joseph.larralde@ircam.fr
- * 
+ *
  * @brief PiPo Module Collection
- * 
+ *
  * Copyright (C) 2013 - 2015 by IMTR IRCAM – Centre Pompidou, Paris, France.
  * All rights reserved.
- * 
+ *
  */
 
 #ifndef _PIPO_COLLECTION_
@@ -78,4 +78,4 @@ public:
 private:
 };
 
-#endif
+#endif /* _PIPO_COLLECTION_ */
