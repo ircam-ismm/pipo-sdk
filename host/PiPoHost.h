@@ -5,8 +5,7 @@
  * @brief Plugin Interface for Processing Objects host classes.
  *
  * A PiPo host is built around the class PiPoChain that represents a sequence of
- * PiPo modules piping data into each other.
- * See details of the steps there.
+ * PiPo modules piping data into each other. See details of the steps there.
  *
  * @copyright
  * Copyright (c) 2012–2016 by IRCAM – Centre Pompidou, Paris, France.

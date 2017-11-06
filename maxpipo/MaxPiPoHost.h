@@ -1,12 +1,11 @@
 /**
- *
  * @file MaxPiPoHost.h
  * @author Norbert.Schnell@ircam.fr
- * 
+ *
  * @brief Max PiPo utilities
  * Copyright (C) 2012-2014 by IRCAM – Centre Pompidou, Paris, France.
  * All rights reserved.
- * 
+ *
  */
 #ifndef _MAX_PIPO_HOST_
 #define _MAX_PIPO_HOST_
@@ -25,30 +24,30 @@
 
 #define atom_isnum(a) ((a)->a_type == A_LONG || (a)->a_type == A_FLOAT)
 #define atom_issym(a) ((a)->a_type == A_SYM)
-#define atom_isobj(p) ((p)->a_type == A_OBJ) 
+#define atom_isobj(p) ((p)->a_type == A_OBJ)
 #define mysneg(s) ((s)->s_name)
 
-#define atom_islong(p) ((p)->a_type == A_LONG) 
-#define atom_isfloat(p) ((p)->a_type == A_FLOAT) 
+#define atom_islong(p) ((p)->a_type == A_LONG)
+#define atom_isfloat(p) ((p)->a_type == A_FLOAT)
 #define atom_getnum(p) (((p)->a_type == A_FLOAT)? (double)((p)->a_w.w_float): (double)((p)->a_w.w_long))
 #define atom_setvoid(p) ((p)->a_type = A_NOTHING)
 
 class MaxPiPoHost : public PiPo::Parent
 {
   class MaxPiPoModuleFactory : public PiPoModuleFactory
-  { 
+  {
     class MaxPiPoModule : public PiPoModule
     {
       MaxPiPoT *maxPiPo;
-      
+
     public:
-      MaxPiPoModule(MaxPiPoT *maxPiPo) 
-      { 
+      MaxPiPoModule(MaxPiPoT *maxPiPo)
+      {
         this->maxPiPo = maxPiPo;
       };
-      
-      MaxPiPoModule(void) 
-      { 
+
+      MaxPiPoModule(void)
+      {
         if(this->maxPiPo != NULL)
           object_free((t_object *)this->maxPiPo);
       };
@@ -60,20 +59,20 @@ class MaxPiPoHost : public PiPo::Parent
       this->ext = ext;
       this->prefix = std::string(prefix);
     };
-    
+
     ~MaxPiPoModuleFactory(void) { }
-    
+
     PiPo *create(unsigned int index, const std::string &pipoName, const std::string &instanceName, PiPoModule *&module)
     {
       std::string pipoClassNameStr = this->prefix + "." + pipoName;
       MaxPiPoT *maxPiPo = (MaxPiPoT *)object_new_typed(CLASS_BOX, gensym(pipoClassNameStr.c_str()), 0, NULL);
-      
+
       if(maxPiPo != NULL)
       {
         module = new MaxPiPoModule(maxPiPo);
         return maxPiPo->pipo;
       }
-      
+
       object_error((t_object *)this->ext, "cannot find external module %s", pipoClassNameStr.c_str());
       return NULL;
     }
@@ -82,9 +81,9 @@ class MaxPiPoHost : public PiPo::Parent
     t_object *ext;
     std::string prefix;
   };
-  
+
 //#define PIPO_MAX_LABELS 64
-  
+
   //TODO: unify with pipohost.h
   class PiPoStreamAttributes
   {
@@ -98,7 +97,7 @@ class MaxPiPoHost : public PiPo::Parent
     bool hasVarSize;
     double domain;
     unsigned int maxFrames;
-    
+
     PiPoStreamAttributes(void) : labels()
     {
       this->hasTimeTags = false;
@@ -131,14 +130,14 @@ public:
 
   PiPoChain *getChain(void) { return &this->chain; };
   PiPo *setChainDescription(const char *str, PiPo *receiver);
-  
+
   typedef t_max_err (*MaxAttrGetterT)(t_object *ext, void *attr, long *pac, t_atom **pat);
   typedef t_max_err (*MaxAttrSetterT)(t_object *ext, void *attr, long ac, t_atom *at);
   void copyPiPoAttributes(MaxAttrGetterT getAttrMeth, MaxAttrSetterT setAttrMeth);
 
   void getMaxAttr(const char *attrName, long *pac, t_atom **pat, PiPoChain *chain = NULL);
   void setMaxAttr(const char *attrName, long ac, t_atom *at, PiPoChain *chain = NULL, bool silently = false);
-  
+
   /**  call streamAttributes on first pipo in chain --> generic host */
   void propagateInputAttributes(void);
   void setOutputAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames);
@@ -146,7 +145,7 @@ public:
   void streamAttributesChanged(PiPo *pipo, PiPo::Attr *attr);
   void signalError(PiPo *pipo, std::string errorMsg);
   void signalWarning(PiPo *pipo, std::string errorMsg);
-  
+
   //TODO: to pipohost
   void setInputDims(int width, int size, bool propagate = true);
   void setInputLabels(long ac, t_atom *at, bool propagate = true);
@@ -154,7 +153,7 @@ public:
   void setInputFrameRate(double sampleRate, bool propagate = true);
   void setInputFrameOffset(double sampleOffset, bool propagate = true);
   void setInputMaxFrames(int maxFrames, bool propagate = true);
-  
+
   void getInputDims(int &width, int &size);
   void getInputLabels(int &num, t_atom *array);
   bool getInputHasTimeTags(void);

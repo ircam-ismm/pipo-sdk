@@ -5,7 +5,12 @@
  * @brief PiPo dataflow graph class that parses a graph description string and instantiates
  * the corresponding graph of PiPos (made of PiPoSequence and PiPoParallel instances)
  *
- * A PiPoGraph is built around the classes
+ * PiPoGraph is built around the classes PiPoSequence, PiPoParallel and PiPoOp.
+ *
+ * A PiPoGraph is itself also a PiPo module, i.e. data processing works the same
+ * as for a simple operator :
+ * - the PiPoGraph is prepared for processing by calling streamAttributes() on it.
+ * - data is piped into the PiPoGraph with the frames() method.
  *
  * @ingroup pipoapi
  *
@@ -55,9 +60,10 @@
 // NB : this is a work in progress
 // TODO: define error return codes for parsing
 
-class PiPoGraph : public PiPo {
-
-  typedef enum PiPoGraphTypeE {
+class PiPoGraph : public PiPo
+{
+  typedef enum PiPoGraphTypeE
+  {
     undefined = -1, leaf = 0, sequence, parallel
   } PiPoGraphType;
 
@@ -90,14 +96,10 @@ public:
   ~PiPoGraph()
   {
     for (unsigned int i = 0; i < attrNames.size(); i++)
-    {
       delete attrNames[i];
-    }
 
     for (unsigned int i = 0; i < attrDescrs.size(); i++)
-    {
       delete attrDescrs[i];
-    }
 
     this->clear();
   }
@@ -105,9 +107,7 @@ public:
   void clear()
   {
     for (unsigned int i = 0; i < this->subGraphs.size(); ++i)
-    {
       this->subGraphs[i].clear();
-    }
 
     if (this->graphType != leaf && this->pipo != nullptr)
     {
@@ -158,21 +158,13 @@ private:
 
     int cnt = 0;
     for (unsigned int i = 0; i < graphStr.length(); ++i)
-    {
       if (graphStr[i] == '<')
-      {
         cnt++;
-      }
       else if (graphStr[i] == '>')
-      {
         cnt--;
-      }
-    }
 
     if (cnt != 0)
-    {
       return false;
-    }
 
     // TODO : add more syntax checking here ?
 
@@ -194,8 +186,8 @@ private:
     if (trims > 0)
     {
       int subLevelsCnt = 0;
+
       for (unsigned int i = 0; i < graphStr.length(); ++i)
-      {
         if (graphStr[i] == '<')
         {
           subLevelsCnt++;
@@ -209,7 +201,6 @@ private:
           this->graphType = parallel;
           break;
         }
-      }
     }
 
     // if we don't have any sequential / parallelism symbol, then we are a leaf
@@ -217,9 +208,7 @@ private:
         graphStr.find(">") >= std::string::npos &&
         graphStr.find(",") >= std::string::npos &&
         graphStr.find(":") >= std::string::npos)
-    {
       this->graphType = leaf;
-    }
 
     // std::cout << representation << " " << this->graphType << std::endl;
 
@@ -263,7 +252,6 @@ private:
         // leaf string representation cannot be empty
         return (graphStr.length() > 0);
       }
-
       break;
 
       //================= sequence of graphs, parse according to ':', <' and '>'
@@ -274,9 +262,7 @@ private:
         std::vector< std::pair<unsigned int, unsigned int> > subStrings;
 
         if (graphStr[0] == '<')
-        {
           subLevelsCnt++;
-        }
 
         for (unsigned int i = 1; i < graphStr.length(); ++i)
         {
@@ -310,10 +296,8 @@ private:
             }
           }
           else if (graphStr[i] == ',' && subLevelsCnt == 0)
-          {
             // cannot have first-level commas in a sequence
             return false;
-          }
         }
 
         if (graphStr[graphStr.length() - 1] != '>')
@@ -329,14 +313,11 @@ private:
           PiPoGraph &g = this->subGraphs[subGraphs.size() - 1];
 
           if (!g.parse(graphStr.substr(subStrings[i].first, subStrings[i].second)))
-          {
             return false;
-          }
         }
 
         return (subLevelsCnt == 0);
       }
-
       break;
 
       //============================= parallel graphs, parse according to commas
@@ -348,20 +329,12 @@ private:
         commaIndices.push_back(0);
 
         for (unsigned int i = 0; i < graphStr.length(); ++i)
-        {
           if (graphStr[i] == '<')
-          {
             subLevelsCnt++;
-          }
           else if (graphStr[i] == '>')
-          {
             subLevelsCnt--;
-          }
           else if (graphStr[i] == ',' && i < graphStr.length() - 1 && subLevelsCnt == 0)
-          {
             commaIndices.push_back(i + 1);
-          }
-        }
 
         commaIndices.push_back(graphStr.length() + 1);
 
@@ -373,19 +346,15 @@ private:
           unsigned int blockLength = commaIndices[i + 1] - blockStart - 1;
 
           if (!g.parse(graphStr.substr(blockStart, blockLength)))
-          {
             return false;
-          }
         }
 
         return (subLevelsCnt == 0);
       }
-
       break;
 
       //===================================================== this never happens
       default:
-
       break;
     }
 
@@ -399,35 +368,23 @@ private:
     if (this->graphType == leaf)
     {
       if (!this->op.instantiate(this->parent, this->moduleFactory))
-      {
         return false;
-      }
       else
-      {
         this->pipo = this->op.getPiPo();
-      }
     }
     else if (this->graphType == sequence)
     {
       for (unsigned int i = 0; i < this->subGraphs.size(); ++i)
-      {
         if (!this->subGraphs[i].instantiate())
-        {
           return false;
-        }
-      }
 
       this->pipo = new PiPoSequence(this->parent);
     }
     else if (this->graphType == parallel)
     {
       for (unsigned int i = 0; i < this->subGraphs.size(); ++i)
-      {
         if (!this->subGraphs[i].instantiate())
-        {
           return false;
-        }
-      }
 
       this->pipo = new PiPoParallel(this->parent);
     }
@@ -441,30 +398,20 @@ private:
   {
 
     for (unsigned int i = 0; i < this->subGraphs.size(); ++i)
-    {
       this->subGraphs[i].wire(firstPass);
-    }
 
     if (this->graphType == sequence)
-    {
-      if (firstPass) {
+      if (firstPass)
         for (unsigned int i = 0; i < this->subGraphs.size(); ++i)
-        {
           static_cast<PiPoSequence *>(this->pipo)->add(this->subGraphs[i].getPiPo());
-        }
-      }
-    }
-    else if (this->graphType == parallel)
-    {
-      if (firstPass) {
-        for (unsigned int i = 0; i < this->subGraphs.size(); ++i)
-        {
-          static_cast<PiPoParallel *>(this->pipo)->add(this->subGraphs[i].getPiPo());
-        }
-      }
-    }
 
-    if (firstPass) {
+    else if (this->graphType == parallel)
+      if (firstPass)
+        for (unsigned int i = 0; i < this->subGraphs.size(); ++i)
+          static_cast<PiPoParallel *>(this->pipo)->add(this->subGraphs[i].getPiPo());
+
+    if (firstPass)
+    {
       //wire(false);
     }
 
@@ -575,9 +522,7 @@ public:
     this->pipo->setParent(parent);
 
     for (unsigned int i = 0; i < this->subGraphs.size(); ++i)
-    {
       this->subGraphs[i].setParent(parent);
-    }
   }
 
   PiPo *getReceiver(unsigned int index = 0) override
