@@ -10,7 +10,7 @@
 #ifndef _MAX_PIPO_HOST_
 #define _MAX_PIPO_HOST_
 
-#include "PiPoHost.h"
+#include "PiPoChain.h"
 #include "MaxPiPo.h"
 #include "ext.h"
 #include "ext_obex.h"

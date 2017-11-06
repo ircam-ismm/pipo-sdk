@@ -415,8 +415,6 @@ private:
       //wire(false);
     }
 
-
-
     /*
     for (unsigned int i = 0; i < this->subGraphs.size(); ++i)
     {

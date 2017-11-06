@@ -103,4 +103,4 @@ public:
 private:
 };
 
-#endif
+#endif /* _PIPO_COLLECTION_ */
