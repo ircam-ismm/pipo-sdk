@@ -43,6 +43,7 @@
 
 #define PIPO_OUT_RING_SIZE 2
 
+#include <iostream>
 #include "PiPoCollection.h"
 
 // forward declaration (scroll down for the code)
@@ -122,7 +123,7 @@ public:
     return this->out->getLastFrame();
   }
 
-  virtual int setInputStreamAttributes(PipoStreamAttributes &sa, bool propagate = true)
+  virtual int setInputStreamAttributes(PiPoStreamAttributes &sa, bool propagate = true)
   {
     this->inputStreamAttrs = sa;
 
@@ -134,7 +135,7 @@ public:
     return 0;
   }
 
-  virtual PipoStreamAttributes getOutputStreamAttributes()
+  virtual PiPoStreamAttributes getOutputStreamAttributes()
   {
     return this->outputStreamAttrs;
   }
