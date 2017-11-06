@@ -120,7 +120,7 @@ public:
     return this->out->getLastFrame();
   }
 
-  virtual int setInputStreamAttributes(PipoStreamAttributes &sa, bool propagate = true)
+  virtual int setInputStreamAttributes(PiPoStreamAttributes &sa, bool propagate = true)
   {
     this->inputStreamAttrs = sa;
 
@@ -132,7 +132,7 @@ public:
     return 0;
   }
 
-  virtual PipoStreamAttributes getOutputStreamAttributes()
+  virtual PiPoStreamAttributes getOutputStreamAttributes()
   {
     return this->outputStreamAttrs;
   }
@@ -341,93 +341,5 @@ private:
 
   }
 };
-
-//================================= PiPoOut ==================================//
-
-class PiPoOut : public PiPo {
-private:
-  PiPoHost *host;
-  std::atomic<int> writeIndex, readIndex;
-  std::vector<std::vector<PiPoValue>> ringBuffer;
-
-public:
-  PiPoOut(PiPoHost *host) :
-  PiPo((PiPo::Parent *)host)
-  {
-    this->host = host;
-    writeIndex = 0;
-    readIndex = 0;
-    ringBuffer.resize(PIPO_OUT_RING_SIZE);
-  }
-
-  ~PiPoOut() {}
-
-  int streamAttributes(bool hasTimeTags,
-                       double rate, double offset,
-                       unsigned int width, unsigned int height,
-                       const char **labels, bool hasVarSize,
-                       double domain, unsigned int maxFrames)
-  {
-    this->host->setOutputStreamAttributes(hasTimeTags, rate, offset, width, height,
-                                          labels, hasVarSize, domain, maxFrames);
-
-    for (int i = 0; i < PIPO_OUT_RING_SIZE; ++i)
-    {
-      ringBuffer[i].resize(width * height);
-    }
-
-    return 0;
-  }
-
-  int frames(double time, double weight, PiPoValue *values,
-             unsigned int size, unsigned int num) {
-
-    if (num > 0)
-    {
-      for (int i = 0; i < num; ++i)
-      {
-        //*
-        for (int j = 0; j < size; ++j)
-        {
-          ringBuffer[writeIndex][j] = values[i * size + j];
-        }
-
-        // atomic swap ?
-        writeIndex = 1 - writeIndex;
-        readIndex = 1 - writeIndex;
-
-        // this->host->onNewFrame(time, ringBuffer[readIndex]);
-
-        if (writeIndex + 1 == PIPO_OUT_RING_SIZE) {
-          writeIndex = 0;
-        } else {
-          writeIndex++;
-        }
-        //*/
-
-        this->host->onNewFrame(time, weight, values, size);
-      }
-    }
-
-    return 0;
-  }
-
-  std::vector<PiPoValue> getLastFrame() {
-      std::vector<PiPoValue> f;
-
-      if (readIndex > -1) {
-          f = ringBuffer[readIndex];
-      }
-
-      return f;
-  }
-};
-
-/** EMACS **
- * Local variables:
- * mode: c
- * c-basic-offset:2
- * End:
- */
 
 #endif
