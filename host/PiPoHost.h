@@ -43,10 +43,8 @@
 
 #define PIPO_OUT_RING_SIZE 2
 
+#include "PiPoOut"
 #include "PiPoCollection.h"
-
-// forward declaration (scroll down for the code)
-class PiPoOut;
 
 //================================= PiPoHost =================================//
 
