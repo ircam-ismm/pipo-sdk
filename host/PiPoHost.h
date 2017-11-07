@@ -45,8 +45,9 @@
 
 #include <iostream>
 
-#include "PiPoOut.h"
-#include "PiPoCollection.h"
+#include "PiPo.h"
+
+class PiPoOut;
 
 //================================= PiPoHost =================================//
 
@@ -65,149 +66,29 @@ private:
   PiPoStreamAttributes outputStreamAttrs;
 
 public:
-  PiPoHost() :
-  inputStreamAttrs(PIPO_MAX_LABELS),
-  outputStreamAttrs(PIPO_MAX_LABELS)
-  {
-    PiPoCollection::init();
-    this->out = new PiPoOut(this);
-    this->graph = nullptr;
-  }
+  PiPoHost();
+  ~PiPoHost();
 
-  ~PiPoHost()
-  {
-    this->clearGraph();
-    delete this->out;
-  }
-
-  virtual bool setGraph(std::string name)
-  {
-    if (this->graph != nullptr)
-    {
-      delete this->graph;
-    }
-
-    this->graph = PiPoCollection::create(name);
-
-    if (this->graph != NULL)
-    {
-      this->graphName = name;
-      this->graph->setReceiver((PiPo *)this->out);
-      return true;
-    }
-
-    this->graph = nullptr;
-    this->graphName = "undefined";
-    return false;
-  }
-
-  virtual void clearGraph()
-  {
-    if (this->graph != nullptr)
-    {
-      delete this->graph;
-      this->graph = nullptr;
-    }
-  }
+  virtual bool setGraph(std::string name);
+  virtual void clearGraph();
 
   // override this method when inheriting !!!
-  virtual void onNewFrame(double time, double weight, PiPoValue *values, unsigned int size)
-  {
-    std::cout << time << std::endl;
-    std::cout << "please override this method" << std::endl;
-  }
+  virtual void onNewFrame(double time, double weight, PiPoValue *values, unsigned int size);
 
-  virtual std::vector<PiPoValue> getLastFrame()
-  {
-    return this->out->getLastFrame();
-  }
+  virtual std::vector<PiPoValue> getLastFrame();
 
-  virtual int setInputStreamAttributes(PiPoStreamAttributes &sa, bool propagate = true)
-  {
-    this->inputStreamAttrs = sa;
+  virtual int setInputStreamAttributes(PiPoStreamAttributes &sa, bool propagate = true);
 
-    if (propagate)
-    {
-      return this->propagateInputStreamAttributes();
-    }
-
-    return 0;
-  }
-
-  virtual PiPoStreamAttributes getOutputStreamAttributes()
-  {
-    return this->outputStreamAttrs;
-  }
+  virtual PiPoStreamAttributes getOutputStreamAttributes();
 
   virtual int frames(double time, double weight, PiPoValue *values, unsigned int size,
-                     unsigned int num)
-  {
-    return this->graph->frames(time, weight, values, size, num);
-  }
+                     unsigned int num);
 
   // virtual bool setAttr(const std::string &attrName, bool value);
   // virtual bool setAttr(const std::string &attrName, int value);
-  virtual bool setAttr(const std::string &attrName, double value)
-  {
-    PiPo::Attr *attr = this->graph->getAttr(attrName.c_str());
-
-    if (attr != NULL)
-    {
-      int iAttr = attr->getIndex();
-      return this->graph->setAttr(iAttr, value);
-    }
-
-    return false;
-  }
-
-  virtual bool setAttr(const std::string &attrName, const std::vector<double> &values)
-  {
-    PiPo::Attr *attr = this->graph->getAttr(attrName.c_str());
-
-    if (attr != NULL)
-    {
-      int iAttr = attr->getIndex();
-      double vals[values.size()];
-      unsigned int i = 0;
-
-      for (auto &value : values)
-      {
-        vals[i] = value;
-        i++;
-      }
-
-      return this->graph->setAttr(iAttr, &vals[0], static_cast<unsigned int>(values.size()));
-    }
-
-    return false;
-  }
-
-  virtual bool setAttr(const std::string &attrName, const std::string &value) // for enums
-  {
-    PiPo::Attr *attr = this->graph->getAttr(attrName.c_str());
-
-    if (attr != NULL)
-    {
-      // int iAttr = attr->getIndex();
-      PiPo::Type type = attr->getType();
-
-      if (type == PiPo::Type::Enum)
-      {
-        std::vector<const char *> *list = attr->getEnumList();
-
-        for (int i = 0; i < list->size(); i++)
-        {
-          if (strcmp(list->at(i), value.c_str()) == 0)
-          {
-            attr->set(0, i);
-            return true;
-          }
-        }
-      }
-    }
-
-    return false;
-  }
+  virtual bool setAttr(const std::string &attrName, double value);
+  virtual bool setAttr(const std::string &attrName, const std::vector<double> &values);
+  virtual bool setAttr(const std::string &attrName, const std::string &value); // for enums
 
   // virtual const std::vector<std::string>& getAttrNames();
   // virtual bool isBoolAttr(const std::string &attrName);
@@ -218,130 +99,21 @@ public:
   // virtual bool isFloatArrayAttr(const std::string &attrName);
   // virtual bool isStringAttr(const std::string &attrName);
 
-  virtual std::vector<std::string> getAttrNames()
-  {
-    std::vector<std::string> res;
+  virtual std::vector<std::string> getAttrNames();
 
-    for (unsigned int i = 0; i < this->graph->getNumAttrs(); ++i)
-    {
-      res.push_back(this->graph->getAttr(i)->getName());
-    }
+  virtual double getDoubleAttr(const std::string &attrName);
 
-    return res;
-  }
+  virtual std::vector<double> getDoubleArrayAttr(const std::string &attrName);
 
-  virtual double getDoubleAttr(const std::string &attrName)
-  {
-    PiPo::Attr *attr = this->graph->getAttr(attrName.c_str());
-
-    if (attr != NULL)
-    {
-      // int iAttr = attr->getIndex();
-      PiPo::Type type = attr->getType();
-
-      if (type == PiPo::Type::Double)
-      {
-        return attr->getDbl(0);
-      }
-    }
-
-    return 0;
-  }
-
-  virtual std::vector<double> getDoubleArrayAttr(const std::string &attrName)
-  {
-    std::vector<double> res;
-    PiPo::Attr *attr = this->graph->getAttr(attrName.c_str());
-
-    if (attr != NULL) {
-      // int iAttr = attr->getIndex();
-      PiPo::Type type = attr->getType();
-
-      if (type == PiPo::Type::Double)
-      {
-        for (int i = 0; i < attr->getSize(); ++i)
-        {
-          res.push_back(attr->getDbl(i));
-        }
-      }
-    }
-
-    return res;
-  }
-
-  virtual std::string getEnumAttr(const std::string &attrName)
-  {
-    PiPo::Attr *attr = this->graph->getAttr(attrName.c_str());
-
-    if (attr != NULL)
-    {
-      // int iAttr = attr->getIndex();
-      PiPo::Type type = attr->getType();
-
-      if (type == PiPo::Type::Enum)
-      {
-        return attr->getStr(0);
-      }
-    }
-
-    return "";
-
-  }
+  virtual std::string getEnumAttr(const std::string &attrName);
 
 private:
-  int propagateInputStreamAttributes()
-  {
-    if (this->graph != nullptr)
-    {
-      return this->graph->streamAttributes(this->inputStreamAttrs.hasTimeTags,
-                                           this->inputStreamAttrs.rate,
-                                           this->inputStreamAttrs.offset,
-                                           this->inputStreamAttrs.dims[0],
-                                           this->inputStreamAttrs.dims[1],
-                                           this->inputStreamAttrs.labels,
-                                           this->inputStreamAttrs.hasVarSize,
-                                           this->inputStreamAttrs.domain,
-                                           this->inputStreamAttrs.maxFrames);
-    }
-
-    return 0;
-  }
+  int propagateInputStreamAttributes();
 
   void setOutputStreamAttributes(bool hasTimeTags, double rate, double offset,
                            unsigned int width, unsigned int height,
                            const char **labels, bool hasVarSize,
-                           double domain, unsigned int maxFrames)
-  {
-    if (labels != NULL) {
-      int numLabels = width;
-
-      if (numLabels > PIPO_MAX_LABELS) {
-        numLabels = PIPO_MAX_LABELS;
-      }
-
-      for (unsigned int i = 0; i < numLabels; i++) {
-        try {
-          this->outputStreamAttrs.labels[i] = labels[i];
-        } catch(std::exception e) {
-          this->outputStreamAttrs.labels[i] = "unnamed";
-        }
-      }
-
-      this->outputStreamAttrs.numLabels = numLabels;
-    } else {
-      this->outputStreamAttrs.numLabels = 0;
-    }
-
-    this->outputStreamAttrs.hasTimeTags = hasTimeTags;
-    this->outputStreamAttrs.rate = rate;
-    this->outputStreamAttrs.offset = offset;
-    this->outputStreamAttrs.dims[0] = width;
-    this->outputStreamAttrs.dims[1] = height;
-    this->outputStreamAttrs.hasVarSize = hasVarSize;
-    this->outputStreamAttrs.domain = domain;
-    this->outputStreamAttrs.maxFrames = maxFrames;
-
-  }
+                           double domain, unsigned int maxFrames);
 };
 
-#endif
+#endif /* _PIPO_HOST_*/
