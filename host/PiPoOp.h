@@ -40,30 +40,12 @@
 #define _PIPO_OP_
 
 #include "PiPo.h"
+#include "PiPoModule.h"
 
 #include <string>
 #include <vector>
 
 const float PIPO_MIN_SDK_VERSION_REQUIRED = 0.2;
-
-/**
- * abstract base class for a container of a pipo module for PiPoModuleFactory
- */
-class PiPoModule
-{
-public:
-  PiPoModule(void) { };
-  ~PiPoModule(void) { };
-};
-
-class PiPoModuleFactory
-{
-public:
-  PiPoModuleFactory(void) { };
-  ~PiPoModuleFactory(void) { };
-
-  virtual PiPo *create(unsigned int index, const std::string &pipoName, const std::string &instanceName, PiPoModule *&module) = 0;
-};
 
 /**
  * element of pipo chain, points to pipo pipo

@@ -8,6 +8,7 @@
  * All rights reserved.
  *
  */
+
 #ifndef _PIPO_MODULE_CLASS_
 #define _PIPO_MODULE_CLASS_
 
