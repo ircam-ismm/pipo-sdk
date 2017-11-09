@@ -7,17 +7,21 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		31C2B37F1FB0D015001A134E /* PiPoModuleClass.h in Headers */ = {isa = PBXBuildFile; fileRef = 31C2B37E1FB0D015001A134E /* PiPoModuleClass.h */; };
+		315B90381FB4AC4B0005150B /* PiPo.h in Headers */ = {isa = PBXBuildFile; fileRef = 315B90341FB4AC4B0005150B /* PiPo.h */; };
+		315B90391FB4AC4B0005150B /* PiPoParallel.h in Headers */ = {isa = PBXBuildFile; fileRef = 315B90351FB4AC4B0005150B /* PiPoParallel.h */; };
+		315B903A1FB4AC4B0005150B /* PiPoSequence.h in Headers */ = {isa = PBXBuildFile; fileRef = 315B90361FB4AC4B0005150B /* PiPoSequence.h */; };
+		315B903B1FB4AC4B0005150B /* RingBuffer.h in Headers */ = {isa = PBXBuildFile; fileRef = 315B90371FB4AC4B0005150B /* RingBuffer.h */; };
+		315B903E1FB4AC760005150B /* PiPoModuleClass.h in Headers */ = {isa = PBXBuildFile; fileRef = 315B903D1FB4AC760005150B /* PiPoModuleClass.h */; };
 		31C6621A1DBE58EF00A543A8 /* PiPoGain.h in Sources */ = {isa = PBXBuildFile; fileRef = 31C662191DBE589900A543A8 /* PiPoGain.h */; };
 		31C6621D1DBE5A7700A543A8 /* PipoGain.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 31C6621C1DBE5A6E00A543A8 /* PipoGain.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		31BD32B51DC0B5AA0007CF1C /* PiPo.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = PiPo.h; path = ../../include/PiPo.h; sourceTree = "<group>"; };
-		31BD32B61DC0B5AA0007CF1C /* PiPoParallel.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = PiPoParallel.h; path = ../../include/PiPoParallel.h; sourceTree = "<group>"; };
-		31BD32B71DC0B5AA0007CF1C /* PiPoSequence.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = PiPoSequence.h; path = ../../include/PiPoSequence.h; sourceTree = "<group>"; };
-		31BD32B81DC0B5AA0007CF1C /* RingBuffer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = RingBuffer.h; path = ../../include/RingBuffer.h; sourceTree = "<group>"; };
-		31C2B37E1FB0D015001A134E /* PiPoModuleClass.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoModuleClass.h; path = ../../host/PiPoModuleClass.h; sourceTree = "<group>"; };
+		315B90341FB4AC4B0005150B /* PiPo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPo.h; path = ../../src/PiPo.h; sourceTree = "<group>"; };
+		315B90351FB4AC4B0005150B /* PiPoParallel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoParallel.h; path = ../../src/PiPoParallel.h; sourceTree = "<group>"; };
+		315B90361FB4AC4B0005150B /* PiPoSequence.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoSequence.h; path = ../../src/PiPoSequence.h; sourceTree = "<group>"; };
+		315B90371FB4AC4B0005150B /* RingBuffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RingBuffer.h; path = ../../src/RingBuffer.h; sourceTree = "<group>"; };
+		315B903D1FB4AC760005150B /* PiPoModuleClass.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PiPoModuleClass.h; path = ../../src/host/PiPoModuleClass.h; sourceTree = "<group>"; };
 		31C662191DBE589900A543A8 /* PiPoGain.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PiPoGain.h; sourceTree = "<group>"; };
 		31C6621C1DBE5A6E00A543A8 /* PipoGain.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = PipoGain.cpp; sourceTree = "<group>"; };
 		3B37A53F1DB105E9001FCA3C /* PipoGain.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = PipoGain.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -45,30 +49,30 @@
 		20286C29FDCF999611CA2CEA /* juce_application */ = {
 			isa = PBXGroup;
 			children = (
-				31C2B37D1FB0D007001A134E /* host */,
+				315B90331FB4AC310005150B /* src */,
 				31C662191DBE589900A543A8 /* PiPoGain.h */,
 				31C6621C1DBE5A6E00A543A8 /* PipoGain.cpp */,
-				31BD32B41DC0B59C0007CF1C /* include */,
 				195DF8CFFE9D517E11CA2CBB /* Products */,
 			);
 			name = juce_application;
 			sourceTree = "<group>";
 		};
-		31BD32B41DC0B59C0007CF1C /* include */ = {
+		315B90331FB4AC310005150B /* src */ = {
 			isa = PBXGroup;
 			children = (
-				31BD32B51DC0B5AA0007CF1C /* PiPo.h */,
-				31BD32B61DC0B5AA0007CF1C /* PiPoParallel.h */,
-				31BD32B71DC0B5AA0007CF1C /* PiPoSequence.h */,
-				31BD32B81DC0B5AA0007CF1C /* RingBuffer.h */,
+				315B903C1FB4AC4F0005150B /* host */,
+				315B90341FB4AC4B0005150B /* PiPo.h */,
+				315B90351FB4AC4B0005150B /* PiPoParallel.h */,
+				315B90361FB4AC4B0005150B /* PiPoSequence.h */,
+				315B90371FB4AC4B0005150B /* RingBuffer.h */,
 			);
-			name = include;
+			name = src;
 			sourceTree = "<group>";
 		};
-		31C2B37D1FB0D007001A134E /* host */ = {
+		315B903C1FB4AC4F0005150B /* host */ = {
 			isa = PBXGroup;
 			children = (
-				31C2B37E1FB0D015001A134E /* PiPoModuleClass.h */,
+				315B903D1FB4AC760005150B /* PiPoModuleClass.h */,
 			);
 			name = host;
 			sourceTree = "<group>";
@@ -80,7 +84,11 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				31C2B37F1FB0D015001A134E /* PiPoModuleClass.h in Headers */,
+				315B90381FB4AC4B0005150B /* PiPo.h in Headers */,
+				315B903A1FB4AC4B0005150B /* PiPoSequence.h in Headers */,
+				315B90391FB4AC4B0005150B /* PiPoParallel.h in Headers */,
+				315B903E1FB4AC760005150B /* PiPoModuleClass.h in Headers */,
+				315B903B1FB4AC4B0005150B /* RingBuffer.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
