@@ -72,6 +72,11 @@ public:
   virtual bool setGraph(std::string name);
   virtual void clearGraph();
 
+  // methods from PiPo::Parent
+  virtual void streamAttributesChanged(PiPo *pipo, PiPo::Attr *attr);
+  virtual void signalError(PiPo *pipo, std::string errorMsg);
+  virtual void signalWarning(PiPo *pipo, std::string errorMsg);
+
   // override this method when inheriting !!!
   virtual void onNewFrame(double time, double weight, PiPoValue *values, unsigned int size);
 

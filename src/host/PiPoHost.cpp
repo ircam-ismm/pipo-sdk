@@ -68,6 +68,28 @@ PiPoHost::~PiPoHost()
   delete this->out;
 }
 
+// implementation of PiPo::Parent methods
+
+void
+PiPoHost::streamAttributesChanged(PiPo *pipo, PiPo::Attr *attr)
+{
+  this->propagateInputStreamAttributes();
+}
+
+void
+PiPoHost::signalError(PiPo *pipo, std::string errorMsg)
+{
+  std::cout << "Error : " << errorMsg << std::endl;
+}
+
+void
+PiPoHost::signalWarning(PiPo *pipo, std::string errorMsg)
+{
+  std::cout << "Warning : " << errorMsg << std::endl;
+}
+
+// own methods
+
 bool
 PiPoHost::setGraph(std::string name)
 {
