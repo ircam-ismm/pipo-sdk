@@ -1,5 +1,5 @@
 /**
- * @file PiPoHost.h
+ * @file PiPoHost.cpp
  * @author Norbert.Schnell@ircam.fr
  *
  * @brief Plugin Interface for Processing Objects host classes.
@@ -38,9 +38,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _PIPO_HOST_
-#define _PIPO_HOST_
-
 #define PIPO_OUT_RING_SIZE 2
 
 #include <iostream>
@@ -68,7 +65,7 @@ PiPoHost::~PiPoHost()
   delete this->out;
 }
 
-// implementation of PiPo::Parent methods
+// implementation of PiPo::Parent methods (should probably be overridden)
 
 void
 PiPoHost::streamAttributesChanged(PiPo *pipo, PiPo::Attr *attr)
@@ -98,9 +95,9 @@ PiPoHost::setGraph(std::string name)
     delete this->graph;
   }
 
-  this->graph = PiPoCollection::create(name);
+  this->graph = PiPoCollection::create(name, static_cast<PiPo::Parent *>(this));
 
-  if (this->graph != NULL)
+  if (this->graph != nullptr)
   {
     this->graphName = name;
     this->graph->setReceiver((PiPo *)this->out);
@@ -137,7 +134,7 @@ PiPoHost::getLastFrame()
 }
 
 int
-PiPoHost::setInputStreamAttributes(PiPoStreamAttributes &sa, bool propagate = true)
+PiPoHost::setInputStreamAttributes(const PiPoStreamAttributes &sa, bool propagate)
 {
   this->inputStreamAttrs = sa;
 
@@ -149,21 +146,20 @@ PiPoHost::setInputStreamAttributes(PiPoStreamAttributes &sa, bool propagate = tr
   return 0;
 }
 
-PiPoStreamAttributes
+PiPoStreamAttributes&
 PiPoHost::getOutputStreamAttributes()
 {
+  //PiPoStreamAttributes res
   return this->outputStreamAttrs;
 }
 
 int
 PiPoHost::frames(double time, double weight, PiPoValue *values, unsigned int size,
-                   unsigned int num)
+                 unsigned int num)
 {
   return this->graph->frames(time, weight, values, size, num);
 }
 
-// virtual bool setAttr(const std::string &attrName, bool value);
-// virtual bool setAttr(const std::string &attrName, int value);
 bool
 PiPoHost::setAttr(const std::string &attrName, double value)
 {
@@ -228,15 +224,6 @@ PiPoHost::setAttr(const std::string &attrName, const std::string &value) // for 
 
   return false;
 }
-
-// virtual const std::vector<std::string>& getAttrNames();
-// virtual bool isBoolAttr(const std::string &attrName);
-// virtual bool isEnumAttr(const std::string &attrName);
-// virtual bool isIntAttr(const std::string &attrName);
-// virtual bool isIntArrayAttr(const std::string &attrName);
-// virtual bool isFloatAttr(const std::string &attrName);
-// virtual bool isFloatArrayAttr(const std::string &attrName);
-// virtual bool isStringAttr(const std::string &attrName);
 
 std::vector<std::string>
 PiPoHost::getAttrNames()
@@ -371,82 +358,78 @@ PiPoHost::setOutputStreamAttributes(bool hasTimeTags, double rate, double offset
 
 //================================= PiPoOut ==================================//
 
-class PiPoOut : public PiPo {
-private:
-  PiPoHost *host;
-  std::atomic<int> writeIndex, readIndex;
-  std::vector<std::vector<PiPoValue>> ringBuffer;
+PiPoOut::PiPoOut(PiPoHost *host) :
+PiPoOut::PiPo((PiPo::Parent *)host)
+{
+  this->host = host;
+  writeIndex = 0;
+  readIndex = 0;
+  ringBuffer.resize(PIPO_OUT_RING_SIZE);
+}
 
-public:
-  PiPoOut(PiPoHost *host) :
-  PiPo((PiPo::Parent *)host)
+PiPoOut::~PiPoOut() {}
+
+int
+PiPoOut::streamAttributes(bool hasTimeTags,
+                          double rate, double offset,
+                          unsigned int width, unsigned int height,
+                          const char **labels, bool hasVarSize,
+                          double domain, unsigned int maxFrames)
+{
+  this->host->setOutputStreamAttributes(hasTimeTags, rate, offset, width, height,
+                                        labels, hasVarSize, domain, maxFrames);
+
+  for (int i = 0; i < PIPO_OUT_RING_SIZE; ++i)
   {
-    this->host = host;
-    writeIndex = 0;
-    readIndex = 0;
-    ringBuffer.resize(PIPO_OUT_RING_SIZE);
+    ringBuffer[i].resize(width * height);
   }
 
-  ~PiPoOut() {}
+  return 0;
+}
 
-  int streamAttributes(bool hasTimeTags,
-                       double rate, double offset,
-                       unsigned int width, unsigned int height,
-                       const char **labels, bool hasVarSize,
-                       double domain, unsigned int maxFrames)
+int
+PiPoOut::frames(double time, double weight, PiPoValue *values,
+                unsigned int size, unsigned int num)
+{
+  if (num > 0)
   {
-    this->host->setOutputStreamAttributes(hasTimeTags, rate, offset, width, height,
-                                          labels, hasVarSize, domain, maxFrames);
-
-    for (int i = 0; i < PIPO_OUT_RING_SIZE; ++i)
+    for (int i = 0; i < num; ++i)
     {
-      ringBuffer[i].resize(width * height);
-    }
-
-    return 0;
-  }
-
-  int frames(double time, double weight, PiPoValue *values,
-             unsigned int size, unsigned int num) {
-
-    if (num > 0)
-    {
-      for (int i = 0; i < num; ++i)
+      //*
+      for (int j = 0; j < size; ++j)
       {
-        //*
-        for (int j = 0; j < size; ++j)
-        {
-          ringBuffer[writeIndex][j] = values[i * size + j];
-        }
-
-        // atomic swap ?
-        writeIndex = 1 - writeIndex;
-        readIndex = 1 - writeIndex;
-
-        // this->host->onNewFrame(time, ringBuffer[readIndex]);
-
-        if (writeIndex + 1 == PIPO_OUT_RING_SIZE) {
-          writeIndex = 0;
-        } else {
-          writeIndex++;
-        }
-        //*/
-
-        this->host->onNewFrame(time, weight, values, size);
+        ringBuffer[writeIndex][j] = values[i * size + j];
       }
+
+      // atomic swap ?
+      writeIndex = 1 - writeIndex;
+      readIndex = 1 - writeIndex;
+
+      // this->host->onNewFrame(time, ringBuffer[readIndex]);
+
+      if (writeIndex + 1 == PIPO_OUT_RING_SIZE) {
+        writeIndex = 0;
+      } else {
+        writeIndex++;
+      }
+      //*/
+
+      this->host->onNewFrame(time, weight, values, size);
     }
-
-    return 0;
   }
 
-  std::vector<PiPoValue> getLastFrame() {
-      std::vector<PiPoValue> f;
+  return 0;
+}
 
-      if (readIndex > -1) {
-          f = ringBuffer[readIndex];
-      }
+std::vector<PiPoValue>
+PiPoOut::getLastFrame()
+{
+  std::vector<PiPoValue> f;
 
-      return f;
+  if (readIndex > -1)
+  {
+    f = ringBuffer[readIndex];
   }
-};
 
+  return f;
+}

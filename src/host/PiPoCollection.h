@@ -99,7 +99,7 @@ public:
   static void init(bool defaultPipos = true);
   static void addToCollection(std::string name, PiPoCreatorBase *creator);
   // static void addAlias(std::string alias, std::string name); ----> TODO
-  static PiPo *create(std::string name);
+  static PiPo *create(std::string name, PiPo::Parent *parent = NULL);
 private:
 };
 

@@ -56,7 +56,6 @@
 #include "PiPoSequence.h"
 #include "PiPoParallel.h"
 
-
 // NB : this is a work in progress
 // TODO: define error return codes for parsing
 
@@ -68,12 +67,13 @@ class PiPoGraph : public PiPo
   } PiPoGraphType;
 
 private:
+  bool topLevel;
   std::string representation;
   PiPoGraphType graphType;
 
-  // parallel graphs if isParallel
-  // sequence of graphs otherwise (not sequence of PiPos)
-  // empty if leaf
+  // parallel graphs if graphType is parallel
+  // sequence of graphs if graphType is sequence (not sequence of PiPos)
+  // empty if graphType is leaf
   std::vector<PiPoGraph> subGraphs;
 
   // use op if we are a leaf to parse instanceName and to hold attributes
@@ -85,21 +85,25 @@ private:
   PiPoModuleFactory *moduleFactory;
 
 public:
-  PiPoGraph(PiPo::Parent *parent, PiPoModuleFactory *moduleFactory = NULL) :
+  PiPoGraph(PiPo::Parent *parent, PiPoModuleFactory *moduleFactory, bool topLevel = true) :
   PiPo(parent)
   {
     this->pipo = nullptr;
     this->parent = parent;
     this->moduleFactory = moduleFactory;
+    this->topLevel = topLevel;
   }
 
   ~PiPoGraph()
   {
-    for (unsigned int i = 0; i < attrNames.size(); i++)
-      delete attrNames[i];
+    if (this->topLevel)
+    {
+      for (unsigned int i = 0; i < attrNames.size(); ++i)
+        delete attrNames[i];
 
-    for (unsigned int i = 0; i < attrDescrs.size(); i++)
-      delete attrDescrs[i];
+      for (unsigned int i = 0; i < attrDescrs.size(); ++i)
+        delete attrDescrs[i];
+    }
 
     this->clear();
   }
@@ -120,27 +124,13 @@ public:
       // let op clear itself
       this->op.clear();
     }
-  };
+  }
 
   bool create(std::string graphStr) {
     if (parse(graphStr) && instantiate() && wire()) {
       copyPiPoAttributes();
       return true;
     }
-
-    // if (parse(graphStr)) {
-    //   if (instantiate()) {
-    //     if (wire()) {
-    //       return true;
-    //     } else {
-    //       std::cout << "error wiring" << std::endl;
-    //     }
-    //   } else {
-    //     std::cout << "error instantiating" << std::endl;
-    //   }
-    // } else {
-    //   std::cout << "error parsing" << std::endl;
-    // }
 
     this->clear();
     return false;
@@ -149,7 +139,6 @@ public:
 private:
   //======================== PARSE GRAPH EXPRESSION ==========================//
 
-  // or use const char * ?
   bool parse(std::string graphStr) {
 
     //=================== BASIC SYNTAX RULES CHECKING ========================//
@@ -157,6 +146,7 @@ private:
     //========== check if we have the right number of '<' and '>' ============//
 
     int cnt = 0;
+
     for (unsigned int i = 0; i < graphStr.length(); ++i)
       if (graphStr[i] == '<')
         cnt++;
@@ -203,14 +193,16 @@ private:
         }
     }
 
-    // if we don't have any sequential / parallelism symbol, then we are a leaf
+    // if we don't have any sequential / parallelism symbol,
+    // and we are not a single top-level pipo
+    // (because we need to be inside a PiPoGraph at the top-level),
+    // then we are a leaf :
     if (graphStr.find("<") >= std::string::npos &&
         graphStr.find(">") >= std::string::npos &&
         graphStr.find(",") >= std::string::npos &&
-        graphStr.find(":") >= std::string::npos)
+        graphStr.find(":") >= std::string::npos &&
+        !this->topLevel)
       this->graphType = leaf;
-
-    // std::cout << representation << " " << this->graphType << std::endl;
 
     //====== now fill (or not) subGraphs vector according to graph type ======//
 
@@ -220,31 +212,11 @@ private:
       //========================== leaf graph, we are a single PiPo, trim spaces
       case leaf:
       {
-        // trim spaces
-        // TODO: trim tabs and other spaces ?
+        // trim spaces - TODO: trim tabs and other spaces ?
         this->representation.erase(
           std::remove(this->representation.begin(), this->representation.end(), ' '),
           this->representation.end()
         );
-
-        // the following block parses pipoName and instanceName
-        // keep using PiPoOp class for this instead (as in PiPoChain) ?
-        // ===> YES ! PiPoOp manages PiPoVersion etc
-        // leave this to PiPoOp class
-
-        /*
-        size_t open = this->representation.find('(');
-        size_t close = this->representation.find(')');
-
-        if (open < std::string::npos || close < std::string::npos) {
-          // ok, do nothing
-          if (open > 0 && open < close && close == this->representation.length() - 1) {
-            // ok, parse
-          } else {
-            // parentheses are not in the right place
-          }
-        }
-        */
 
         size_t pos = 0;
         this->op.parse(this->representation.c_str(), pos);
@@ -309,8 +281,8 @@ private:
 
         for (unsigned int i = 0; i < subStrings.size(); ++i)
         {
-          this->subGraphs.push_back(PiPoGraph(this->parent, this->moduleFactory));
-          PiPoGraph &g = this->subGraphs[subGraphs.size() - 1];
+          this->subGraphs.push_back(PiPoGraph(this->parent, this->moduleFactory, false));
+          PiPoGraph &g = this->subGraphs[this->subGraphs.size() - 1];
 
           if (!g.parse(graphStr.substr(subStrings[i].first, subStrings[i].second)))
             return false;
@@ -336,11 +308,11 @@ private:
           else if (graphStr[i] == ',' && i < graphStr.length() - 1 && subLevelsCnt == 0)
             commaIndices.push_back(i + 1);
 
-        commaIndices.push_back(graphStr.length() + 1);
+        commaIndices.push_back(static_cast<unsigned int>(graphStr.length()) + 1);
 
         for (unsigned int i = 0; i < commaIndices.size() - 1; ++i)
         {
-          this->subGraphs.push_back(PiPoGraph(this->parent, this->moduleFactory));
+          this->subGraphs.push_back(PiPoGraph(this->parent, this->moduleFactory, false));
           PiPoGraph &g = this->subGraphs[this->subGraphs.size() - 1];
           unsigned int blockStart = commaIndices[i];
           unsigned int blockLength = commaIndices[i + 1] - blockStart - 1;
@@ -392,66 +364,31 @@ private:
     return true;
   }
 
-
-
-  bool wire(bool firstPass = true)
+  bool wire()
   {
 
     for (unsigned int i = 0; i < this->subGraphs.size(); ++i)
-      this->subGraphs[i].wire(firstPass);
+      this->subGraphs[i].wire();
 
     if (this->graphType == sequence)
-      if (firstPass)
         for (unsigned int i = 0; i < this->subGraphs.size(); ++i)
           static_cast<PiPoSequence *>(this->pipo)->add(this->subGraphs[i].getPiPo());
 
     else if (this->graphType == parallel)
-      if (firstPass)
         for (unsigned int i = 0; i < this->subGraphs.size(); ++i)
           static_cast<PiPoParallel *>(this->pipo)->add(this->subGraphs[i].getPiPo());
-
-    if (firstPass)
-    {
-      //wire(false);
-    }
-
-    /*
-    for (unsigned int i = 0; i < this->subGraphs.size(); ++i)
-    {
-      this->subGraphs[i].connect(false);
-    }
-
-    // add from top level to bottom level (see PiPoBasic)
-    for (unsigned int i = 0; i < this->subGraphs.size(); ++i)
-    {
-      if (this->graphType == sequence)
-      {
-        // PiPoSequence add method auto connects new PiPo to previous in the chain
-        dynamic_cast<PiPoSequence *>(this->pipo)->add(this->subGraphs[i].getPiPo());
-        //this->subGraphs[i].connect(false);
-
-      }
-      else if (this->graphType == parallel)
-      {
-        // PiPoParallel add method auto connects new PiPo to internal Merge
-        dynamic_cast<PiPoParallel *>(this->pipo)->add(this->subGraphs[i].getPiPo());
-        //this->subGraphs[i].connect(false);
-      }
-    }
-    //*/
 
     return true;
   }
 
   // TODO: add an option to get PiPoAttributes only from named modules ?
-  void copyPiPoAttributes(bool topLevel = true)
+  void copyPiPoAttributes()
   {
-    // if (topLevel) std::cout << "I am of type " << this->graphType << std::endl;
     for (unsigned int i = 0; i < this->subGraphs.size(); ++i)
     {
       PiPoGraph &subGraph = this->subGraphs[i];
 
-      subGraph.copyPiPoAttributes(false);
+      subGraph.copyPiPoAttributes();
       PiPo *pipo = subGraph.getPiPo();
       unsigned int numAttrs = pipo->getNumAttrs();
 
@@ -459,7 +396,6 @@ private:
       {
         std::string instanceName = subGraph.getInstanceName();
 
-        // std::cout << instanceName << " " << numAttrs << std::endl;
         for (unsigned int iAttr = 0; iAttr < numAttrs; ++iAttr)
         {
           PiPo::Attr *attr = pipo->getAttr(iAttr);
@@ -476,7 +412,7 @@ private:
           attrNames.push_back(attrName);
           attrDescrs.push_back(attrDescr);
 
-          PiPo *p = topLevel ? this : this->pipo;
+          PiPo *p = this->topLevel ? this : this->pipo;
           p->addAttr(p, attrNames[attrNames.size() - 1]->c_str(), attrDescrs[attrDescrs.size() - 1]->c_str(), attr);
         }
       }
@@ -486,11 +422,10 @@ private:
         attrNames.insert(attrNames.end(), subGraph.attrNames.begin(), subGraph.attrNames.end());
         attrDescrs.insert(attrDescrs.end(), subGraph.attrDescrs.begin(), subGraph.attrDescrs.end());
 
-        // std::cout << pipo << " " << numAttrs << std::endl;
         for (unsigned int iAttr = 0; iAttr < numAttrs; ++iAttr)
         {
           PiPo::Attr *attr = pipo->getAttr(iAttr);
-          PiPo *p = topLevel ? this : this->pipo;
+          PiPo *p = this->topLevel ? this : this->pipo;
           p->addAttr(p, subGraph.attrNames[iAttr]->c_str(), subGraph.attrDescrs[iAttr]->c_str(), attr);
         }
       }
@@ -513,7 +448,7 @@ public:
     return this->pipo;
   }
 
-  // OVERRIDING EVERY METHOD FROM THE BASE CLASS :
+  //=============== OVERRIDING ALL METHODS FROM THE BASE CLASS ===============//
 
   void setParent(PiPo::Parent *parent) override
   {
@@ -548,14 +483,6 @@ public:
     return this->pipo->finalize(inputEnd);
   }
 
-  // void print() {
-  //   std::cout << this->representation << " " << this->graphType << std::endl;
-  //   for (unsigned int i = 0; i < this->subGraphs.size(); ++i) {
-  //     std::cout << " ";
-  //     this->subGraphs[i].print();
-  //   }
-  // }
-
   int streamAttributes(bool hasTimeTags, double rate, double offset,
                                unsigned int width, unsigned int height,
                                const char **labels, bool hasVarSize,
@@ -571,6 +498,14 @@ public:
   {
     return this->pipo->frames(time, weight, values, size, num);
   }
+
+  // void print() {
+  //   std::cout << this->representation << " " << this->graphType << std::endl;
+  //   for (unsigned int i = 0; i < this->subGraphs.size(); ++i) {
+  //     std::cout << " ";
+  //     this->subGraphs[i].print();
+  //   }
+  // }
 };
 
 #endif /* _PIPO_GRAPH_ */
