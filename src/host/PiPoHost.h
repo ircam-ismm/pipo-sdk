@@ -72,14 +72,19 @@ public:
   virtual bool setGraph(std::string name);
   virtual void clearGraph();
 
+  // methods from PiPo::Parent
+  virtual void streamAttributesChanged(PiPo *pipo, PiPo::Attr *attr);
+  virtual void signalError(PiPo *pipo, std::string errorMsg);
+  virtual void signalWarning(PiPo *pipo, std::string errorMsg);
+
   // override this method when inheriting !!!
   virtual void onNewFrame(double time, double weight, PiPoValue *values, unsigned int size);
 
   virtual std::vector<PiPoValue> getLastFrame();
 
-  virtual int setInputStreamAttributes(PiPoStreamAttributes &sa, bool propagate = true);
+  virtual int setInputStreamAttributes(const PiPoStreamAttributes &sa, bool propagate = true);
 
-  virtual PiPoStreamAttributes getOutputStreamAttributes();
+  virtual PiPoStreamAttributes &getOutputStreamAttributes();
 
   virtual int frames(double time, double weight, PiPoValue *values, unsigned int size,
                      unsigned int num);
@@ -111,9 +116,33 @@ private:
   int propagateInputStreamAttributes();
 
   void setOutputStreamAttributes(bool hasTimeTags, double rate, double offset,
-                           unsigned int width, unsigned int height,
-                           const char **labels, bool hasVarSize,
-                           double domain, unsigned int maxFrames);
+                                 unsigned int width, unsigned int height,
+                                 const char **labels, bool hasVarSize,
+                                 double domain, unsigned int maxFrames);
+};
+
+//============================================================================//
+
+class PiPoOut : public PiPo {
+private:
+  PiPoHost *host;
+  std::atomic<int> writeIndex, readIndex;
+  std::vector<std::vector<PiPoValue>> ringBuffer;
+
+public:
+  PiPoOut(PiPoHost *host);
+  ~PiPoOut();
+
+  int streamAttributes(bool hasTimeTags,
+                       double rate, double offset,
+                       unsigned int width, unsigned int height,
+                       const char **labels, bool hasVarSize,
+                       double domain, unsigned int maxFrames);
+
+  int frames(double time, double weight, PiPoValue *values,
+             unsigned int size, unsigned int num);
+
+  std::vector<PiPoValue> getLastFrame();
 };
 
 #endif /* _PIPO_HOST_*/
