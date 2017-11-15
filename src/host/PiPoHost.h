@@ -126,7 +126,9 @@ private:
 class PiPoOut : public PiPo {
 private:
   PiPoHost *host;
-  std::atomic<int> writeIndex, readIndex;
+  // fix all dependencies to compile with the c++11 flag before (Pm2, ircam_descriptor, ...)
+  // std::atomic<int> writeIndex, readIndex;
+  int writeIndex, readIndex;
   std::vector<std::vector<PiPoValue>> ringBuffer;
 
 public:
