@@ -91,7 +91,9 @@ public:
 
   // virtual bool setAttr(const std::string &attrName, bool value);
   // virtual bool setAttr(const std::string &attrName, int value);
+  virtual bool setAttr(const std::string &attrName, int value);
   virtual bool setAttr(const std::string &attrName, double value);
+  virtual bool setAttr(const std::string &attrName, const std::vector<int> &values);
   virtual bool setAttr(const std::string &attrName, const std::vector<double> &values);
   virtual bool setAttr(const std::string &attrName, const std::string &value); // for enums
 
@@ -105,11 +107,10 @@ public:
   // virtual bool isStringAttr(const std::string &attrName);
 
   virtual std::vector<std::string> getAttrNames();
-
+  virtual int getIntAttr(const std::string &attrName);
   virtual double getDoubleAttr(const std::string &attrName);
-
+  virtual std::vector<int> getIntArrayAttr(const std::string &attrName);
   virtual std::vector<double> getDoubleArrayAttr(const std::string &attrName);
-
   virtual std::string getEnumAttr(const std::string &attrName);
 
 private:

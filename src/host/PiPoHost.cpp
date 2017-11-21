@@ -65,8 +65,7 @@ PiPoHost::~PiPoHost()
   delete this->out;
 }
 
-// implementation of PiPo::Parent methods (should probably be overridden)
-
+// implementation of PiPo::Parent methods
 void
 PiPoHost::streamAttributesChanged(PiPo *pipo, PiPo::Attr *attr)
 {
@@ -86,7 +85,6 @@ PiPoHost::signalWarning(PiPo *pipo, std::string errorMsg)
 }
 
 // own methods
-
 bool
 PiPoHost::setGraph(std::string name)
 {
@@ -149,7 +147,6 @@ PiPoHost::setInputStreamAttributes(const PiPoStreamAttributes &sa, bool propagat
 PiPoStreamAttributes&
 PiPoHost::getOutputStreamAttributes()
 {
-  //PiPoStreamAttributes res
   return this->outputStreamAttrs;
 }
 
@@ -158,6 +155,20 @@ PiPoHost::frames(double time, double weight, PiPoValue *values, unsigned int siz
                  unsigned int num)
 {
   return this->graph->frames(time, weight, values, size, num);
+}
+
+bool
+PiPoHost::setAttr(const std::string &attrName, int value)
+{
+  PiPo::Attr *attr = this->graph->getAttr(attrName.c_str());
+
+  if (attr != NULL)
+  {
+    int iAttr = attr->getIndex();
+    return this->graph->setAttr(iAttr, value);
+  }
+
+  return false;
 }
 
 bool
@@ -175,20 +186,43 @@ PiPoHost::setAttr(const std::string &attrName, double value)
 }
 
 bool
+PiPoHost::setAttr(const std::string &attrName, const std::vector<int> &values)
+{
+  PiPo::Attr *attr = this->graph->getAttr(attrName.c_str());
+
+  if (attr != NULL)
+  {
+    PiPo::Type type = attr->getType();
+
+    int iAttr = attr->getIndex();
+    int vals[values.size()];
+
+    for (unsigned int i = 0; i < values.size(); ++i)
+    {
+      vals[i] = values[i];
+    }
+
+    return this->graph->setAttr(iAttr, &vals[0], static_cast<unsigned int>(values.size()));
+  }
+
+  return false;
+}
+
+bool
 PiPoHost::setAttr(const std::string &attrName, const std::vector<double> &values)
 {
   PiPo::Attr *attr = this->graph->getAttr(attrName.c_str());
 
   if (attr != NULL)
   {
+    PiPo::Type type = attr->getType();
+
     int iAttr = attr->getIndex();
     double vals[values.size()];
-    unsigned int i = 0;
 
-    for (auto &value : values)
+    for (unsigned int i = 0; i < values.size(); ++i)
     {
-      vals[i] = value;
-      i++;
+      vals[i] = values[i];
     }
 
     return this->graph->setAttr(iAttr, &vals[0], static_cast<unsigned int>(values.size()));
@@ -204,7 +238,6 @@ PiPoHost::setAttr(const std::string &attrName, const std::string &value) // for 
 
   if (attr != NULL)
   {
-    // int iAttr = attr->getIndex();
     PiPo::Type type = attr->getType();
 
     if (type == PiPo::Type::Enum)
@@ -238,6 +271,24 @@ PiPoHost::getAttrNames()
   return res;
 }
 
+int
+PiPoHost::getIntAttr(const std::string &attrName)
+{
+  PiPo::Attr *attr = this->graph->getAttr(attrName.c_str());
+
+  if (attr != NULL)
+  {
+    PiPo::Type type = attr->getType();
+
+    if (type == PiPo::Type::Int)
+    {
+      return attr->getInt(0);
+    }
+  }
+
+  return 0;
+}
+
 double
 PiPoHost::getDoubleAttr(const std::string &attrName)
 {
@@ -245,7 +296,6 @@ PiPoHost::getDoubleAttr(const std::string &attrName)
 
   if (attr != NULL)
   {
-    // int iAttr = attr->getIndex();
     PiPo::Type type = attr->getType();
 
     if (type == PiPo::Type::Double)
@@ -257,6 +307,28 @@ PiPoHost::getDoubleAttr(const std::string &attrName)
   return 0;
 }
 
+std::vector<int>
+PiPoHost::getIntArrayAttr(const std::string &attrName)
+{
+  std::vector<int> res;
+  PiPo::Attr *attr = this->graph->getAttr(attrName.c_str());
+
+  if (attr != NULL) {
+    PiPo::Type type = attr->getType();
+
+    if (type == PiPo::Type::Int)
+    {
+      res.resize(attr->getSize());
+      for (int i = 0; i < attr->getSize(); ++i)
+      {
+        res[i] = attr->getInt(i);
+      }
+    }
+  }
+
+  return res;
+}
+
 std::vector<double>
 PiPoHost::getDoubleArrayAttr(const std::string &attrName)
 {
@@ -264,14 +336,14 @@ PiPoHost::getDoubleArrayAttr(const std::string &attrName)
   PiPo::Attr *attr = this->graph->getAttr(attrName.c_str());
 
   if (attr != NULL) {
-    // int iAttr = attr->getIndex();
     PiPo::Type type = attr->getType();
 
     if (type == PiPo::Type::Double)
     {
+      res.resize(attr->getSize());
       for (int i = 0; i < attr->getSize(); ++i)
       {
-        res.push_back(attr->getDbl(i));
+        res[i] = attr->getDbl(i);
       }
     }
   }
@@ -286,7 +358,6 @@ PiPoHost::getEnumAttr(const std::string &attrName)
 
   if (attr != NULL)
   {
-    // int iAttr = attr->getIndex();
     PiPo::Type type = attr->getType();
 
     if (type == PiPo::Type::Enum)
@@ -320,11 +391,12 @@ PiPoHost::propagateInputStreamAttributes()
 
 void
 PiPoHost::setOutputStreamAttributes(bool hasTimeTags, double rate, double offset,
-                         unsigned int width, unsigned int height,
-                         const char **labels, bool hasVarSize,
-                         double domain, unsigned int maxFrames)
+                                    unsigned int width, unsigned int height,
+                                    const char **labels, bool hasVarSize,
+                                    double domain, unsigned int maxFrames)
 {
-  if (labels != NULL) {
+  if (labels != NULL)
+  {
     int numLabels = width;
 
     if (numLabels > PIPO_MAX_LABELS)
@@ -332,17 +404,23 @@ PiPoHost::setOutputStreamAttributes(bool hasTimeTags, double rate, double offset
       numLabels = PIPO_MAX_LABELS;
     }
 
+    for (unsigned int i = 0; i < this->outputStreamAttrs.numLabels; ++i)
+    {
+      // free previously allocated memory
+      delete[] this->outputStreamAttrs.labels[i];
+    }
+
     for (unsigned int i = 0; i < numLabels; i++)
     {
-      try {
-        this->outputStreamAttrs.labels[i] = labels[i];
-      } catch(std::exception e) {
-        this->outputStreamAttrs.labels[i] = "unnamed";
-      }
+      this->outputStreamAttrs.labels[i] = new char[PIPO_MAX_LABELS];
+      const char * label = labels[i] != NULL ? labels[i] : "";
+      std::strcpy(const_cast<char *>(this->outputStreamAttrs.labels[i]), label);
     }
 
     this->outputStreamAttrs.numLabels = numLabels;
-  } else {
+  }
+  else
+  {
     this->outputStreamAttrs.numLabels = 0;
   }
 
@@ -395,7 +473,12 @@ PiPoOut::frames(double time, double weight, PiPoValue *values,
   {
     for (int i = 0; i < num; ++i)
     {
-      //*
+      this->host->onNewFrame(time, weight, values, size);
+
+      /*
+      ////////// TODO : write a real lock-free queue using atomic_swap
+      ////////// for pipo graphs fed by audio frames
+
       for (int j = 0; j < size; ++j)
       {
         ringBuffer[writeIndex][j] = values[i * size + j];
@@ -404,17 +487,17 @@ PiPoOut::frames(double time, double weight, PiPoValue *values,
       // atomic swap ?
       writeIndex = 1 - writeIndex;
       readIndex = 1 - writeIndex;
+      this->host->onNewFrame(time, ringBuffer[readIndex]);
 
-      // this->host->onNewFrame(time, ringBuffer[readIndex]);
-
-      if (writeIndex + 1 == PIPO_OUT_RING_SIZE) {
+      if (writeIndex + 1 == PIPO_OUT_RING_SIZE)
+      {
         writeIndex = 0;
-      } else {
+      }
+      else
+      {
         writeIndex++;
       }
       //*/
-
-      this->host->onNewFrame(time, weight, values, size);
     }
   }
 
