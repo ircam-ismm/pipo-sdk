@@ -921,9 +921,6 @@ public:
     {
       unsigned int size = attr->getSize();
 
-      if(numValues > size)
-        numValues = size;
-
       for(unsigned int i = 0; i < numValues; i++)
         attr->set(i, values[i], silently);
 
@@ -954,9 +951,6 @@ public:
     if(attr != NULL)
     {
       unsigned int size = attr->getSize();
-
-      if(numValues > size)
-        numValues = size;
 
       for(unsigned int i = 0; i < numValues; i++)
         attr->set(i, values[i], true);
