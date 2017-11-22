@@ -57,7 +57,7 @@ class PiPoOut;
 class PiPoHost : public PiPo::Parent {
   friend class PiPoOut;
 
-private:
+protected:
   std::string graphName;
   PiPo *graph;
   PiPoOut *out;
