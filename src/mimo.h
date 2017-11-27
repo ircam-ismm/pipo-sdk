@@ -32,6 +32,22 @@ public:
 };
 
 
+/** structure holding a buffer full of data
+*/
+typedef struct
+{
+  int		numframes;	//< number of elements in data, varsize, timetags
+  PiPoValue    *data;		//< pointer to numframes matrices of height * width
+  int	       *varsize;	//< pointer to numframes row counts if track is varsize
+  bool		has_timetags;	//< if true, use timetags, otherwise track is sampled and starttime is given
+  union
+  {
+    double     *timetags;	//< pointer to numframes time tags
+    double	starttime;	//< start time for sampled data
+  } time;
+} mimo_buffer;
+
+
 
 /** base class for a Mimo module (modular interface for modeling objects)
 
@@ -60,7 +76,7 @@ public:
 
       @param numbuffers	number of buffers with training data
       @param numtracks	number of tracks per input buffer with training data
-      @param bufsizes	array[numbuffers] of numbers of frames for each input buffer
+      @param bufsizes	array[numbuffers * numtracks] of numbers of frames for each input buffer and track
       @param streamattr	array[numtracks] attributes of input data for each input track
       @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
   */
@@ -76,20 +92,11 @@ public:
       @param itercount		number of current iteration (starts at zero)
       @param trackindex		index of current input track (up to numtracks - 1)
       @param numbuffers		number of buffers
-      @param bufsizes		array[numbuffers] of number of frames in @p{bufdata[i]}
-      @param bufdata		array[numbuffers] of input data in format given by @p{streamattr}
-      @param timetags		array[numbuffers] of pointers to time tags or NULL when sampled
-      @param varsize 		array[numbuffers] of pointers to row sizes or NULL when constant size
+      @param buffers		array[numbuffers] of buffer data
       @return			status flag: continue training (> 0), stop training (== 0), error (< 0)
   */
-  virtual int train (int itercount, int trackindex, int numbuffers, int bufsizes[], const PiPoValue *bufdata[], const double *timetags[], const int *varsize[] = NULL) = 0;
+  virtual int train (int itercount, int trackindex, int numbuffers, const mimo_buffer buffers[]) = 0;
   
-  virtual int train (int itercount, int trackindex, int numbuffers, int bufsizes[], const PiPoValue *bufdata, const double starttime[], const int *varsize[] = NULL)
-  {
-    // for convenience: default implementation for mimo's that don't need to know about time: fall back to timetagged implementation providing NULL pointer
-    return train (itercount, trackindex, numbuffers, bufsizes, bufdata, (const double *) NULL, varsize);
-  }
-
   
   /** return recommended max number of iterations, or 0 for no limit. 
       This can be overridden by the user via an attribute 
@@ -106,24 +113,24 @@ public:
   {
     int ret = 0;
     
-    for(unsigned int i = 0; i < this->receivers.size(); i++)
+    for (unsigned int i = 0; i < this->receivers.size(); i++)
     {
       ret = dynamic_cast<Mimo *>(this->receivers[i])->setup(numbuffers, 1, bufsize, &streamattr[0]);
       
-      if(ret < 0)
+      if (ret < 0)
         break;
     }
     
     return ret;
   }
 
-  int propagateTrain (int itercount, int trackindex, int numbuffers, int bufsizes[], const PiPoValue *bufdata[], const double *timetags[], const int *varsize[])
+  int propagateTrain (int itercount, int trackindex, int numbuffers, const mimo_buffer buffers[])
   {
     int ret = 0;
     
     for (unsigned int i = 0; i < this->receivers.size(); i++)
     {
-      ret = dynamic_cast<Mimo *>(this->receivers[i])->train(itercount, trackindex, numbuffers, bufsizes, bufdata, timetags, varsize);
+      ret = dynamic_cast<Mimo *>(this->receivers[i])->train(itercount, trackindex, numbuffers, buffers);
       
       if (ret < 0)
         break;
