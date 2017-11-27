@@ -5,8 +5,10 @@
 #include "PiPo.h"
 #include <memory>
 
-/* interface for a class that holds the mimo module-specific model parameters resulting from training
- */
+
+
+/** interface for a class that holds the mimo module-specific model parameters resulting from training
+*/
 class mimo_model_data
 {
 public:
@@ -29,13 +31,15 @@ public:
   // virtual const int foo() = 0;
 };
 
-/*
 
-  every mimo module inherits the basic stream description and data
-  passing methods (streamAttributes() and frames()) from PiPo, but
-  ignores real-time oriented methods (segment()), and adds iteration
-  for training.
- */
+
+/** base class for a Mimo module (modular interface for modeling objects)
+
+    every mimo module inherits the basic stream description and data
+    passing methods (streamAttributes() and frames()) from PiPo, but
+    ignores real-time oriented methods (segment()), and adds iteration
+    for training.
+*/
 
 class Mimo : public PiPo
 {
@@ -43,13 +47,11 @@ public:
   // constructor
   Mimo (PiPo::Parent *parent, Mimo *receiver = NULL)
   : PiPo(parent, receiver)
-  {
-  };
+  {  }
   
   Mimo (const Mimo &other)
   : PiPo(other)
-  {
-  }
+  {  }
   
   /** the PiPo::frames() method performs decoding */
   //virtual int frames (...);
@@ -65,29 +67,27 @@ public:
   virtual int setup (int numbuffers, int numtracks, int bufsizes[], const PiPoStreamAttributes *streamattr[]) = 0;
     
   /** the train method performs one iteration of training.
-      It is called for each buffer and each input track, receiving the training data sets.
+
+      It is called for each input track with a list of buffer data, receiving the training data sets.
       The first iteration receives the original data, further iterations the training output data of previous iterations, 
       that each iteration can output by calling propagateTrain().
       For multi-modal training (with more than one input track), only the call for the last track may call propagateTrain().
 
       @param itercount		number of current iteration (starts at zero)
-      @param bufferindex	index of current input buffer (up to numbuffers - 1)
       @param trackindex		index of current input track (up to numtracks - 1)
-      @param numframes		number of frames in @p{data}
-      @param data		input data in format given by @p{streamattr}
-      @param timetags		pointer to @p{numframes} time tags or NULL when sampled
-      @param varsize 		pointer to @p{numframes} of row sizes or NULL when constant size
+      @param numbuffers		number of buffers
+      @param bufsizes		array[numbuffers] of number of frames in @p{bufdata[i]}
+      @param bufdata		array[numbuffers] of input data in format given by @p{streamattr}
+      @param timetags		array[numbuffers] of pointers to time tags or NULL when sampled
+      @param varsize 		array[numbuffers] of pointers to row sizes or NULL when constant size
       @return			status flag: continue training (> 0), stop training (== 0), error (< 0)
-
-      N.B.: we could replace the constraints on calling sequence by a more complicated input format where pointers to data and attributes of each input track are passed as arrays, that would penalise the vast majority of single-track use cases:
-
-      virtual int train (int itercount, int bufferindex, int numframes[], PiPoValue *data[], double *timetags[], int *varsize[]) = 0;
   */
-  virtual int train (int itercount, int bufferindex, int trackindex, int numframes, const PiPoValue *data, const double *timetags, const int *varsize) = 0;
+  virtual int train (int itercount, int trackindex, int numbuffers, int bufsizes[], const PiPoValue *bufdata[], const double *timetags[], const int *varsize[] = NULL) = 0;
   
-  virtual int train (int itercount, int bufferindex, int trackindex, int numframes, const PiPoValue *data, const double starttime, const int *varsize)
+  virtual int train (int itercount, int trackindex, int numbuffers, int bufsizes[], const PiPoValue *bufdata, const double starttime[], const int *varsize[] = NULL)
   {
-    return train (itercount, bufferindex, trackindex, numframes, data, (const double *) NULL, varsize);
+    // for convenience: default implementation for mimo's that don't need to know about time: fall back to timetagged implementation providing NULL pointer
+    return train (itercount, trackindex, numbuffers, bufsizes, bufdata, (const double *) NULL, varsize);
   }
 
   
@@ -117,15 +117,15 @@ public:
     return ret;
   }
 
-  int propagateTrain(int itercount, int bufferindex, int trackindex, int numframes, const PiPoValue *data, const double *timetags, const int *varsize)
+  int propagateTrain (int itercount, int trackindex, int numbuffers, int bufsizes[], const PiPoValue *bufdata[], const double *timetags[], const int *varsize[])
   {
     int ret = 0;
     
     for (unsigned int i = 0; i < this->receivers.size(); i++)
     {
-      ret = dynamic_cast<Mimo *>(this->receivers[i])->train(itercount, bufferindex, trackindex, numframes, data, timetags, varsize);
+      ret = dynamic_cast<Mimo *>(this->receivers[i])->train(itercount, trackindex, numbuffers, bufsizes, bufdata, timetags, varsize);
       
-      if(ret < 0)
+      if (ret < 0)
         break;
     }
     
