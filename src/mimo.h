@@ -80,7 +80,7 @@ public:
       @param streamattr	array[numtracks] attributes of input data for each input track
       @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
   */
-  virtual int setup (int numbuffers, int numtracks, int bufsizes[], const PiPoStreamAttributes *streamattr[]) = 0;
+  virtual int setup (int numbuffers, int numtracks, const int bufsizes[], const PiPoStreamAttributes *streamattr[]) = 0;
     
   /** the train method performs one iteration of training.
 
@@ -109,7 +109,7 @@ public:
   /** return trained model parameters */
   virtual mimo_model_data *getmodel () = 0;
 
-  int propagateSetup (int numbuffers, int numtracks, int bufsize[], const PiPoStreamAttributes *streamattr[])
+  int propagateSetup (int numbuffers, int numtracks, const int bufsize[], const PiPoStreamAttributes *streamattr[])
   {
     int ret = 0;
     
