@@ -34,7 +34,7 @@ public:
 
 /** structure holding a buffer full of data
 */
-typedef struct
+struct mimo_buffer
 {
   int		numframes;	//< number of elements in data, varsize, timetags
   PiPoValue    *data;		//< pointer to numframes matrices of height * width
@@ -42,10 +42,31 @@ typedef struct
   bool		has_timetags;	//< if true, use timetags, otherwise track is sampled and starttime is given
   union
   {
-    double     *timetags;	//< pointer to numframes time tags
-    double	starttime;	//< start time for sampled data
+    const double *timetags;	//< pointer to numframes time tags
+    double	  starttime;	//< start time for sampled data
   } time;
-} mimo_buffer;
+
+  
+  mimo_buffer ()
+  {
+    numframes	   = 0;
+    data	   = NULL;
+    varsize	   = NULL;
+    has_timetags   = false;
+    time.timetags  = NULL;
+    time.starttime = 0;
+  }
+  
+  mimo_buffer (int _numframes, PiPoValue *_data, int *_varsize, bool _has_timetags, const double *_timetags, double _starttime)
+  {
+    numframes	   = _numframes;
+    data	   = _data;
+    varsize	   = _varsize;
+    has_timetags   = _has_timetags;
+    time.timetags  = _timetags;
+    time.starttime = _starttime;
+  }
+};
 
 
 
