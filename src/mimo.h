@@ -12,7 +12,12 @@
 class mimo_model_data
 {
 public:
+  /** query size of json encoding of model (including terminating 0).
+      will be followed by a call to to_json() */
+  virtual int json_size () = 0;
+
   /** output as json string into out
+      Is preceeded by a call to json_size().
       Throws an exception if string would exceed size.
 
       @param out	string buffer of length \p{size}
@@ -22,7 +27,9 @@ public:
       N.B.: the mimo module might be loaded from a dynamic library, so
       we can't return a complex object such as std::string that
       internatlly uses heap allocations, since the dylib's heap is a
-      separate one from the main app */
+      separate one from the main app. We can't even work on a
+      std::stringstream passed by reference, since probably the
+      reallocations also use the heap. */
   virtual char *to_json (char *out, int size) throw() = 0;
 
   /** get model from json string */
