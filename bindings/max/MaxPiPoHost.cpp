@@ -12,6 +12,8 @@
 
 #include <string.h>
 #include <vector>
+#include "ext.h"	// for ext_dictionary.h and
+#include "ext_dictobj.h"
 
 using namespace std;
 
@@ -74,10 +76,11 @@ getMaxAttributeList(PiPo *pipo, unsigned int attrId, long *pac, t_atom **pat)
       break;
     }
     case PiPo::String:
+    case PiPo::Dictionary:
     {
       for(unsigned int i = 0; i < attr->getSize(); i++)
         atom_setsym((*pat) + i, gensym(attr->getStr(i)));
-      
+
       break;
     }
 
@@ -134,8 +137,8 @@ MaxPiPoHost::setChainDescription(const char *str, PiPo *receiver)
   return NULL;
 }
 
-void
-MaxPiPoHost::copyPiPoAttributes(MaxAttrGetterT getAttrMeth, MaxAttrSetterT setAttrMeth)
+/** declare pipo module attributes as max attributes */
+void MaxPiPoHost::copyPiPoAttributes (MaxAttrGetterT getAttrMeth, MaxAttrSetterT setAttrMeth)
 {
   for(int iPiPo = 0; iPiPo < this->chain.getSize(); iPiPo++)
   {
@@ -181,6 +184,7 @@ MaxPiPoHost::copyPiPoAttributes(MaxAttrGetterT getAttrMeth, MaxAttrSetterT setAt
           break;
           
         case PiPo::String:
+        case PiPo::Dictionary:
           typeSym = USESYM(symbol);
           break;
           
@@ -306,7 +310,31 @@ MaxPiPoHost::setMaxAttr(const char *attrName, long ac, t_atom *at, PiPoChain *ch
                       attr->set(i, 0, true);
                   }
               }
-              
+
+	      if (attr->getType() == PiPo::Dictionary)
+	      { // check if attr value is valid max dictionary and convert into json string
+		assert(attr->getSize() == 1); //YAGNI: make a list of json strings
+		PiPoDictionaryAttr *dictattr = dynamic_cast<PiPoDictionaryAttr *>(attr);
+		
+		t_dictionary *dict = dictobj_findregistered_retain(atom_getsym(at));
+		if (dict != NULL)
+		{
+		  t_object    *jsonwriter = (t_object *) object_new(_sym_nobox, _sym_jsonwriter);
+		  t_handle     json;
+
+		  object_method(jsonwriter, _sym_writedictionary, dict);
+		  object_method(jsonwriter, _sym_getoutput, &json);
+		  
+		  // now const char *str = *json contains our JSON serialization of the t_dictionary
+		  dictattr->setJson(*json);
+		  
+		  object_free(jsonwriter);
+		  dictobj_release(dict);
+		}
+		else // attr. value is not a dictionary, we assume it is json and copy it
+		  dictattr->setJson(mysneg(atom_getsym(at)));
+	      }
+      
               attr->changed(silently);
           }
           else
@@ -314,7 +342,6 @@ MaxPiPoHost::setMaxAttr(const char *attrName, long ac, t_atom *at, PiPoChain *ch
         }
         else
           object_error(this->ext, "missing argument for attribute %s", attrName);
-        
       }
     }
   }
@@ -585,3 +612,10 @@ MaxPiPoHost::getOutputMaxFrames()
 {
   return this->outputStreamAttrs.maxFrames;
 }
+
+/** EMACS **
+ * Local variables:
+ * mode: c++
+ * c-basic-offset:2
+ * End:
+ */
