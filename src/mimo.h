@@ -129,10 +129,12 @@ public:
   /** return recommended max number of iterations, or 0 for no limit. 
       This can be overridden by the user via an attribute 
       N.B.: The host should ask for maxiter at every iteration, so that a training algorithm can adapt its recommendation to the training progress */
-  virtual int maxiter() { return 0; /* unlimited */ }
+  virtual int maxiter() { return 0; /* default: unlimited */ }
 
-  /** return error, distance or loss metric from training */
-  virtual double getmetric() { return 0; /* whatever */ };
+  /** after train, host checks if model converged and iterations should stop
+      @param metric		return error, distance or loss metric from training.
+  */
+  virtual bool converged (double *metric) { return true; /* default: one shot */ };
 
   /** return trained model parameters */
   virtual mimo_model_data *getmodel () = 0;
