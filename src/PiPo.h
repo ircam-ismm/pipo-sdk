@@ -1058,8 +1058,9 @@ private:
   const char * value;
 
 public:
-  PiPoScalarAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream, const char * initVal = (const char *)0) :
-  Attr(pipo, name, descr, &typeid(const char *), changesStream)
+  PiPoScalarAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream,
+		 const char *initVal = (const char *) 0)
+  : Attr(pipo, name, descr, &typeid(const char *), changesStream)
   {
     this->value = initVal;
   }
@@ -1120,7 +1121,7 @@ class PiPoDictionaryAttr : public PiPoScalarAttr<const char *>
 {
 public:
   PiPoDictionaryAttr (PiPo *pipo, const char *name, const char *descr, bool changesStream, const char * initVal = (const char *) 0)
-  : PiPoScalarAttr<const char *>(pipo, name, descr, changesStream, 0), json_string(NULL)
+  : PiPoScalarAttr<const char *>(pipo, name, descr, changesStream, initVal), json_string(NULL)
   {
     this->type = PiPo::Dictionary;
   }
@@ -1131,7 +1132,10 @@ public:
       delete json_string;
   }
 
-  const std::string &getJson () { return json_string; }
+  const char *getJson ()
+  {
+    return json_string  ?  const_cast<const char *>(json_string)  :  "";
+  }
 
   // must only be called by host
   void setJson (const char *str)
