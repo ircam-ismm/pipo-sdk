@@ -56,7 +56,7 @@
 #define PIPO_MAX_LABELS 1024
 
 #ifndef PIPO_SDK_VERSION
-#define PIPO_SDK_VERSION 0.2
+#define PIPO_SDK_VERSION 0.3
 
 #endif
 
@@ -224,27 +224,35 @@ Their value can be queried in \ref streamAttributes or \ref frames (in real-time
 class PiPoGain : public PiPo
 {
 private:
-  std::vector<PiPoValue> buffer;
+  std::vector<PiPoValue> buffer_;
+  unsigned int           framesize_;    // cache max frame size
 
 public:
-  PiPoScalarAttr<double> factor;
+  PiPoScalarAttr<double> factor_attr_;
 
   PiPoGain (Parent *parent, PiPo *receiver = NULL)
   : PiPo(parent, receiver),
-    factor(this, "factor", "Gain Factor", false, 1.0)
+    factor_attr_(this, "factor", "Gain Factor", false, 1.0)
   { }
 
   ~PiPoGain (void)
   { }
 
+  // Configure PiPo module according to the input stream attributes and propagate output stream attributes.
+  // Note: For audio input, one PiPo frame corresponds to one sample frame, i.e. width is the number of channels, height is 1, maxFrames is the maximum number of (sample) frames passed to the module, rate is the sample rate, and domain is 1 / sample rate.
+  //
   int streamAttributes (bool hasTimeTags, double rate, double offset,
                         unsigned int width, unsigned int height,
                         const char **labels, bool hasVarSize,
                         double domain, unsigned int maxFrames)
   {
-    // A general pipo can not work in place, we need to create an output buffer
-    buffer.resize(width * height * maxFrames);
+    // we need to store the max frame size in case hasVarSize is true
+    framesize_ = width * height; 
 
+    // A general pipo can not work in place, we need to create an output buffer
+    buffer_.resize(framesize_ * maxFrames);
+
+    // we will produce the same stream layout as the input
     return propagateStreamAttributes(hasTimeTags, rate, offset, width, height,
                                      labels, hasVarSize, domain, maxFrames);
   }
@@ -252,19 +260,19 @@ public:
   int frames (double time, double weight, PiPoValue *values,
               unsigned int size, unsigned int num)
   {
-    double f = factor.get(); // get gain factor here, as it could change while running
-    PiPoValue *ptr = &buffer[0];
+    double     f      = factor_attr_.get(); // get gain factor here, as it could change while running
+    PiPoValue *outptr = &buffer_[0];
 
     for (unsigned int i = 0; i < num; i++)
     {
       for (unsigned int j = 0; j < size; j++)
-  ptr[j] = values[j] * f;
+        outptr[j] = values[j] * f;
 
-      ptr    += size;
-      values += size;
+      outptr += framesize_;
+      values += framesize_;
     }
 
-    return propagateFrames(time, weight, &buffer[0], size, num);
+    return propagateFrames(time, weight, &buffer_[0], size, num);
   }
 };
 \endcode
@@ -363,6 +371,7 @@ public:
     return PIPO_SDK_VERSION;
 #endif
   }
+
   /**
    * @brief Sets PiPo parent.
    *
@@ -370,6 +379,130 @@ public:
    */
   virtual void setParent(Parent *parent) { this->parent = parent; }
 
+    /**
+   * @brief Configures a PiPo module according to the input stream attributes and propagate output stream attributes
+   *
+   * Note: For audio input, one PiPo frame corresponds to one sample frame, i.e. width is the number of channels, height is 1, and maxFrames is the maximum number of (sample) frames passed to the module. Also, rate is the sample rate and domain is 1 / sample rate.
+   *
+   * PiPo module:
+   * Any implementation of this method requires a propagateStreamAttributes() method call and returns its return value, typically like this:
+   *
+   * \code
+   *  return this->propagateStreamAttributes(hasTimeTags, rate, offset, width, height, labels, hasVarSize, domain, maxFrames);
+   * \endcode
+   *
+   * PiPo host:
+   * A terminating receiver module provided by a PiPo host handles the final output stream attributes and usally returns 0.
+   *
+   * @param hasTimeTags a boolean representing whether the elements of the stream are time-tagged
+   * @param rate        the frame rate (highest average rate for time-tagged streams, sample rate for audio input)
+   * @param offset      the lag of the output stream relative to the input
+   * @param width       the frame width (number of channels for audio or data matrix columns)
+   * @param height      the frame height (or number of matrix rows, always 1 for audio)
+   * @param labels      optional labels for the frames' channels or columns (can be NULL)
+   * @param hasVarSize  a boolean representing whether the frames have a variable height (respecting the given frame height as maximum)
+   * @param domain      extent of a frame in the given domain (e.g. duration or frequency range)
+   * @param maxFrames   maximum number of frames in a block exchanged between two modules (window size for audio)
+   * @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
+   */
+  virtual int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames) = 0;
+
+  /**
+   * @brief Resets processing (optional)
+   *
+   * PiPo module:
+   * Any implementation of this method requires a propagateReset() method call and returns its return value.
+   *
+   * PiPo host:
+   * A terminating receiver module provided by a PiPo host usally simply returns 0.
+   *
+   * @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
+   */
+  virtual int reset(void)
+  {
+    return this->propagateReset();
+  }
+
+  /**
+   * @brief Processes a single frame or a block of frames
+   *
+   * PiPo module:
+   * An implementation of this method may call propagateFrames(), typically like this:
+   *
+   * \code
+   *  return this->propagateFrames(time, weight, values, size, num);
+   * \endcode
+   *
+   * PiPo host:
+   * A terminating receiver module provided by a PiPo host handles the received frames and usally returns 0.
+   *
+   * @param time        time-tag for a single frame or a block of frames
+   * @param weight      weight associated to frame or block
+   * @param values      interleaved frames values, row by row (interleaving channels or columns), frame by frame
+   TODO: should be const!!!
+   * @param size        actual number of elements in each frame (number of channels for audio, can differ from width * height for varsize frames!)
+   * @param num         number of frames (number of sample framess for audio input)
+   * @return            0 for ok or a negative error code (to be specified), -1 for an unspecified error
+   */
+  virtual int frames (double time, double weight, PiPoValue *values, unsigned int size, unsigned int num) = 0;
+
+  /**
+   * @brief UNUSED: Signals segment start or end
+   *
+   * PiPo module:
+   * An implementation of this method calls propagateFrames() at the end of the segment.
+   *
+   * In the case of two sucessive calls to segment(), the second call implitly ends the last segment.
+   *
+   * If the module did not receive any frames - at all or since the last segment end -, the method should
+   * return 0 to the call segment(0.0, end) without calling propagateFrames().
+   * This permits the host to check whether a module implements the segment method or not.
+   *
+   * \code
+
+   if(this->started)
+   {
+   // do what is to be done to finalize the segment description
+   this->propagateFrames(time, weight, values, size, num);
+   this->started = false;
+   }
+
+   if(start)
+   {
+   // do what is to be done to initialize the segment description
+   }
+
+   return 0;
+
+   * \endcode
+   *
+   * @param time time of segment start of end
+   * @param start flag, true for segment start, false for segment end
+   * @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
+   */
+  virtual int segment(double time, bool start)
+  {
+    return -1;
+  }
+
+  /**
+   * @brief Finalizes processing (optional)
+   *
+   * PiPo module:
+   * Any implementation of this method requires a propagateFinalize() method call and returns its return value.
+   *
+   * PiPo host:
+   * A terminating receiver module provided by a PiPo host usally simply returns 0.
+   *
+   * @param inputEnd end time of the finalized input stream
+   * @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
+   */
+  virtual int finalize(double inputEnd)
+  {
+    return this->propagateFinalize(inputEnd);
+  }
+
+  
   /**
    * @brief Propagates a module's output stream attributes to its receiver.
    *
@@ -506,127 +639,9 @@ public:
         this->receivers.push_back(receiver);
     }
   }
-
-  /**
-   * @brief Configures a PiPo module according to the input stream attributes and propagate output stream attributes
-   *
-   * PiPo module:
-   * Any implementation of this method requires a propagateStreamAttributes() method call and returns its return value, typically like this:
-   *
-   * \code
-   *  return this->propagateStreamAttributes(hasTimeTags, rate, offset, width, height, labels, hasVarSize, domain, maxFrames);
-   * \endcode
-   *
-   * PiPo host:
-   * A terminating receiver module provided by a PiPo host handles the final output stream attributes and usally returns 0.
-   *
-   * @param hasTimeTags a boolean representing whether the elements of the stream are time-tagged
-   * @param rate the frame rate (highest average rate for time-tagged streams, sample rate for audio input)
-   * @param offset the lag of the output stream relative to the input
-   * @param width the frame width (number of channels for audio or data matrix columns)
-   * @param height the frame height (or number of matrix rows, always 1 for audio)
-   * @param labels optional labels for the frames' channels or columns (can be NULL)
-   * @param hasVarSize a boolean representing whether the frames have a variable height (respecting the given frame height as maximum)
-   * @param domain extent of a frame in the given domain (e.g. duration or frequency range)
-   * @param maxFrames maximum number of frames in a block exchanged between two modules (window size for audio)
-   * @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
+  
+  /** section: internal methods
    */
-  virtual int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames) = 0;
-
-  /**
-   * @brief Resets processing (optional)
-   *
-   * PiPo module:
-   * Any implementation of this method requires a propagateReset() method call and returns its return value.
-   *
-   * PiPo host:
-   * A terminating receiver module provided by a PiPo host usally simply returns 0.
-   *
-   * @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
-   */
-  virtual int reset(void)
-  {
-    return this->propagateReset();
-  }
-
-  /**
-   * @brief Processes a single frame or a block of frames
-   *
-   * PiPo module:
-   * An implementation of this method may call propagateFrames(), typically like this:
-   *
-   * \code
-   *  return this->propagateFrames(time, weight, values, size, num);
-   * \endcode
-   *
-   * PiPo host:
-   * A terminating receiver module provided by a PiPo host handles the received frames and usally returns 0.
-   *
-   * @param time time-tag for a single frame or a block of frames
-   * @param weight weight associated to frame or block
-   * @param values interleaved frames values, row by row (interleaving channels or columns), frame by frame
-   TODO: should be const!!!
-   * @param size total size of each of all frames (size = number of elements = width * height = number of channels for audio)
-   * @param num number of frames (number of samples for audio input)
-   * @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
-   */
-  virtual int frames (double time, double weight, PiPoValue *values, unsigned int size, unsigned int num) = 0;
-
-  /**
-   * @brief Signals segment start or end
-   *
-   * PiPo module:
-   * An implementation of this method calls propagateFrames() at the end of the segment.
-   *
-   * In the case of two sucessive calls to segment(), the second call implitly ends the last segment.
-   *
-   * If the module did not receive any frames - at all or since the last segment end -, the method should
-   * return 0 to the call segment(0.0, end) without calling propagateFrames().
-   * This permits the host to check whether a module implements the segment method or not.
-   *
-   * \code
-
-   if(this->started)
-   {
-   // do what is to be done to finalize the segment description
-   this->propagateFrames(time, weight, values, size, num);
-   this->started = false;
-   }
-
-   if(start)
-   {
-   // do what is to be done to initialize the segment description
-   }
-
-   return 0;
-
-   * \endcode
-   *
-   * @param time time of segment start of end
-   * @param start flag, true for segment start, false for segment end
-   * @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
-   */
-  virtual int segment(double time, bool start)
-  {
-    return -1;
-  }
-
-  /**
-   * @brief Finalizes processing (optinal)
-   *
-   * PiPo module:
-   * Any implementation of this method requires a propagateFinalize() method call and returns its return value.
-   *
-   * PiPo host:
-   * A terminating receiver module provided by a PiPo host usally simply returns 0.
-   *
-   * @param inputEnd end time of the finalized input stream
-   * @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
-   */
-  virtual int finalize(double inputEnd)
-  {
-    return this->propagateFinalize(inputEnd);
-  }
 
   void streamAttributesChanged(Attr *attr)
   {
@@ -664,7 +679,7 @@ public:
    *
    */
 public:
-  enum Type { Undefined, Bool, Enum, Int, Float, Double, String, Function };
+  enum Type { Undefined, Bool, Enum, Int, Float, Double, String, Function, Dictionary };
 
   // dummy enum used for specialization of templates
   enum Enumerate { };
@@ -707,8 +722,10 @@ public:
     unsigned int index;
     const char *name; /**< attribute name */
     const char *descr; /**< short description */
-    enum Type type;
     bool changesStream;
+
+  protected:
+    enum Type type;
 
   public:
     /**
@@ -1094,6 +1111,42 @@ public:
   double getDbl(unsigned int i = 0) { return (double)this->value; }
   const char *getStr(unsigned int i = 0) { return this->getEnumTag(this->value); }
 };
+
+
+/** specialisation of string attr that can receive a dictionary structure from the host and transmits this as a json string to the pipo module.
+    The string value of the attr is the external id of the dictionary and shouldn't be changed.
+ */
+class PiPoDictionaryAttr : public PiPoScalarAttr<const char *>
+{
+public:
+  PiPoDictionaryAttr (PiPo *pipo, const char *name, const char *descr, bool changesStream, const char * initVal = (const char *) 0)
+  : PiPoScalarAttr<const char *>(pipo, name, descr, changesStream, 0), json_string(NULL)
+  {
+    this->type = PiPo::Dictionary;
+  }
+
+  ~PiPoDictionaryAttr ()
+  {
+    if (json_string)
+      delete json_string;
+  }
+
+  const std::string &getJson () { return json_string; }
+
+  // must only be called by host
+  void setJson (const char *str)
+  {
+    if (json_string)
+      delete json_string;
+
+    json_string = new char [strlen(str) + 1];
+    strcpy(json_string, str);
+  }
+  
+private:
+  char *json_string; // std::string crashes again...
+};
+
 
 /***********************************************
  *
