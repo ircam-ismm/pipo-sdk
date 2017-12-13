@@ -45,7 +45,7 @@ struct mimo_buffer
 {
   int		numframes;	//< number of elements in data, varsize, timetags
   PiPoValue    *data;		//< pointer to numframes matrices of height * width
-  int	       *varsize;	//< pointer to numframes row counts if track is varsize
+  const int    *varsize;	//< pointer to numframes row counts if track is varsize
   bool		has_timetags;	//< if true, use timetags, otherwise track is sampled and starttime is given
   union
   {
@@ -64,7 +64,7 @@ struct mimo_buffer
     time.starttime = 0;
   }
   
-  mimo_buffer (int _numframes, PiPoValue *_data, int *_varsize, bool _has_timetags, const double *_timetags, double _starttime)
+  mimo_buffer (int _numframes, PiPoValue *_data, const int *_varsize, bool _has_timetags, const double *_timetags, double _starttime)
   {
     numframes	   = _numframes;
     data	   = _data;
@@ -166,8 +166,15 @@ public:
     
     return ret;
   }
-};
+}; // end class Mimo
 
+
+/** special attribute class for decoder pipo of a mimo module: gets model from json string (or max dictionary handled by the host)
+ 
+class MimoModelAttr : public PiPoScalarAttr<std::string>
+{
+};
+*/
 
 /** EMACS **
  * Local variables:
