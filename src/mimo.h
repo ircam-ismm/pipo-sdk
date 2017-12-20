@@ -70,8 +70,10 @@ struct mimo_buffer
     data	   = _data;
     varsize	   = _varsize;
     has_timetags   = _has_timetags;
-    time.timetags  = _timetags;
-    time.starttime = _starttime;
+    if (has_timetags)
+      time.timetags  = _timetags;
+    else
+      time.starttime = _starttime;
   }
 };
 
