@@ -707,12 +707,12 @@ public:
     {
         return !(at1 == at2);
     }
-    bool          isNumber()  { return (type == Int || type == Double); }
-    bool          isString()  { return type == String; }
+    bool          isNumber()  { return type == Int || type == Double; }
+    bool          isString()  { return type == String || type == Dictionary; }
     PiPo::Type    getType()   { return type; }
     int           getInt()    { return ((type == Int) ? this->data.itg : ((type == Double) ? (int)(this->data.dbl) : 0)); }
     double        getDouble() { return ((type == Double) ? this->data.dbl : ((type == Int) ? (double)(this->data.itg) : 0.)); }
-    const char *  getString() { return ((type == String) ? this->data.str : ""); }
+    const char *  getString() { return (isString() ? this->data.str : ""); }
   };
 
   class Attr
