@@ -79,7 +79,7 @@ getMaxAttributeList(PiPo *pipo, unsigned int attrId, long *pac, t_atom **pat)
     case PiPo::Dictionary:
     {
       for(unsigned int i = 0; i < attr->getSize(); i++)
-        atom_setsym((*pat) + i, gensym(attr->getStr(i)));
+        atom_setsym((*pat) + i, attr->getStr(i) ? gensym(attr->getStr(i)) : gensym("")); // why didn't this crash before the NULL check?
 
       break;
     }
