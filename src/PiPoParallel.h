@@ -24,6 +24,9 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 */
 
+#ifndef _PIPO_PARALLEL_H_
+#define _PIPO_PARALLEL_H_
+
 #include <assert.h> //db
 #include <stdlib.h> //db
 #include "PiPo.h"
@@ -341,6 +344,9 @@ public:
   /** @} end of processing methods */
   /** @} end of overloaded PiPo methods */
 };
+
+#endif /* _PIPO_PARALLEL_H_ */
+
 
 /** EMACS **
  * Local variables:
