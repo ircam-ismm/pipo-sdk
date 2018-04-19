@@ -347,7 +347,13 @@ PiPoHost::getAttrEnumList(const std::string &attrName)
     }
   }
 
-  return { "" };
+#if (__STDC_VERSION__ >= 201103L)	/* C++11 */
+  return { "" };	  
+#else				/* fallback for C++98 */  
+  std::vector<std::string> empty;
+  empty.push_back("");
+  return empty;
+#endif
 }
 
 bool

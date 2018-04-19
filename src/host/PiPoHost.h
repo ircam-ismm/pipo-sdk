@@ -133,7 +133,7 @@ private:
   // fix all dependencies to compile with the c++11 flag before (Pm2, ircam_descriptor, ...)
   // std::atomic<int> writeIndex, readIndex;
   int writeIndex, readIndex;
-  std::vector<std::vector<PiPoValue>> ringBuffer;
+  std::vector<std::vector<PiPoValue> > ringBuffer;
 
 public:
   PiPoOut(PiPoHost *host);
