@@ -2,12 +2,15 @@
  *
  * @file MaxPiPoHost.h
  * @author Norbert.Schnell@ircam.fr
- * 
+ *
  * @brief Max PiPo utilities
  * Copyright (C) 2012-2014 by IRCAM – Centre Pompidou, Paris, France.
  * All rights reserved.
- * 
+ *
  */
+
+#include <assert.h>
+
 #include "MaxPiPoHost.h"
 
 #include <string.h>
@@ -80,12 +83,12 @@ getMaxAttributeList(PiPo *pipo, unsigned int attrId, long *pac, t_atom **pat)
     {
       for(unsigned int i = 0; i < attr->getSize(); i++)
         atom_setsym((*pat) + i, attr->getStr(i) ? gensym(attr->getStr(i)) : gensym("")); // why didn't this crash before the NULL check?
-
+      
       break;
     }
-
+      
     default:
-      break;      
+      break;
   }
 }
 
@@ -96,8 +99,8 @@ getMaxAttributeList(PiPo *pipo, unsigned int attrId, long *pac, t_atom **pat)
  */
 MaxPiPoHost::MaxPiPoHost(t_object *ext, const char *prefix)
 : moduleFactory(ext, prefix),
-  chain(this, &this->moduleFactory),
-  inputStreamAttrs(), outputStreamAttrs()
+chain(this, &this->moduleFactory),
+inputStreamAttrs(), outputStreamAttrs()
 {
   this->ext = ext;
   systhread_mutex_new(&this->mutex, SYSTHREAD_MUTEX_RECURSIVE);
@@ -132,7 +135,7 @@ MaxPiPoHost::setChainDescription(const char *str, PiPo *receiver)
   this->chain.clear();
   
   if(this->chain.parse(str) > 0 && this->chain.instantiate() && this->chain.connect(receiver))
-     return this->chain.getHead();
+    return this->chain.getHead();
   
   return NULL;
 }
@@ -198,7 +201,7 @@ void MaxPiPoHost::copyPiPoAttributes (MaxAttrGetterT getAttrMeth, MaxAttrSetterT
       if(type == PiPo::Bool)
         object_attr_addattr_parse(this->ext, attrName.c_str(), "style", USESYM(symbol), 0, "onoff");
       else if(type == PiPo::Enum)
-      {      
+      {
         vector<const char *> *enumList = attr->getEnumList();
         
         if(enumList != NULL && enumList->size() > 0)
@@ -228,13 +231,13 @@ void MaxPiPoHost::copyPiPoAttributes (MaxAttrGetterT getAttrMeth, MaxAttrSetterT
 void
 MaxPiPoHost::getMaxAttr(const char *attrName, long *pac, t_atom **pat, PiPoChain *chain)
 {
-  if(pac != NULL && pat != NULL) 
+  if(pac != NULL && pat != NULL)
   {
     char instanceName[maxWordLen];
     char pipoAttrName[maxWordLen];
     
     this->lock();
-   
+    
     if(chain == NULL)
       chain = &this->chain;
     
@@ -299,43 +302,43 @@ MaxPiPoHost::setMaxAttr(const char *attrName, long ac, t_atom *at, PiPoChain *ch
           
           if(atom_isnum(at) || atom_issym(at))
           {
-              for(int i = 0; i < ac; i++) {
-                  if(atom_issym(at + i)) {
-                      attr->set(i, (const char *)mysneg(atom_getsym(at + i)), true);
-                  } else if(atom_islong(at + i)) {
-                      attr->set(i, (int)atom_getlong(at + i), true);
-                  } else if(atom_isfloat(at + i)) {
-                      attr->set(i, (double)atom_getfloat(at + i), true);
-                  } else {
-                      attr->set(i, 0, true);
-                  }
+            for(int i = 0; i < ac; i++) {
+              if(atom_issym(at + i)) {
+                attr->set(i, (const char *)mysneg(atom_getsym(at + i)), true);
+              } else if(atom_islong(at + i)) {
+                attr->set(i, (int)atom_getlong(at + i), true);
+              } else if(atom_isfloat(at + i)) {
+                attr->set(i, (double)atom_getfloat(at + i), true);
+              } else {
+                attr->set(i, 0, true);
               }
-
-	      if (attr->getType() == PiPo::Dictionary)
-	      { // check if attr value is valid max dictionary and convert into json string
-		assert(attr->getSize() == 1); //YAGNI: make a list of json strings
-		PiPoDictionaryAttr *dictattr = dynamic_cast<PiPoDictionaryAttr *>(attr);
-		
-		t_dictionary *dict = dictobj_findregistered_retain(atom_getsym(at));
-		if (dict != NULL)
-		{
-		  t_object    *jsonwriter = (t_object *) object_new(_sym_nobox, _sym_jsonwriter);
-		  t_handle     json;
-
-		  object_method(jsonwriter, _sym_writedictionary, dict);
-		  object_method(jsonwriter, _sym_getoutput, &json);
-		  
-		  // now const char *str = *json contains our JSON serialization of the t_dictionary
-		  dictattr->setJson(*json);
-		  
-		  object_free(jsonwriter);
-		  dictobj_release(dict);
-		}
-		else // attr. value is not a dictionary, we assume it is json and copy it
-		  dictattr->setJson(mysneg(atom_getsym(at)));
-	      }
-      
-              attr->changed(silently);
+            }
+            
+            if (attr->getType() == PiPo::Dictionary)
+            { // check if attr value is valid max dictionary and convert into json string
+              //assert(attr->getSize() == 1); //YAGNI: make a list of json strings
+              PiPoDictionaryAttr *dictattr = dynamic_cast<PiPoDictionaryAttr *>(attr);
+              
+              t_dictionary *dict = dictobj_findregistered_retain(atom_getsym(at));
+              if (dict != NULL)
+              {
+                t_object    *jsonwriter = (t_object *) object_new(_sym_nobox, _sym_jsonwriter);
+                t_handle     json;
+                
+                object_method(jsonwriter, _sym_writedictionary, dict);
+                object_method(jsonwriter, _sym_getoutput, &json);
+                
+                // now const char *str = *json contains our JSON serialization of the t_dictionary
+                dictattr->setJson(*json);
+                
+                object_free(jsonwriter);
+                dictobj_release(dict);
+              }
+              else // attr. value is not a dictionary, we assume it is json and copy it
+                dictattr->setJson(mysneg(atom_getsym(at)));
+            }
+            
+            attr->changed(silently);
           }
           else
             object_error(this->ext, "invalid argument for attribute %s", attrName);
@@ -519,7 +522,7 @@ void
 MaxPiPoHost::setInputFrameOffset(double sampleOffset, bool propagate)
 {
   this->inputStreamAttrs.offset = sampleOffset;
-
+  
   if(propagate)
     this->propagateInputAttributes();
 }
@@ -528,7 +531,7 @@ void
 MaxPiPoHost::setInputMaxFrames(int maxFrames, bool propagate)
 {
   this->inputStreamAttrs.maxFrames = maxFrames;
-
+  
   if(propagate)
     this->propagateInputAttributes();
 }
