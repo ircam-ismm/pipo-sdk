@@ -734,7 +734,7 @@ public:
     Attr(PiPo *pipo, const char *name, const char *descr, const std::type_info *type, bool changesStream)
     {
       this->pipo = pipo;
-      this->index = pipo->attrs.size();
+      this->index = (unsigned int) pipo->attrs.size();
       this->name = name;
       this->descr = descr;
 
@@ -811,7 +811,7 @@ public:
 
     void addEnumItem(const char *item, const char *doc = "undocumented")
     {
-      unsigned int idx = this->enumList.size();
+      unsigned int idx = (unsigned int) this->enumList.size();
 
       this->enumList.push_back(item);
       this->enumListDoc.push_back(doc);
@@ -845,7 +845,7 @@ public:
       if(index < 0)
         index = 0;
       else if(index >= (int)this->enumList.size())
-        index = this->enumList.size() - 1;
+        index = (unsigned int) this->enumList.size() - 1;
 
       return index;
     }
@@ -860,7 +860,7 @@ public:
       this->attrs.clear();
 
     /* overwrite index, name, and description */
-    attr->setIndex(pipo->attrs.size());
+    attr->setIndex((unsigned int) pipo->attrs.size());
     attr->setName(name);
     attr->setDescr(descr);
 
@@ -936,7 +936,7 @@ public:
 
     if(attr != NULL)
     {
-      unsigned int size = attr->getSize();
+      unsigned int size = (unsigned int) attr->getSize();
 
       for(unsigned int i = 0; i < numValues; i++)
         attr->set(i, values[i], silently);
@@ -967,7 +967,7 @@ public:
 
     if(attr != NULL)
     {
-      unsigned int size = attr->getSize();
+      // unsigned int size = attr->getSize();
 
       for(unsigned int i = 0; i < numValues; i++)
         attr->set(i, values[i], true);
@@ -987,7 +987,7 @@ public:
    */
   unsigned int getNumAttrs(void)
   {
-    return this->attrs.size();
+    return (unsigned int) this->attrs.size();
   }
 
   /**
@@ -1314,7 +1314,7 @@ public:
   void clone(Attr *other) { *(dynamic_cast<std::vector<TYPE> *>(this)) = *(dynamic_cast<std::vector<TYPE> *>(other)); }
 
   unsigned int setSize(unsigned int size) { this->resize(size, (TYPE)0); return size; }
-  unsigned int getSize(void) { return this->size(); }
+  unsigned int getSize(void) { return (unsigned int) this->size(); }
 
   void set(unsigned int i, int val, bool silently = false)
   {
@@ -1341,7 +1341,7 @@ public:
   int getInt(unsigned int i)
   {
     if(i >= this->size())
-      i = this->size() - 1;
+      i = (unsigned int) this->size() - 1;
 
     return (int)(*this)[i];
   }
@@ -1349,7 +1349,7 @@ public:
   double getDbl(unsigned int i)
   {
     if(i >= this->size())
-      i = this->size() - 1;
+      i = (unsigned int) this->size() - 1;
 
     return (double)(*this)[i];
   }
@@ -1378,7 +1378,7 @@ public:
   void clone(Attr *other) { *(dynamic_cast<std::vector<unsigned int> *>(this)) = *(dynamic_cast<std::vector<unsigned int> *>(other)); }
 
   unsigned int setSize(unsigned int size) { this->resize(size, 0); return size; }
-  unsigned int getSize(void) { return this->size(); }
+  unsigned int getSize(void) { return (unsigned int) this->size(); }
 
   void set(unsigned int i, int val, bool silently = false)
   {
@@ -1413,7 +1413,7 @@ public:
   int getInt(unsigned int i)
   {
     if(i >= this->size())
-      i = this->size() - 1;
+      i = (unsigned int) this->size() - 1;
 
     return (int)(*this)[i];
   }
@@ -1421,7 +1421,7 @@ public:
   double getDbl(unsigned int i)
   {
     if(i >= this->size())
-      i = this->size() - 1;
+      i = (unsigned int) this->size() - 1;
 
     return (double)(*this)[i];
   }
@@ -1450,7 +1450,7 @@ public:
     void clone(Attr *other) { *(dynamic_cast<std::vector<PiPo::Atom> *>(this)) = *(dynamic_cast<std::vector<PiPo::Atom> *>(other)); }
 
     unsigned int setSize(unsigned int size) { this->resize(size, PiPo::Atom(0)); return size; }
-    unsigned int getSize(void) { return this->size(); }
+    unsigned int getSize(void) { return (unsigned int) this->size(); }
 
     void set(unsigned int i, int val, bool silently = false)
     {
@@ -1485,7 +1485,7 @@ public:
     int getInt(unsigned int i)
     {
       if(i >= this->size())
-        i = this->size() - 1;
+        i = (unsigned int) this->size() - 1;
 
       return (*this)[i].getInt();
     }
@@ -1493,7 +1493,7 @@ public:
     double getDbl(unsigned int i)
     {
       if(i >= this->size())
-        i = this->size() - 1;
+        i = (unsigned int) this->size() - 1;
 
       return (*this)[i].getDouble();
     }
@@ -1501,7 +1501,7 @@ public:
     const char *getStr(unsigned int i)
     {
       if(i >= this->size())
-        i = this->size() - 1;
+        i = (unsigned int) this->size() - 1;
 
       return (*this)[i].getString();
     }

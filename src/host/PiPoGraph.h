@@ -275,7 +275,7 @@ private:
         if (graphStr[graphStr.length() - 1] != '>')
         {
           subStrings.push_back(std::pair<unsigned int, unsigned int>(
-            lastStartIndex, graphStr.length() - lastStartIndex
+            lastStartIndex, (unsigned int) graphStr.length() - lastStartIndex
           ));
         }
 
