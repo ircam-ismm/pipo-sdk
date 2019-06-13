@@ -48,6 +48,7 @@
 #ifndef _PIPO_GRAPH_
 #define _PIPO_GRAPH_
 
+#include <algorithm> // for right definition of std::remove
 #include <string>
 #include <vector>
 #include <iostream>
