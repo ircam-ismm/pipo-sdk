@@ -134,7 +134,7 @@ struct PiPoStreamAttributes
       _width = 0;
     }
 
-    if (this->numLabels + _width > this->labels_alloc)
+    if ((int) (this->numLabels + _width) > this->labels_alloc)
     {
       printf("Warning: PiPoStreamAttributes::concat_labels: label overflow prevented (trying to concat %d to %d used of %d)\n", _width, this->numLabels, this->labels_alloc);
       _width = this->labels_alloc - this->numLabels;
@@ -936,7 +936,7 @@ public:
 
     if(attr != NULL)
     {
-      unsigned int size = (unsigned int) attr->getSize();
+      // unused: unsigned int size = (unsigned int) attr->getSize();
 
       for(unsigned int i = 0; i < numValues; i++)
         attr->set(i, values[i], silently);
