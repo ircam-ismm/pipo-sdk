@@ -1331,19 +1331,20 @@ public:
     if (i >= this->size())
       setSize(i + 1);
 
-    (*this)[i] = (TYPE)val;
+    (*this)[i] = static_cast<TYPE>(val);
 
     this->changed(silently);
   }
 
-  void set(unsigned int i, const char *val, bool silently = false) { }
+  void set(unsigned int i, const char *val, bool silently = false)
+  { /* conversion from string not implemented */ }
 
   int getInt(unsigned int i)
   {
     if(i >= this->size())
       i = (unsigned int) this->size() - 1;
 
-    return (int)(*this)[i];
+    return static_cast<int>((*this)[i]);
   }
 
   double getDbl(unsigned int i)
@@ -1351,7 +1352,7 @@ public:
     if(i >= this->size())
       i = (unsigned int) this->size() - 1;
 
-    return (double)(*this)[i];
+    return static_cast<double>((*this)[i]);
   }
 
   const char *getStr(unsigned int i) { return NULL; }
@@ -1363,6 +1364,81 @@ public:
 };
 
 
+// specialisation of PiPoVarSizeAttr template for c-strings
+template <>
+class PiPoVarSizeAttr<const char *> : public PiPo::Attr, public std::vector<const char *>
+{
+public:
+  PiPoVarSizeAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream, unsigned int size = 0, const char *initVal = 0) :
+  Attr(pipo, name, descr, &typeid(const char *), changesStream),
+  std::vector<const char *>(size, initVal)
+  {
+    for(unsigned int i = 0; i < this->size(); i++)
+      (*this)[i] = initVal;
+  }
+
+  void clone(Attr *other) { *(dynamic_cast<std::vector<unsigned int> *>(this)) = *(dynamic_cast<std::vector<unsigned int> *>(other)); }
+
+  unsigned int setSize(unsigned int size) { this->resize(size, 0); return size; }
+  unsigned int getSize(void) { return (unsigned int) this->size(); }
+
+  void set(unsigned int i, int val, bool silently = false)
+  {
+    if (i >= this->size())
+      setSize(i + 1);
+
+    (*this)[i] = NULL; // todo: itoa
+
+    this->changed(silently);
+  }
+
+  void set(unsigned int i, double val, bool silently = false)
+  {
+    if (i >= this->size())
+      setSize(i + 1);
+
+    (*this)[i] = NULL; // todo: ftoa
+
+    this->changed(silently);
+  }
+
+  void set(unsigned int i, const char *val, bool silently = false)
+  {
+    if (i >= this->size())
+      setSize(i + 1);
+
+    (*this)[i] = val;
+
+    this->changed(silently);
+  }
+
+  int getInt(unsigned int i)
+  {
+    if(i >= this->size())
+      i = (unsigned int) this->size() - 1;
+
+    return 0; // todo: atoi
+  }
+
+  double getDbl(unsigned int i)
+  {
+    if(i >= this->size())
+      i = (unsigned int) this->size() - 1;
+
+    return 0; // todo: atof
+  }
+
+  const char *getStr(unsigned int i)
+  {
+    if (i < this->size())
+      return (*this)[i];
+    
+    return NULL;
+  }
+};
+
+
+// specialisation of PiPoVarSizeAttr template for pipo enum type
 template <>
 class PiPoVarSizeAttr<enum PiPo::Enumerate> : public PiPo::EnumAttr, public std::vector<unsigned int>
 {
