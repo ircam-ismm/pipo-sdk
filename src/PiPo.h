@@ -1377,7 +1377,7 @@ public:
       (*this)[i] = initVal;
   }
 
-  void clone(Attr *other) { *(dynamic_cast<std::vector<unsigned int> *>(this)) = *(dynamic_cast<std::vector<unsigned int> *>(other)); }
+  void clone(Attr *other) { *(dynamic_cast<std::vector<const char *> *>(this)) = *(dynamic_cast<std::vector<const char *> *>(other)); }
 
   unsigned int setSize(unsigned int size) { this->resize(size, 0); return size; }
   unsigned int getSize(void) { return (unsigned int) this->size(); }
@@ -1512,7 +1512,8 @@ public:
 };
 
 
-template<>
+// specialisation of PiPoVarSizeAttr template for pipo atom type
+template <>
 class PiPoVarSizeAttr<PiPo::Atom> : public PiPo::Attr, public std::vector<PiPo::Atom>
 {
 public:
