@@ -351,7 +351,10 @@ public:
     this->parent = other.parent;
   }
 
-  virtual ~PiPo(void) { }
+  virtual ~PiPo(void)
+  {
+    
+  }
 
   /**
    * Get version of SDK as a major.minor float (so that host can
@@ -723,7 +726,9 @@ public:
     const char *name; /**< attribute name */
     const char *descr; /**< short description */
     bool changesStream;
-
+    bool isArray;
+    bool isVarSize;
+    
   protected:
     enum Type type;
 
@@ -731,12 +736,14 @@ public:
     /**
      * PiPo attribute base class
      */
-    Attr(PiPo *pipo, const char *name, const char *descr, const std::type_info *type, bool changesStream)
+    Attr(PiPo *pipo, const char *name, const char *descr, const std::type_info *type, bool changesStream, bool isArray = false, bool isVarSize = false)
     {
       this->pipo = pipo;
       this->index = (unsigned int) pipo->attrs.size();
       this->name = name;
       this->descr = descr;
+      this->isArray = isArray;
+      this->isVarSize = isVarSize;
 
       if(type == &typeid(bool))
         this->type = Bool;
@@ -769,7 +776,9 @@ public:
     const char *getDescr(void) { return this->descr; }
     enum Type getType(void) { return this->type; }
     bool doesChangeStream(void) { return this->changesStream; }
-
+    bool getIsArray(void) {return this->isArray;}
+    bool getIsVarSize(void) {return this->isVarSize;}
+    
     virtual void clone(Attr *other) = 0;
 
     virtual unsigned int setSize(unsigned int size) = 0;
@@ -803,8 +812,8 @@ public:
     std::map<const char *, unsigned int, strCompare> enumMap;
 
   public:
-    EnumAttr(PiPo *pipo, const char *name, const char *descr, const std::type_info *type, bool changesStream) :
-    Attr(pipo, name, descr, type, changesStream),
+    EnumAttr(PiPo *pipo, const char *name, const char *descr, const std::type_info *type, bool changesStream, bool isArray = false, bool isVarSize = false) :
+    Attr(pipo, name, descr, type, changesStream, isArray, isVarSize),
     enumList(), enumListDoc(), enumMap()
     {
     }
@@ -1174,7 +1183,7 @@ class PiPoArrayAttr : public PiPo::Attr, public PiPo::AttrArray<TYPE, SIZE>
 {
 public:
   PiPoArrayAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream, TYPE initVal = (TYPE)0) :
-  Attr(pipo, name, descr, &typeid(TYPE), changesStream),
+  Attr(pipo, name, descr, &typeid(TYPE), changesStream, true, false),
   PiPo::AttrArray<TYPE, SIZE>()
   {
     for(unsigned int i = 0; i < SIZE; i++)
@@ -1233,7 +1242,7 @@ class PiPoArrayAttr<enum PiPo::Enumerate, SIZE> : public PiPo::EnumAttr, public 
 {
 public:
   PiPoArrayAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream, unsigned int initVal = 0) :
-  EnumAttr(pipo, name, descr, &typeid(enum PiPo::Enumerate), changesStream),
+  EnumAttr(pipo, name, descr, &typeid(enum PiPo::Enumerate), changesStream, true, false),
   PiPo::AttrArray<unsigned int, SIZE>()
   {
     for(unsigned int i = 0; i < this->size; i++)
@@ -1306,7 +1315,7 @@ class PiPoVarSizeAttr : public PiPo::Attr, public std::vector<TYPE>
 {
 public:
   PiPoVarSizeAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream, unsigned int size = 0, TYPE initVal = (TYPE)0) :
-  Attr(pipo, name, descr, &typeid(TYPE), changesStream),
+  Attr(pipo, name, descr, &typeid(TYPE), changesStream, false, true),
   std::vector<TYPE>(size, initVal)
   {
   }
@@ -1370,7 +1379,7 @@ class PiPoVarSizeAttr<const char *> : public PiPo::Attr, public std::vector<cons
 {
 public:
   PiPoVarSizeAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream, unsigned int size = 0, const char *initVal = 0) :
-  Attr(pipo, name, descr, &typeid(const char *), changesStream),
+  Attr(pipo, name, descr, &typeid(const char *), changesStream, false, true),
   std::vector<const char *>(size, initVal)
   {
     for(unsigned int i = 0; i < this->size(); i++)
@@ -1444,7 +1453,7 @@ class PiPoVarSizeAttr<enum PiPo::Enumerate> : public PiPo::EnumAttr, public std:
 {
 public:
   PiPoVarSizeAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream, unsigned int size = 0, unsigned int initVal = 0) :
-  EnumAttr(pipo, name, descr, &typeid(enum PiPo::Enumerate), changesStream),
+  EnumAttr(pipo, name, descr, &typeid(enum PiPo::Enumerate), changesStream, false, true),
   std::vector<unsigned int>(size, 0)
   {
     for(unsigned int i = 0; i < this->size(); i++)
@@ -1518,7 +1527,7 @@ class PiPoVarSizeAttr<PiPo::Atom> : public PiPo::Attr, public std::vector<PiPo::
 {
 public:
     PiPoVarSizeAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream, unsigned int size = 0, int initVal = 0) :
-    Attr(pipo, name, descr, &typeid(const char *), changesStream)
+    Attr(pipo, name, descr, &typeid(const char *), changesStream, false, true)
     {
         for(unsigned int i = 0; i < this->size(); i++)
             (*this)[i] = PiPo::Atom(initVal);
