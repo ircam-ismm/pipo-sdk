@@ -62,12 +62,25 @@ getMaxAttributeList(PiPo *pipo, unsigned int attrId, long *pac, t_atom **pat)
       break;
       
     case PiPo::Bool:
-    case PiPo::Enum:
     case PiPo::Int:
     {
       for(unsigned int i = 0; i < attr->getSize(); i++)
         atom_setlong((*pat) + i, attr->getInt(i));
       
+      break;
+    }
+    case PiPo::Enum:
+    {
+      vector<const char *> *enumList = attr->getEnumList();
+      if(enumList != NULL && enumList->size() > 0)
+        for(unsigned int i = 0; i < attr->getSize(); i++)
+        {
+          const char *enumStr = (*enumList)[attr->getInt(i)];
+          atom_setsym((*pat) + i, gensym(enumStr));
+        }
+      else
+        for(unsigned int i = 0; i < attr->getSize(); i++)
+          atom_setlong((*pat) + i, attr->getInt(i));
       break;
     }
     case PiPo::Float:
@@ -194,8 +207,17 @@ void MaxPiPoHost::copyPiPoAttributes (MaxAttrGetterT getAttrMeth, MaxAttrSetterT
         default:
           break;
       }
+      bool isArray = attr->getIsArray();
+      bool isVarSize = attr->getIsVarSize();
       
-      t_object *maxAttr = attribute_new(attrName.c_str(), typeSym, 0, (method)getAttrMeth, (method)setAttrMeth);
+      t_object *maxAttr = NULL;
+      if(!(isArray || isVarSize))
+        maxAttr = attribute_new(attrName.c_str(), typeSym, 0, (method)getAttrMeth, (method)setAttrMeth);
+      else
+      {
+        if(type == PiPo::Enum) typeSym = USESYM(atom);
+        maxAttr = attr_offset_array_new(attrName.c_str(), typeSym, 1024, 0, (method)getAttrMeth, (method)setAttrMeth, 0, 0);
+      }
       object_addattr(this->ext, maxAttr);
       
       if(type == PiPo::Bool)
@@ -214,8 +236,11 @@ void MaxPiPoHost::copyPiPoAttributes (MaxAttrGetterT getAttrMeth, MaxAttrSetterT
             enumStr += (*enumList)[i];
           }
           
-          object_attr_addattr_parse(this->ext, attrName.c_str(), "style", USESYM(symbol), 0, "enumindex");
-          object_attr_addattr_parse(this->ext, attrName.c_str(), "enumvals", USESYM(symbol), 0, enumStr.c_str());
+          if(!(isArray || isVarSize))
+          {
+            object_attr_addattr_parse(this->ext, attrName.c_str(), "style", USESYM(symbol), 0, "enumindex");
+            object_attr_addattr_parse(this->ext, attrName.c_str(), "enumvals", USESYM(symbol), 0, enumStr.c_str());
+          }
         }
       }
       
