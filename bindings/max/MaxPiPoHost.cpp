@@ -71,16 +71,24 @@ getMaxAttributeList(PiPo *pipo, unsigned int attrId, long *pac, t_atom **pat)
     }
     case PiPo::Enum:
     {
-      vector<const char *> *enumList = attr->getEnumList();
-      if(enumList != NULL && enumList->size() > 0)
-        for(unsigned int i = 0; i < attr->getSize(); i++)
-        {
-          const char *enumStr = (*enumList)[attr->getInt(i)];
-          atom_setsym((*pat) + i, gensym(enumStr));
-        }
+      if(attr->getIsArray() || attr->getIsVarSize())
+      {
+        vector<const char *> *enumList = attr->getEnumList();
+        if(enumList != NULL && enumList->size() > 0)
+          for(unsigned int i = 0; i < attr->getSize(); i++)
+          {
+            const char *enumStr = (*enumList)[attr->getInt(i)];
+            atom_setsym((*pat) + i, gensym(enumStr));
+          }
+        else
+          for(unsigned int i = 0; i < attr->getSize(); i++)
+            atom_setlong((*pat) + i, attr->getInt(i));
+      }
       else
+      {
         for(unsigned int i = 0; i < attr->getSize(); i++)
           atom_setlong((*pat) + i, attr->getInt(i));
+      }
       break;
     }
     case PiPo::Float:
