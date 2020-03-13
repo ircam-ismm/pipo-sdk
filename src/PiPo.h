@@ -89,13 +89,64 @@ struct PiPoStreamAttributes
     this->offset  = offset;
     this->dims[0] = width;
     this->dims[1] = height;
-    this->labels  = labels;
     this->numLabels = width;
-    this->labels_alloc  = -1; // signals external memory
     this->hasVarSize  = hasVarSize;
     this->domain  = domain;
     this->maxFrames = maxFrames;
     this->ringTail      = ringTail;
+
+    if (labels)
+    { // copy label pointers array (but not strings, they're interned symbols!)
+      this->labels = new const char *[width];
+      this->labels_alloc = width;
+
+      for (int i = 0; i < width; i++)
+        this->labels[i] = labels[i];
+    }
+    else
+    {
+      this->labels = NULL;
+      this->labels_alloc = -1; // signals external memory
+    }
+  }
+
+  // copy ctor
+  PiPoStreamAttributes (const PiPoStreamAttributes &other)
+  {
+    // printf("PiPoStreamAttributes copy ctor\n");
+    *this = other;
+
+    if (other.labels  &&  other.labels_alloc >= 0)
+    { // copy label pointers array (but not strings, they're interned symbols!)
+      this->labels = new const char *[other.labels_alloc];
+
+      for (int i = 0; i < other.labels_alloc; i++)
+        this->labels[i] = other.labels[i];
+
+      //printf("  dup %d/%d labels %p -> %p\n", numLabels, labels_alloc, other.labels, labels);
+    }
+  }
+
+  // copy assignment
+  PiPoStreamAttributes &operator= (const PiPoStreamAttributes &other)
+  {
+    // printf("PiPoStreamAttributes copy assignment\n");
+
+    if (this != &other) // self-assignment check expected
+    {
+      memcpy(this, &other, sizeof(other)); // shallow copy
+
+      if (other.labels  &&  other.labels_alloc >= 0)
+      { // copy label pointers array (but not strings, they're interned symbols!)
+        this->labels = new const char *[other.labels_alloc];
+
+        for (int i = 0; i < other.labels_alloc; i++)
+          this->labels[i] = other.labels[i];
+
+        //printf("  dup %d/%d labels %p -> %p\n", numLabels, labels_alloc, other.labels, labels);
+      }
+    }
+    return *this;
   }
 
   void init (int _numlab = -1)
@@ -114,7 +165,12 @@ struct PiPoStreamAttributes
     this->ringTail      = 0;
 
     if (_numlab >= 0)
-      labels = new const char *[_numlab];
+    {
+      this->labels = new const char *[_numlab];
+
+      for (int i = 0; i < _numlab; i++)
+        this->labels[i] = NULL;
+    }
   };
 
   ~PiPoStreamAttributes()
