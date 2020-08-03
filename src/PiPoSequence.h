@@ -117,7 +117,7 @@ public:
     {
       next->setReceiver(receiver);
       
-      for (int i = seq_.size() - 2; i >= 0; i--)
+      for (long i = seq_.size() - 2; i >= 0; i--)
       {
         PiPo *pipo = seq_[i];
         pipo->setReceiver(next);
@@ -135,7 +135,7 @@ public:
   /** @name PiPoChain query methods */
   /** @{ */
 
-  int getSize() const
+  size_t getSize() const
   {
     return seq_.size();
   }

@@ -118,6 +118,13 @@ PiPoHost::clearGraph()
 }
 
 // override this method when inheriting !!!
+// void
+// PiPoHost::onNewFrame(std::function<void (double, double, PiPoValue *, unsigned int)> f)
+// {
+//   this->frameCallback = f;
+// }
+
+// override this method when inheriting !!!
 void
 PiPoHost::onNewFrame(double time, double weight, PiPoValue *values, unsigned int size)
 {
@@ -155,6 +162,64 @@ PiPoHost::frames(double time, double weight, PiPoValue *values, unsigned int siz
                  unsigned int num)
 {
   return this->graph->frames(time, weight, values, size, num);
+}
+
+std::vector<std::string>
+PiPoHost::getAttrNames()
+{
+  std::vector<std::string> res;
+
+  for (unsigned int i = 0; i < this->graph->getNumAttrs(); ++i)
+  {
+    res.push_back(this->graph->getAttr(i)->getName());
+  }
+
+  return res;
+}
+
+bool
+PiPoHost::setAttr(const std::string &attrName, bool value)
+{
+  PiPo::Attr *attr = this->graph->getAttr(attrName.c_str());
+
+  if (attr != NULL)
+  {
+    int iAttr = attr->getIndex();
+    return this->graph->setAttr(iAttr, value ? 1 : 0);
+  }
+
+  return false;
+}
+
+bool
+PiPoHost::setAttr(const std::string &attrName, const std::string &value) // for enums
+{
+  PiPo::Attr *attr = this->graph->getAttr(attrName.c_str());
+
+  if (attr != NULL)
+  {
+    PiPo::Type type = attr->getType();
+
+    if (type == PiPo::Type::Enum)
+    {
+      std::vector<const char *> *list = attr->getEnumList();
+
+      for (int i = 0; i < list->size(); i++)
+      {
+        if (strcmp(list->at(i), value.c_str()) == 0)
+        {
+          attr->set(0, i);
+          return true;
+        }
+      }
+    }
+    else if (type == PiPo::Type::String)
+    {
+      attr->set(0, value.c_str());
+    }
+  }
+
+  return false;
 }
 
 bool
@@ -231,8 +296,36 @@ PiPoHost::setAttr(const std::string &attrName, const std::vector<double> &values
   return false;
 }
 
+//--------------------------- TYPE INTROSPECTION -----------------------------//
+
 bool
-PiPoHost::setAttr(const std::string &attrName, const std::string &value) // for enums
+PiPoHost::isBoolAttr(const std::string &attrName)
+{
+  PiPo::Attr *attr = this->graph->getAttr(attrName.c_str());
+
+  if (attr != NULL)
+  {
+    return (attr->getType() == PiPo::Type::Bool);
+  }
+
+  return false;
+}
+
+bool
+PiPoHost::isEnumAttr(const std::string &attrName)
+{
+  PiPo::Attr *attr = this->graph->getAttr(attrName.c_str());
+
+  if (attr != NULL)
+  {
+    return (attr->getType() == PiPo::Type::Enum);
+  }
+
+  return false;
+}
+
+std::vector<std::string>
+PiPoHost::getAttrEnumList(const std::string &attrName)
 {
   PiPo::Attr *attr = this->graph->getAttr(attrName.c_str());
 
@@ -243,32 +336,119 @@ PiPoHost::setAttr(const std::string &attrName, const std::string &value) // for 
     if (type == PiPo::Type::Enum)
     {
       std::vector<const char *> *list = attr->getEnumList();
+      std::vector<std::string> res(list->size());
 
       for (int i = 0; i < list->size(); i++)
       {
-        if (strcmp(list->at(i), value.c_str()) == 0)
-        {
-          attr->set(0, i);
-          return true;
-        }
+        res[i] = std::string(list->at(i));
       }
+
+      return res;
+    }
+  }
+
+#if (__STDC_VERSION__ >= 201103L)	/* C++11 */
+  return { "" };	  
+#else				/* fallback for C++98 */  
+  std::vector<std::string> empty;
+  empty.push_back("");
+  return empty;
+#endif
+}
+
+bool
+PiPoHost::isStringAttr(const std::string &attrName)
+{
+  PiPo::Attr *attr = this->graph->getAttr(attrName.c_str());
+
+  if (attr != NULL)
+  {
+    return (attr->getType() == PiPo::Type::String);
+  }
+
+  return false;
+}
+
+bool
+PiPoHost::isIntAttr(const std::string &attrName)
+{
+  PiPo::Attr *attr = this->graph->getAttr(attrName.c_str());
+
+  if (attr != NULL)
+  {
+    return (attr->getType() == PiPo::Type::Int);
+  }
+
+  return false;
+}
+
+bool
+PiPoHost::isDoubleAttr(const std::string &attrName)
+{
+  PiPo::Attr *attr = this->graph->getAttr(attrName.c_str());
+
+  if (attr != NULL)
+  {
+    return (attr->getType() == PiPo::Type::Double);
+  }
+
+  return false;
+}
+
+//------------------------------ VALUE GETTERS -------------------------------//
+
+bool
+PiPoHost::getBoolAttr(const std::string &attrName)
+{
+  PiPo::Attr *attr = this->graph->getAttr(attrName.c_str());
+
+  if (attr != NULL)
+  {
+    PiPo::Type type = attr->getType();
+
+    if (type == PiPo::Type::Bool)
+    {
+      return attr->getInt(0) != 0;
     }
   }
 
   return false;
 }
 
-std::vector<std::string>
-PiPoHost::getAttrNames()
+std::string
+PiPoHost::getEnumAttr(const std::string &attrName)
 {
-  std::vector<std::string> res;
+  PiPo::Attr *attr = this->graph->getAttr(attrName.c_str());
 
-  for (unsigned int i = 0; i < this->graph->getNumAttrs(); ++i)
+  if (attr != NULL)
   {
-    res.push_back(this->graph->getAttr(i)->getName());
+    PiPo::Type type = attr->getType();
+
+    if (type == PiPo::Type::Enum)
+    {
+      return std::string(attr->getStr(0));
+    }
   }
 
-  return res;
+  return "";
+}
+
+std::string
+PiPoHost::getStringAttr(const std::string &attrName)
+{
+  PiPo::Attr *attr = this->graph->getAttr(attrName.c_str());
+
+  if (attr != NULL)
+  {
+    PiPo::Type type = attr->getType();
+
+    if (type == PiPo::Type::String)
+    {
+      return std::string(attr->getStr(0));
+    }
+  }
+
+  return "";
 }
 
 int
@@ -349,24 +529,6 @@ PiPoHost::getDoubleArrayAttr(const std::string &attrName)
   }
 
   return res;
-}
-
-std::string
-PiPoHost::getEnumAttr(const std::string &attrName)
-{
-  PiPo::Attr *attr = this->graph->getAttr(attrName.c_str());
-
-  if (attr != NULL)
-  {
-    PiPo::Type type = attr->getType();
-
-    if (type == PiPo::Type::Enum)
-    {
-      return attr->getStr(0);
-    }
-  }
-
-  return "";
 }
 
 
@@ -474,6 +636,7 @@ PiPoOut::frames(double time, double weight, PiPoValue *values,
     for (int i = 0; i < num; ++i)
     {
       this->host->onNewFrame(time, weight, values, size);
+      // this->host->frameCallback(time, weight, values, size);
 
       /*
       ////////// TODO : write a real lock-free queue using atomic_swap

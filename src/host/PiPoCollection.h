@@ -64,7 +64,7 @@ public:
     virtual ~PiPoCreator() {}
     virtual PiPo *create()
     {
-        return new T(NULL);
+      return new T(NULL);
     }
 };
 

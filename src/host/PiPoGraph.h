@@ -48,6 +48,7 @@
 #ifndef _PIPO_GRAPH_
 #define _PIPO_GRAPH_
 
+#include <algorithm> // for right definition of std::remove
 #include <string>
 #include <vector>
 #include <iostream>
@@ -275,7 +276,7 @@ private:
         if (graphStr[graphStr.length() - 1] != '>')
         {
           subStrings.push_back(std::pair<unsigned int, unsigned int>(
-            lastStartIndex, graphStr.length() - lastStartIndex
+            lastStartIndex, (unsigned int) graphStr.length() - lastStartIndex
           ));
         }
 

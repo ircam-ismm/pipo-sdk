@@ -65,6 +65,8 @@ protected:
   PiPoStreamAttributes inputStreamAttrs;
   PiPoStreamAttributes outputStreamAttrs;
 
+  // std::function<void (double, double, PiPoValue *, unsigned int)> frameCallback;
+
 public:
   PiPoHost();
   ~PiPoHost();
@@ -78,6 +80,7 @@ public:
   virtual void signalWarning(PiPo *pipo, std::string errorMsg);
 
   // override this method when inheriting !!!
+  // virtual void onNewFrame(std::function<void (double, double, PiPoValue *, unsigned int)> f);
   virtual void onNewFrame(double time, double weight, PiPoValue *values, unsigned int size);
 
   virtual std::vector<PiPoValue> getLastFrame();
@@ -89,29 +92,29 @@ public:
   virtual int frames(double time, double weight, PiPoValue *values, unsigned int size,
                      unsigned int num);
 
-  // virtual bool setAttr(const std::string &attrName, bool value);
-  // virtual bool setAttr(const std::string &attrName, int value);
+  virtual std::vector<std::string> getAttrNames();
+
+  virtual bool setAttr(const std::string &attrName, bool value);
+  virtual bool setAttr(const std::string &attrName, const std::string &value); // for enums and strings
   virtual bool setAttr(const std::string &attrName, int value);
   virtual bool setAttr(const std::string &attrName, double value);
   virtual bool setAttr(const std::string &attrName, const std::vector<int> &values);
   virtual bool setAttr(const std::string &attrName, const std::vector<double> &values);
-  virtual bool setAttr(const std::string &attrName, const std::string &value); // for enums
 
-  // virtual const std::vector<std::string>& getAttrNames();
-  // virtual bool isBoolAttr(const std::string &attrName);
-  // virtual bool isEnumAttr(const std::string &attrName);
-  // virtual bool isIntAttr(const std::string &attrName);
-  // virtual bool isIntArrayAttr(const std::string &attrName);
-  // virtual bool isFloatAttr(const std::string &attrName);
-  // virtual bool isFloatArrayAttr(const std::string &attrName);
-  // virtual bool isStringAttr(const std::string &attrName);
+  virtual bool isBoolAttr(const std::string &attrName);
+  virtual bool isEnumAttr(const std::string &attrName);
+  virtual std::vector<std::string> getAttrEnumList(const std::string &attrName);
+  virtual bool isStringAttr(const std::string &attrName);
+  virtual bool isIntAttr(const std::string &attrName); // works for single ints and int arrays
+  virtual bool isDoubleAttr(const std::string &attrName); // works for single doubles and double arrays
 
-  virtual std::vector<std::string> getAttrNames();
-  virtual int getIntAttr(const std::string &attrName);
-  virtual double getDoubleAttr(const std::string &attrName);
+  virtual bool getBoolAttr(const std::string &attrName);
+  virtual std::string getEnumAttr(const std::string &attrName);
+  virtual std::string getStringAttr(const std::string &attrName);
+  virtual int getIntAttr(const std::string &attrName); // will get only the 1st element if attr is array
+  virtual double getDoubleAttr(const std::string &attrName); // will get only the 1st element if attr is array
   virtual std::vector<int> getIntArrayAttr(const std::string &attrName);
   virtual std::vector<double> getDoubleArrayAttr(const std::string &attrName);
-  virtual std::string getEnumAttr(const std::string &attrName);
 
 private:
   int propagateInputStreamAttributes();
@@ -130,7 +133,7 @@ private:
   // fix all dependencies to compile with the c++11 flag before (Pm2, ircam_descriptor, ...)
   // std::atomic<int> writeIndex, readIndex;
   int writeIndex, readIndex;
-  std::vector<std::vector<PiPoValue>> ringBuffer;
+  std::vector<std::vector<PiPoValue> > ringBuffer;
 
 public:
   PiPoOut(PiPoHost *host);

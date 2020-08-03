@@ -91,7 +91,7 @@ public:
     this->parent = other.parent;
     this->moduleFactory = other.moduleFactory;
 
-    unsigned int numOps = other.ops.size();
+    unsigned long numOps = other.ops.size();
     this->ops.clear();
     this->ops.resize(numOps);
 
@@ -211,7 +211,7 @@ public:
   /** @name PiPoChain query methods */
   /** @{ */
 
-  int getSize()
+  size_t getSize()
   {
     return this->ops.size();
   };

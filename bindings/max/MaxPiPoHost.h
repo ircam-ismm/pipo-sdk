@@ -67,6 +67,13 @@ class MaxPiPoHost : public PiPo::Parent
       std::string pipoClassNameStr = this->prefix + "." + pipoName;
       MaxPiPoT *maxPiPo = (MaxPiPoT *)object_new_typed(CLASS_BOX, gensym(pipoClassNameStr.c_str()), 0, NULL);
 
+      if (maxPiPo == NULL)
+      { // try to find pipo decoder module embedded in mimo
+        std::string mimo_class_name = "mimo." + pipoName;
+        printf("%s not found, trying to load %s\n", pipoClassNameStr.c_str(), mimo_class_name.c_str());
+        maxPiPo = (MaxPiPoT *) object_new_typed(CLASS_BOX, gensym(mimo_class_name.c_str()), 0, NULL);
+      }
+
       if(maxPiPo != NULL)
       {
         module = new MaxPiPoModule(maxPiPo);
@@ -142,9 +149,9 @@ public:
   void propagateInputAttributes(void);
   void setOutputAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames);
 
-  void streamAttributesChanged(PiPo *pipo, PiPo::Attr *attr);
-  void signalError(PiPo *pipo, std::string errorMsg);
-  void signalWarning(PiPo *pipo, std::string errorMsg);
+  void streamAttributesChanged(PiPo *pipo, PiPo::Attr *attr) override;
+  void signalError(PiPo *pipo, std::string errorMsg) override;
+  void signalWarning(PiPo *pipo, std::string errorMsg) override;
 
   //TODO: to pipohost
   void setInputDims(int width, int size, bool propagate = true);

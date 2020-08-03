@@ -77,7 +77,8 @@ typedef struct MaxPiPoSt {
       case PiPo::Double: { \
         for(unsigned int i = 0; i < attr->getSize(); i++) atom_setfloat((*pat) + i, attr->getDbl(i)); \
         break; } \
-      case PiPo::String: { \
+      case PiPo::String: \
+      case PiPo::Dictionary: { \
         for(unsigned int i = 0; i < attr->getSize(); i++) atom_setsym((*pat) + i, gensym(attr->getStr(i))); \
         break; } \
       default: break;}} \
@@ -179,7 +180,8 @@ typedef struct MaxPiPoSt {
           CLASS_ATTR_ORDER(c, attrName_c, 0, attrIndexStr); \
           IRCAMMAX_CLASS_ATTR_DESCRIPTION(c, attrName_c, attrDescr); \
           break; }\
-        case PiPo::String: { \
+        case PiPo::String: \
+        case PiPo::Dictionary: { \
           CLASS_ATTR_SYM(c, attrName_c, 0, MaxPiPoT, dummy_attr); \
           CLASS_ATTR_LABEL(c,attrName_c, 0, attrDescr); \
           CLASS_ATTR_ACCESSORS(c, attrName_c, getPiPoAttr, setPiPoAttr); \
