@@ -1,10 +1,12 @@
 // base xcode config file for pipo sdk example
 // You need to adapt the first definition MAXAPI_DIR to where you put the Max SDK
+// downloaded from https://cycling74.com/downloads/sdk/
 // You might want to adapt the next 3 settings, but the rest should not need changing.    
     
 
 // where is your Max SDK?
-MAXAPI_DIR = ../../../max6.1sdk
+// Below example path points to a Max8 SDK placed into a folder "max-sdk" next to the pipo-sdk folder.
+MAXAPI_DIR = ../../../max-sdk/max-sdk-8.0.3/source/c74support/
 
 // force built mxo to be placed in example project dir
 CONFIGURATION_BUILD_DIR = $(PROJECT_DIR)

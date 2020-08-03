@@ -5,3 +5,4 @@ examples/maxpipo/maxpipo-example.xcodeproj/*
 !examples/maxpipo/maxpipo-example.xcodeproj/project.pbxproj
 examples/jucepipo/PiPoGain.xcodeproj/*
 !examples/jucepipo/PiPoGain.xcodeproj/project.pbxproj
+examples/maxpipo/DerivedData
