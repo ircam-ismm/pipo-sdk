@@ -100,7 +100,7 @@ struct PiPoStreamAttributes
       this->labels = new const char *[width];
       this->labels_alloc = width;
 
-      for (int i = 0; i < width; i++)
+      for (unsigned int i = 0; i < width; i++)
         this->labels[i] = labels[i];
     }
     else
