@@ -9,8 +9,8 @@
  * All rights reserved.
  * 
  */
-#ifndef _MAX_PIPO_
-#define _MAX_PIPO_
+#ifndef _MAX_PIPO_H_
+#define _MAX_PIPO_H_
 
 #include "PiPo.h"
 #include "ext.h"
@@ -21,7 +21,7 @@
 #include "ircammaxcapi.h"
 #include <string.h>
 #include <vector>
-#endif
+#endif // PIPO_MAX_WITH_DOC
 
 typedef struct MaxPiPoSt {
   t_object head;
@@ -35,10 +35,12 @@ typedef struct MaxPiPoSt {
   t_symbol classdescription;
   t_symbol classseealso;
   t_symbol externalversion;
-#endif
+#endif // PIPO_MAX_WITH_DOC
+
 } MaxPiPoT;
 
 #ifdef PIPO_MAX_WITH_DOC
+
 #define atom_isnum(a) ((a)->a_type == A_LONG || (a)->a_type == A_FLOAT)
 #define atom_issym(a) ((a)->a_type == A_SYM)
 #define atom_isobj(p) ((p)->a_type == A_OBJ)
@@ -218,7 +220,7 @@ typedef struct MaxPiPoSt {
     max ## pipoClass ## Class = c; \
     return 0; }
 
-#else
+#else // PIPO_MAX_WITH_DOC
 
 #define PIPO_MAX_CLASS(pipoName, pipoClass) \
   static t_class *max ## pipoClass ## Class = NULL; \
@@ -243,8 +245,6 @@ typedef struct MaxPiPoSt {
     max ## pipoClass ## Class = c; \
     return 0; }
 
-#endif
+#endif // PIPO_MAX_WITH_DOC
 
-#endif
-
-
+#endif // _MAX_PIPO_H_
