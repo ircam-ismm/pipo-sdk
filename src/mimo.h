@@ -43,14 +43,14 @@ public:
 */
 struct mimo_buffer
 {
-  int		numframes;	//< number of elements in data, varsize, timetags
-  PiPoValue    *data;		//< pointer to numframes matrices of height * width
-  const int    *varsize;	//< pointer to numframes row counts if track is varsize
-  bool		has_timetags;	//< if true, use timetags, otherwise track is sampled and starttime is given
+  int		numframes;	///< number of elements in data, varsize, timetags
+  PiPoValue    *data;		///< pointer to numframes matrices of height * width
+  const int    *varsize;	///< pointer to numframes row counts if track is varsize
+  bool		has_timetags;	///< if true, use timetags, otherwise track is sampled and starttime is given
   union
   {
-    const double *timetags;	//< pointer to numframes time tags
-    double	  starttime;	//< start time for sampled data
+    const double *timetags;	///< pointer to numframes time tags
+    double	  starttime;	///< start time for sampled data
   } time;
 
   

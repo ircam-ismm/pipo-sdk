@@ -74,7 +74,7 @@ struct PiPoStreamAttributes
   bool hasVarSize;
   double domain;
   unsigned int maxFrames;
-  int labels_alloc; //< allocated size of labels, -1 for no (outside) allocation
+  int labels_alloc; ///< allocated size of labels, -1 for no (outside) allocation
   int ringTail;
 
   PiPoStreamAttributes (int numlabels = -1)
