@@ -206,11 +206,12 @@ struct PiPoStreamAttributes
     this->numLabels += _width;
   }
 
-  char *to_string (char *str, int len) const
+  // @return pointer to string, write number of characters written (excluding terminating \0) into len
+  char *to_string (char *str, int *len) const
   {
-    snprintf(str, len,
+    *len = snprintf(str, *len,
             "hasTimeTags\t= %d\n"
-            "rate\t\t\t= %f\n"
+            "rate\t\t= %f\n"
             "offset\t\t= %f\n"
             "width\t\t= %d\n"
             "height\t\t= %d\n"
@@ -224,6 +225,22 @@ struct PiPoStreamAttributes
             labels && numLabels > 0 && labels[0] != NULL  ?  labels[0]  :  "n/a",
             numLabels, labels_alloc,
             (int) hasVarSize, domain, maxFrames, ringTail);
+    
+    return str;
+  }
+
+  char *to_string (char *str, int len) const
+  {
+    return to_string(str, &len);
+  }
+
+  const std::string to_string () const
+  {
+    int buflen = 12 * 32 - 1;  // estimated max
+    std::string str;
+    str.resize(buflen + 1);
+    to_string(&str[0], &buflen);
+    str.resize(buflen);
     return str;
   }
 };
