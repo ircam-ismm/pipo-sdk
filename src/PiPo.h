@@ -56,7 +56,7 @@
 #define PIPO_MAX_LABELS 1024
 
 #ifndef PIPO_SDK_VERSION
-#define PIPO_SDK_VERSION 0.3
+#define PIPO_SDK_VERSION 0.4
 
 #endif
 
@@ -802,7 +802,8 @@ public:
     bool changesStream;
     bool isArray;
     bool isVarSize;
-    
+    bool has_changed; /// changed from outside
+
   protected:
     enum Type type;
 
@@ -867,7 +868,9 @@ public:
 
     virtual std::vector<const char *> *getEnumList(void) { return NULL; }
 
-    void changed(bool silently = false) { if (!silently && this->changesStream) this->pipo->streamAttributesChanged(this); }
+    void changed(bool silently = false) { this->has_changed = true; if (!silently && this->changesStream) this->pipo->streamAttributesChanged(this); }
+    bool hasChanged() { return this->has_changed; }
+    void resetChanged() { this->has_changed = false; }
     void rename(const char *name) { this->name = name; }
   };
 
