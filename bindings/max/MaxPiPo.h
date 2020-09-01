@@ -52,6 +52,12 @@ typedef struct MaxPiPoSt {
 #define atom_setvoid(p) ((p)->a_type = A_NOTHING)
 
 #define PIPO_MAX_CLASS(pipoName, pipoClass, digest, description, numAttrs, attrNames, attrDescriptions) \
+  PIPO_MAX_CLASS2(pipoName, pipoName, pipoClass, digest, description, numAttrs, attrNames, attrDescriptions)
+
+// definition with long name for external, short name for attrs and help
+// there is supposed to be an object alias in init/mubu-objectmappings.txt like this:
+// max objectfile pipo.<short name> pipo.<long name>;
+#define PIPO_MAX_CLASS2(pipoName, pipoShortName, pipoClass, digest, description, numAttrs, attrNames, attrDescriptions) \
   static t_class *max ## pipoClass ## Class = NULL; \
   static const unsigned int maxWordLen = 256; \
   static bool getPiPoInstanceAndAttrName(const char *attrName, char *instanceName, char *pipoAttrName){ \
@@ -129,7 +135,7 @@ typedef struct MaxPiPoSt {
     unsigned int numAttributes = pipo->getNumAttrs(); \
     for(unsigned int iAttr = 0; iAttr < numAttributes; iAttr++){ \
       PiPo::Attr *attr = pipo->getAttr(iAttr); \
-      std::string attrName = pipoName; \
+      std::string attrName = pipoShortName; \
       attrName += "."; \
       attrName += attr->getName(); \
       const char * attrName_c = attrName.c_str(); \
@@ -199,7 +205,7 @@ typedef struct MaxPiPoSt {
     } \
     return self; } \
   static void freeMaxObject(MaxPiPoT *self) { delete self->pipo; } \
-  static void helpnameMethod(MaxPiPoT *self, char *str){ sprintf(str, "pipo.%s", pipoName);} \
+  static void helpnameMethod(MaxPiPoT *self, char *str){ sprintf(str, "pipo.%s", pipoShortName);} \
   static void bangMethod(MaxPiPoT *self, t_symbol *s, short ac, t_atom *at){object_error((t_object *) self, "pipo works only inside a pipo host!!! see pipo, pipo~ and mubu.process");} \
   static void listMethod(MaxPiPoT *self, t_symbol *s, short ac, t_atom *at){object_error((t_object *) self, "pipo works only inside a pipo host!!! see pipo, pipo~ and mubu.process");}\
   static void intMethod(MaxPiPoT *self, long i){object_error((t_object *) self, "pipo works only inside a pipo host!!! see pipo, pipo~ and mubu.process");} \
@@ -223,13 +229,19 @@ typedef struct MaxPiPoSt {
 #else // PIPO_MAX_WITH_DOC
 
 #define PIPO_MAX_CLASS(pipoName, pipoClass) \
+  PIPO_MAX_CLASS2(pipoName, pipoName, pipoClass)
+
+// definition with long name for external, short name for attrs and help
+// there is supposed to be an object alias in init/mubu-objectmappings.txt like this:
+// max objectfile pipo.<short name> pipo.<long name>;
+#define PIPO_MAX_CLASS2(pipoName, pipoShortName, pipoClass) \
   static t_class *max ## pipoClass ## Class = NULL; \
   static void *newMaxObject(t_symbol *s, long ac, t_atom *at) { \
     MaxPiPoT *self = (MaxPiPoT *)object_alloc(max ## pipoClass ## Class); \
     if(self != NULL) { self->pipo = new pipoClass(NULL); } \
     return self; } \
   static void freeMaxObject(MaxPiPoT *self) { delete self->pipo; } \
-  static void helpnameMethod(MaxPiPoT *self, char *str){ sprintf(str, "pipo.%s", pipoName);} \
+  static void helpnameMethod(MaxPiPoT *self, char *str){ sprintf(str, "pipo.%s", pipoShortName);} \
   static void bangMethod(MaxPiPoT *self, t_symbol *s, short ac, t_atom *at){object_error((t_object *) self, "pipo works only inside a pipo host!!!");} \
   static void listMethod(MaxPiPoT *self, t_symbol *s, short ac, t_atom *at){object_error((t_object *) self, "pipo works only inside a pipo host!!!");}\
   static void intMethod(MaxPiPoT *self, long i){object_error((t_object *) self, "pipo works only inside a pipo host!!!");} \
