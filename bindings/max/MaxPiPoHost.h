@@ -131,10 +131,21 @@ public:
   MaxPiPoHost(t_object *ext, const char *prefix = "pipo");
   ~MaxPiPoHost(void);
 
-  void lock(void);
-  bool trylock(void);
-  void unlock(void);
+  inline void lock()
+  {
+    systhread_mutex_lock(this->mutex);
+  };
 
+  inline bool trylock()
+  {
+    return (systhread_mutex_trylock(this->mutex) == 0);
+  };
+
+  inline void unlock()
+  {
+    systhread_mutex_unlock(this->mutex);
+  };
+  
   PiPoChain *getChain(void) { return &this->chain; };
   PiPo *setChainDescription(const char *str, PiPo *receiver);
 

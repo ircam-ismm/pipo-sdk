@@ -132,26 +132,7 @@ MaxPiPoHost::~MaxPiPoHost(void)
   systhread_mutex_free(this->mutex);
 }
 
-void
-MaxPiPoHost::lock()
-{
-  systhread_mutex_lock(this->mutex);
-}
-
-bool
-MaxPiPoHost::trylock()
-{
-  return (systhread_mutex_trylock(this->mutex) == 0);
-}
-
-void
-MaxPiPoHost::unlock()
-{
-  systhread_mutex_unlock(this->mutex);
-}
-
-PiPo *
-MaxPiPoHost::setChainDescription(const char *str, PiPo *receiver)
+PiPo *MaxPiPoHost::setChainDescription(const char *str, PiPo *receiver)
 {
   this->chain.clear();
   
@@ -305,8 +286,7 @@ MaxPiPoHost::getMaxAttr(const char *attrName, long *pac, t_atom **pat, PiPoChain
   }
 }
 
-void
-MaxPiPoHost::setMaxAttr(const char *attrName, long ac, t_atom *at, PiPoChain *chain, bool silently)
+void MaxPiPoHost::setMaxAttr(const char *attrName, long ac, t_atom *at, PiPoChain *chain, bool silently)
 {
   char instanceName[maxWordLen];
   char pipoAttrName[maxWordLen];
@@ -388,8 +368,7 @@ MaxPiPoHost::setMaxAttr(const char *attrName, long ac, t_atom *at, PiPoChain *ch
   this->unlock();
 }
 
-void
-MaxPiPoHost::propagateInputAttributes(void)
+void MaxPiPoHost::propagateInputAttributes(void)
 {
   this->lock();
   
@@ -433,8 +412,7 @@ MaxPiPoHost::propagateInputAttributes(void)
   this->unlock();
 }
 
-void
-MaxPiPoHost::setOutputAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
+void MaxPiPoHost::setOutputAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int size, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
 {
   this->lock();
   
@@ -465,26 +443,22 @@ MaxPiPoHost::setOutputAttributes(bool hasTimeTags, double rate, double offset, u
   this->unlock();
 }
 
-void
-MaxPiPoHost::streamAttributesChanged(PiPo *pipo, PiPo::Attr *attr)
+void MaxPiPoHost::streamAttributesChanged(PiPo *pipo, PiPo::Attr *attr)
 {
   this->propagateInputAttributes();
 }
 
-void
-MaxPiPoHost::signalError(PiPo *pipo, std::string errorMsg)
+void MaxPiPoHost::signalError(PiPo *pipo, std::string errorMsg)
 {
   object_error(this->ext, errorMsg.c_str());
 }
 
-void
-MaxPiPoHost::signalWarning(PiPo *pipo, std::string errorMsg)
+void MaxPiPoHost::signalWarning(PiPo *pipo, std::string errorMsg)
 {
   object_warn(this->ext, errorMsg.c_str());
 }
 
-void
-MaxPiPoHost::setInputDims(int width, int size, bool propagate)
+void MaxPiPoHost::setInputDims(int width, int size, bool propagate)
 {
   this->lock();
   
@@ -497,8 +471,7 @@ MaxPiPoHost::setInputDims(int width, int size, bool propagate)
   this->unlock();
 }
 
-void
-MaxPiPoHost::setInputLabels(long ac, t_atom *at, bool propagate)
+void MaxPiPoHost::setInputLabels(long ac, t_atom *at, bool propagate)
 {
   this->lock();
   
@@ -524,8 +497,7 @@ MaxPiPoHost::setInputLabels(long ac, t_atom *at, bool propagate)
   this->unlock();
 }
 
-void
-MaxPiPoHost::setInputHasTimeTags(int hasTimeTags, bool propagate)
+void MaxPiPoHost::setInputHasTimeTags(int hasTimeTags, bool propagate)
 {
   this->lock();
   
@@ -540,8 +512,7 @@ MaxPiPoHost::setInputHasTimeTags(int hasTimeTags, bool propagate)
 #define MIN_SAMPLERATE (1.0 / 31536000000.0) /* once a year */
 #define MAX_SAMPLERATE (96000000000.0)
 
-void
-MaxPiPoHost::setInputFrameRate(double sampleRate, bool propagate)
+void MaxPiPoHost::setInputFrameRate(double sampleRate, bool propagate)
 {
   if(sampleRate <= MIN_SAMPLERATE)
     this->inputStreamAttrs.rate = MIN_SAMPLERATE;
@@ -554,8 +525,7 @@ MaxPiPoHost::setInputFrameRate(double sampleRate, bool propagate)
     this->propagateInputAttributes();
 }
 
-void
-MaxPiPoHost::setInputFrameOffset(double sampleOffset, bool propagate)
+void MaxPiPoHost::setInputFrameOffset(double sampleOffset, bool propagate)
 {
   this->inputStreamAttrs.offset = sampleOffset;
   
@@ -563,8 +533,7 @@ MaxPiPoHost::setInputFrameOffset(double sampleOffset, bool propagate)
     this->propagateInputAttributes();
 }
 
-void
-MaxPiPoHost::setInputMaxFrames(int maxFrames, bool propagate)
+void MaxPiPoHost::setInputMaxFrames(int maxFrames, bool propagate)
 {
   this->inputStreamAttrs.maxFrames = maxFrames;
   
@@ -572,15 +541,13 @@ MaxPiPoHost::setInputMaxFrames(int maxFrames, bool propagate)
     this->propagateInputAttributes();
 }
 
-void
-MaxPiPoHost::getInputDims(int &width, int &size)
+void MaxPiPoHost::getInputDims(int &width, int &size)
 {
   width = this->inputStreamAttrs.dims[0];
   size = this->inputStreamAttrs.dims[1];
 }
 
-void
-MaxPiPoHost::getInputLabels(int &num, t_atom *array)
+void MaxPiPoHost::getInputLabels(int &num, t_atom *array)
 {
   int numLabels = this->inputStreamAttrs.numLabels;
   
@@ -591,33 +558,28 @@ MaxPiPoHost::getInputLabels(int &num, t_atom *array)
     atom_setsym(array + i, this->inputStreamAttrs.labels[i]);
 }
 
-bool
-MaxPiPoHost::getInputHasTimeTags()
+bool MaxPiPoHost::getInputHasTimeTags()
 {
   return this->inputStreamAttrs.hasTimeTags;
 }
 
-double
-MaxPiPoHost::getInputFrameRate(void)
+double MaxPiPoHost::getInputFrameRate(void)
 {
   return this->inputStreamAttrs.rate;
 }
 
-double
-MaxPiPoHost::getInputFrameOffset(void)
+double MaxPiPoHost::getInputFrameOffset(void)
 {
   return this->inputStreamAttrs.offset;
 }
 
-void
-MaxPiPoHost::getOutputDims(int &width, int &size)
+void MaxPiPoHost::getOutputDims(int &width, int &size)
 {
   width = this->outputStreamAttrs.dims[0];
   size = this->outputStreamAttrs.dims[1];
 }
 
-void
-MaxPiPoHost::getOutputLabels(int &num, t_atom *array)
+void MaxPiPoHost::getOutputLabels(int &num, t_atom *array)
 {
   int numLabels = this->outputStreamAttrs.numLabels;
   
@@ -628,26 +590,22 @@ MaxPiPoHost::getOutputLabels(int &num, t_atom *array)
     atom_setsym(array + i, this->outputStreamAttrs.labels[i]);
 }
 
-bool
-MaxPiPoHost::getOutputHasTimeTags()
+bool MaxPiPoHost::getOutputHasTimeTags()
 {
   return this->outputStreamAttrs.hasTimeTags;
 }
 
-double
-MaxPiPoHost::getOutputFrameRate(void)
+double MaxPiPoHost::getOutputFrameRate(void)
 {
   return this->outputStreamAttrs.rate;
 }
 
-double
-MaxPiPoHost::getOutputFrameOffset(void)
+double MaxPiPoHost::getOutputFrameOffset(void)
 {
   return this->outputStreamAttrs.offset;
 }
 
-int
-MaxPiPoHost::getOutputMaxFrames()
+int MaxPiPoHost::getOutputMaxFrames()
 {
   return this->outputStreamAttrs.maxFrames;
 }
