@@ -1447,6 +1447,16 @@ public:
   {
     return &((*this)[0]);
   }
+
+  using std::vector<TYPE>::size;
+  using std::vector<TYPE>::begin;
+  using std::vector<TYPE>::erase;
+
+  void remove (int pos) // remove element at index pos
+  {
+    if (pos >= 0  &&  pos < size())    
+      erase(begin() + pos);
+  }
 };
 
 
@@ -1521,6 +1531,12 @@ public:
     
     return NULL;
   }
+
+  void remove (int pos) // remove element at index pos
+  {
+    if (pos >= 0  &&  pos < size())
+      erase(begin() + pos);
+  }
 };
 
 
@@ -1594,6 +1610,13 @@ public:
       return this->getEnumTag((*this)[i]);
 
     return NULL;
+  }
+
+  //TODO: use base class or member-only specialization to reuse PiPoVarSizeAttr::remove
+  void remove (int pos) // remove element at index pos
+  {
+    if (pos >= 0  &&  pos < size())
+      erase(begin() + pos);
   }
 };
 
