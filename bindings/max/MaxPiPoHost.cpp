@@ -77,8 +77,11 @@ getMaxAttributeList(PiPo *pipo, unsigned int attrId, long *pac, t_atom **pat)
         if(enumList != NULL && enumList->size() > 0)
           for(unsigned int i = 0; i < attr->getSize(); i++)
           {
-            const char *enumStr = (*enumList)[attr->getInt(i)];
-            atom_setsym((*pat) + i, gensym(enumStr));
+            const char *enumStr = attr->getStr(i);
+            if (enumStr)
+              atom_setsym((*pat) + i, gensym(enumStr));
+            else // no enum item string, leave as int
+              atom_setlong((*pat) + i, attr->getInt(i));
           }
         else
           for(unsigned int i = 0; i < attr->getSize(); i++)
