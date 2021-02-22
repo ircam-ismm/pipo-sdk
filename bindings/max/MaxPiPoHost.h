@@ -170,6 +170,7 @@ public:
   void setInputHasTimeTags(int hasTimeTags, bool propagate = true);
   void setInputFrameRate(double sampleRate, bool propagate = true);
   void setInputFrameOffset(double sampleOffset, bool propagate = true);
+  void setInputFrameDomain(double domain, bool propagate = true);
   void setInputMaxFrames(int maxFrames, bool propagate = true);
 
   void getInputDims(int &width, int &size);
@@ -177,6 +178,7 @@ public:
   bool getInputHasTimeTags(void);
   double getInputFrameRate(void);
   double getInputFrameOffset(void);
+  double getInputFrameDomain(void);
 
   void getOutputDims(int &width, int &size);
   void getOutputLabels(int &num, t_atom *array);

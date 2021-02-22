@@ -536,6 +536,14 @@ void MaxPiPoHost::setInputFrameOffset(double sampleOffset, bool propagate)
     this->propagateInputAttributes();
 }
 
+void MaxPiPoHost::setInputFrameDomain(double domain, bool propagate)
+{
+  this->inputStreamAttrs.domain = domain;
+
+  if(propagate)
+    this->propagateInputAttributes();
+}
+
 void MaxPiPoHost::setInputMaxFrames(int maxFrames, bool propagate)
 {
   this->inputStreamAttrs.maxFrames = maxFrames;
@@ -574,6 +582,11 @@ double MaxPiPoHost::getInputFrameRate(void)
 double MaxPiPoHost::getInputFrameOffset(void)
 {
   return this->inputStreamAttrs.offset;
+}
+
+double MaxPiPoHost::getInputFrameDomain(void)
+{
+  return this->inputStreamAttrs.domain;
 }
 
 void MaxPiPoHost::getOutputDims(int &width, int &size)
