@@ -28,10 +28,9 @@ typedef struct max_mimo_st {
     if (self != NULL) { self->mimo = new mimo_class(NULL); } \
     return self; } \
   static void free_max_object(MaxMimoT *self) { delete self->mimo; } \
-  int main(void) { \
+  void ext_main(void *r) { \
     t_class *c = class_new("mimo." mimo_name, (method) new_max_object, (method) free_max_object, (long) sizeof(MaxMimoT), 0L, A_GIMME, 0); \
     class_register(CLASS_BOX, c); \
-    max_ ## mimo_class ## _class = c; \
-    return 0; }
+    max_ ## mimo_class ## _class = c; }
 
 #endif

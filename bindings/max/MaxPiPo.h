@@ -210,7 +210,7 @@ typedef struct MaxPiPoSt {
   static void listMethod(MaxPiPoT *self, t_symbol *s, short ac, t_atom *at){object_error((t_object *) self, "pipo works only inside a pipo host!!! see pipo, pipo~ and mubu.process");}\
   static void intMethod(MaxPiPoT *self, long i){object_error((t_object *) self, "pipo works only inside a pipo host!!! see pipo, pipo~ and mubu.process");} \
   static void floatMethod(MaxPiPoT *self, double f){object_error((t_object *) self, "pipo works only inside a pipo host!!! see pipo, pipo~ and mubu.process");}\
-  int main(void) { \
+  void ext_main(void *r) { \
     t_class *c = class_new("pipo." pipoName, (method)newMaxObject, (method)freeMaxObject, (long)sizeof(MaxPiPoT), 0L, A_GIMME, 0); \
     class_initIrcamMax(c); \
     IRCAMMAX_CLASS_DIGEST(c, MaxPiPoT, digest); \
@@ -223,8 +223,7 @@ typedef struct MaxPiPoSt {
     class_addmethod(c, (method)intMethod, "int", A_LONG, 0);\
     class_addmethod(c, (method)floatMethod, "float", A_FLOAT, 0);\
     class_register(CLASS_BOX, c); \
-    max ## pipoClass ## Class = c; \
-    return 0; }
+    max ## pipoClass ## Class = c; }
 
 #else // PIPO_MAX_WITH_DOC
 
@@ -246,7 +245,7 @@ typedef struct MaxPiPoSt {
   static void listMethod(MaxPiPoT *self, t_symbol *s, short ac, t_atom *at){object_error((t_object *) self, "pipo works only inside a pipo host!!!");}\
   static void intMethod(MaxPiPoT *self, long i){object_error((t_object *) self, "pipo works only inside a pipo host!!!");} \
   static void floatMethod(MaxPiPoT *self, double f){object_error((t_object *) self, "pipo works only inside a pipo host!!!");}\
-  int main(void) { \
+  void ext_main(void *r) { \
     t_class *c = class_new("pipo." pipoName, (method)newMaxObject, (method)freeMaxObject, (long)sizeof(MaxPiPoT), 0L, A_GIMME, 0); \
     class_addmethod(c, (method)helpnameMethod, "helpname", A_CANT, 0);\
     class_addmethod(c, (method)bangMethod, "bang", 0);\
@@ -254,8 +253,7 @@ typedef struct MaxPiPoSt {
     class_addmethod(c, (method)intMethod, "int", A_LONG, 0);\
     class_addmethod(c, (method)floatMethod, "float", A_FLOAT, 0);\
     class_register(CLASS_BOX, c); \
-    max ## pipoClass ## Class = c; \
-    return 0; }
+    max ## pipoClass ## Class = c; }
 
 #endif // PIPO_MAX_WITH_DOC
 
