@@ -31,7 +31,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include <stdlib.h> //db
 #include "PiPo.h"
 
-#define PIPO_DEBUG DEBUG*1
+#define PIPO_DEBUG DEBUG*0
 
 class PiPoParallel : public PiPo
 {

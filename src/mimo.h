@@ -161,7 +161,7 @@ public:
     int ret = 0;
     
     for (unsigned int i = 0; i < this->receivers.size(); i++)
-    {
+    { // winds up calling MimoProcReceiver::train to transmit output data for one track in all buffers
       ret = dynamic_cast<Mimo *>(this->receivers[i])->train(itercount, trackindex, numbuffers, buffers);
       
       if (ret < 0)

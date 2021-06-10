@@ -148,7 +148,7 @@ PiPo *MaxPiPoHost::setChainDescription(const char *str, PiPo *receiver)
 /** declare pipo module attributes as max attributes */
 void MaxPiPoHost::copyPiPoAttributes (MaxAttrGetterT getAttrMeth, MaxAttrSetterT setAttrMeth)
 {
-  for(int iPiPo = 0; iPiPo < this->chain.getSize(); iPiPo++)
+  for(unsigned int iPiPo = 0; iPiPo < this->chain.getSize(); iPiPo++)
   {
     PiPo *pipo = this->chain.getPiPo(iPiPo);
     const char *instanceName = this->chain.getInstanceName(iPiPo);

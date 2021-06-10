@@ -1534,7 +1534,7 @@ public:
 
   void remove (int pos) // remove element at index pos
   {
-    if (pos >= 0  &&  pos < size())
+    if (pos >= 0  &&  pos < (int) size())
       erase(begin() + pos);
   }
 };
@@ -1615,7 +1615,7 @@ public:
   //TODO: use base class or member-only specialization to reuse PiPoVarSizeAttr::remove
   void remove (int pos) // remove element at index pos
   {
-    if (pos >= 0  &&  pos < size())
+    if (pos >= 0  &&  pos < (int) size())
       erase(begin() + pos);
   }
 };

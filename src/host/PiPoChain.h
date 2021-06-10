@@ -178,7 +178,7 @@ public:
 
   void copyPiPoAttributes()
   {
-    for(int iPiPo = 0; iPiPo < this->getSize(); iPiPo++)
+    for(unsigned int iPiPo = 0; iPiPo < this->getSize(); iPiPo++)
     {
       PiPo *pipo = this->getPiPo(iPiPo);
 
