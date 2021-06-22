@@ -158,7 +158,7 @@ void MaxPiPoHost::copyPiPoAttributes (MaxAttrGetterT getAttrMeth, MaxAttrSetterT
     {
       PiPo::Attr *attr = pipo->getAttr(iAttr);
       
-      if(attr != NULL)
+      if(attr != NULL && attr->getName() != NULL)
       {
         /* attribute name */
         string attrName = instanceName;
