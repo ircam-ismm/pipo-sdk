@@ -315,11 +315,11 @@ void MaxPiPoHost::setMaxAttr(const char *attrName, long ac, t_atom *at, PiPoChai
             ac = i;
         }
         
-        if(ac > 0)
+        if (ac > 0  ||  (attr->getIsVarSize()  &&  ac >= 0)) // check for at least one arg when not varsize, accept 0 args when varsize (empty list)
         {
           attr->setSize(ac);
           
-          if(atom_isnum(at) || atom_issym(at))
+          if (ac == 0  ||  atom_isnum(at)  ||  atom_issym(at))
           {
             for(int i = 0; i < ac; i++) {
               if(atom_issym(at + i)) {
