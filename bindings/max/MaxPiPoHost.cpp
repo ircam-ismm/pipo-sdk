@@ -34,7 +34,7 @@ getPiPoInstanceAndAttrName(const char *attrName, char *instanceName, char *pipoA
   
   if(dot != NULL)
   {
-    unsigned int pipoAttrNameLen = dot - attrName;
+    unsigned int pipoAttrNameLen = (unsigned int)(dot - attrName);
     
     strcpy(pipoAttrName, dot + 1);
     
@@ -317,7 +317,7 @@ void MaxPiPoHost::setMaxAttr(const char *attrName, long ac, t_atom *at, PiPoChai
         
         if (ac > 0  ||  (attr->getIsVarSize()  &&  ac >= 0)) // check for at least one arg when not varsize, accept 0 args when varsize (empty list)
         {
-          attr->setSize(ac);
+          attr->setSize((unsigned int)ac);
           
           if (ac == 0  ||  atom_isnum(at)  ||  atom_issym(at))
           {
@@ -481,7 +481,7 @@ void MaxPiPoHost::setInputLabels(long ac, t_atom *at, bool propagate)
   if(ac > PIPO_MAX_LABELS)
     ac = PIPO_MAX_LABELS;
   
-  this->inputStreamAttrs.numLabels = ac;
+  this->inputStreamAttrs.numLabels = (unsigned int)ac;
   
   for(int i = 0; i < ac; i++)
   {
