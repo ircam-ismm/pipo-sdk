@@ -62,10 +62,12 @@ class MaxPiPoHost : public PiPo::Parent
 
     ~MaxPiPoModuleFactory(void) { }
 
-    PiPo *create(unsigned int index, const std::string &pipoName, const std::string &instanceName, PiPoModule *&module)
+    PiPo *create(unsigned int index, const std::string &pipoName, const std::string &instanceName, PiPoModule *&module, PiPo::Parent *parent)
     {
       std::string pipoClassNameStr = this->prefix + "." + pipoName;
-      MaxPiPoT *maxPiPo = (MaxPiPoT *)object_new_typed(CLASS_BOX, gensym(pipoClassNameStr.c_str()), 0, NULL);
+      t_atom at;
+      atom_setobj(&at, parent);
+      MaxPiPoT *maxPiPo = (MaxPiPoT *)object_new_typed(CLASS_BOX, gensym(pipoClassNameStr.c_str()), 1, &at);
 
       if (maxPiPo == NULL)
       { // try to find pipo decoder module embedded in mimo
