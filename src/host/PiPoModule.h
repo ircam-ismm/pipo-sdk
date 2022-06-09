@@ -56,7 +56,7 @@ public:
   PiPoModuleFactory(void) { };
   ~PiPoModuleFactory(void) { };
 
-  virtual PiPo *create(unsigned int index, const std::string &pipoName, const std::string &instanceName, PiPoModule *&module) = 0;
+  virtual PiPo *create(unsigned int index, const std::string &pipoName, const std::string &instanceName, PiPoModule *&module, PiPo::Parent *parent) = 0;
 };
 
 #endif /* _PIPO_MODULE */

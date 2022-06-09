@@ -130,7 +130,7 @@ public:
     this->module = NULL;
 
     if(moduleFactory != NULL)
-      this->pipo = moduleFactory->create(index, this->pipoName, this->instanceName, this->module);
+      this->pipo = moduleFactory->create(index, this->pipoName, this->instanceName, this->module, parent);
 
     if(this->pipo != NULL)
     { // check if version of created pipo is compatible with host
