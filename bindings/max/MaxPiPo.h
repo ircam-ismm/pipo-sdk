@@ -203,6 +203,7 @@ typedef struct MaxPiPoSt {
     if(self != NULL) { \
       self->pipo = new pipoClass(NULL); \
     } \
+    if(ac == 0) object_warn((t_object *)self, "pipo works only inside a pipo host!!! see pipo, pipo~ and mubu.process  ac == %d\n", ac); \
     return self; } \
   static void freeMaxObject(MaxPiPoT *self) { delete self->pipo; } \
   static void helpnameMethod(MaxPiPoT *self, char *str){ sprintf(str, "pipo.%s", pipoShortName);} \
