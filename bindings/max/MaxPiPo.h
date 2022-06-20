@@ -36,7 +36,6 @@ typedef struct MaxPiPoSt {
   t_symbol classseealso;
   t_symbol externalversion;
 #endif // PIPO_MAX_WITH_DOC
-
 } MaxPiPoT;
 
 #ifdef PIPO_MAX_WITH_DOC
@@ -239,6 +238,7 @@ typedef struct MaxPiPoSt {
   static void *newMaxObject(t_symbol *s, long ac, t_atom *at) { \
     MaxPiPoT *self = (MaxPiPoT *)object_alloc(max ## pipoClass ## Class); \
     if(self != NULL) { self->pipo = new pipoClass(NULL); } \
+    if(ac == 0) object_warn((t_object *)self, "pipo works only inside a pipo host!!! see pipo, pipo~ and mubu.process  ac == %d\n", ac); \
     return self; } \
   static void freeMaxObject(MaxPiPoT *self) { delete self->pipo; } \
   static void helpnameMethod(MaxPiPoT *self, char *str){ sprintf(str, "pipo.%s", pipoShortName);} \
