@@ -238,7 +238,9 @@ typedef struct max_mimo_st {
   static void *new_max_object(t_symbol *s, long ac, t_atom *at) { \
     MaxMimoT *self = (MaxMimoT *) object_alloc(max_ ## mimoClass ## _class); \
     if (self != NULL) { self->mimo = new mimoClass(NULL); } \
-    if(ac == 0) object_warn((t_object *)self, "mimo works only inside a mimo host!!! see mubu.model and pipo"); \
+  if(ac == 0) { \
+   object_error_obtrusive((t_object *)self, "mimo works only inside a mimo host!!! see mubu.model and pipo\n"); \
+   object_warn((t_object *)self, "mimo works only inside a mimo host!!! see mubu.model and pipo\n"); } \
     return self; } \
   static void free_max_object(MaxMimoT *self) { delete self->mimo; } \
   static void helpnameMethod(MaxMimoT *self, char *str){ sprintf(str, "mimo.%s", mimoShortName);} \
