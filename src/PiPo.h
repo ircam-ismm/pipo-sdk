@@ -1122,6 +1122,62 @@ public:
     this->attrs[index]->clone(attr);
   }
 
+  
+  /// utility function to get column indices from an int or string PiPo::Attr
+  //
+  // checks that index is < max_num, looks up strings in given column names, returns int array of valid indices
+  // N.B.: no sorting, double columns are allowed
+  //
+  // @param attr		pipo attribute to get column index or name from, can be any PiPo::Attr subclass that has operator[] defined (fixed or var size list, not yet scalar)
+  // @param max_num	highest valid index + 1
+  // @param labels	array of max_num column names for lookup from string attr
+  // @return vector<int> of valid column indices ( 0 .. max_num - 1), empty attr list returns vector of all indices 0 .. max_num - 1
+
+  template<typename ATTRTYPE>
+  static std::vector<unsigned int> lookup_column_indices (ATTRTYPE &attr, int max_num, const char **labels = NULL)
+  {
+    std::vector<unsigned int> checked;
+    checked.reserve(attr.getSize());    // make space for maximum size
+    
+    for (int i = 0; i < attr.getSize(); i++)
+    {
+      PiPo::Atom elem(attr[i]); // put attr element (of any type) into pipo Atom, either copying atom, or wrapping int or string
+      // todo: define TYPE get(int) method for all pipo::attr derivations
+
+      switch (elem.getType())
+      {
+        case PiPo::Double:
+        case PiPo::Int:
+	{
+	  int res = elem.getInt();
+	  if (res >= 0  &&  static_cast<unsigned int>(res) < max_num)
+	    checked.push_back(res);
+	}
+	break;
+
+        case PiPo::String:
+	  if (labels != NULL) // lookup string atom by search (TBD: make dict lookup?)
+	    for (unsigned int j = 0; j < max_num; j++)
+	      if (labels[j] != NULL  &&  std::strcmp(elem.getString(), labels[j]) == 0)
+		checked.push_back(j);
+	  break;
+
+        default: 
+	  break;
+      }
+    }
+
+    if (checked.size() == 0)
+    {
+      // fill with all indices
+      checked.resize(max_num);
+      for (unsigned int i = 0; i < max_num; ++i)
+	checked[i] = i;
+    }
+
+    return checked;
+  } // end lookup_column_indices
+
 }; // end class PiPo
 
 
