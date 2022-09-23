@@ -93,13 +93,19 @@ public:
                      unsigned int num);
 
   virtual std::vector<std::string> getAttrNames();
+  virtual PiPo::Attr *getAttr(const std::string &attrName);
 
   virtual bool setAttr(const std::string &attrName, bool value);
-  virtual bool setAttr(const std::string &attrName, const std::string &value); // for enums and strings
   virtual bool setAttr(const std::string &attrName, int value);
   virtual bool setAttr(const std::string &attrName, double value);
-  virtual bool setAttr(const std::string &attrName, const std::vector<int> &values);
-  virtual bool setAttr(const std::string &attrName, const std::vector<double> &values);
+  virtual bool setAttr(const std::string &attrName, const char *value); // for enums and strings
+  virtual bool setAttr(const std::string &attrName, const std::string &value); // for enums and strings
+
+  template<typename TYPE>
+  bool setAttr(const std::string &attrName, const std::vector<TYPE> &values);
+
+//  virtual bool setAttr(const std::string &attrName, const std::vector<int> &values);
+  //virtual bool setAttr(const std::string &attrName, const std::vector<double> &values);
 
   virtual bool isBoolAttr(const std::string &attrName);
   virtual bool isEnumAttr(const std::string &attrName);

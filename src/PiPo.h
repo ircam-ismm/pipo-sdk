@@ -1025,6 +1025,42 @@ public:
     return getAttr(qname.c_str());
   }
 
+#if 1
+  template<typename TYPE>
+  bool setAttr (unsigned int index, TYPE value, bool silently = false)
+  {
+    Attr *attr = getAttr(index);
+
+    if (attr != NULL)
+    {
+      attr->set(0, value, silently);
+
+      return true;
+    }
+
+    return false;
+  }
+
+  template<typename TYPE>
+  bool setAttr (unsigned int index, TYPE *values, unsigned int numValues, bool silently = false)
+  {
+    Attr *attr = getAttr(index);
+
+    if (attr != NULL)
+    {
+      // unused: unsigned int size = (unsigned int) attr->getSize();
+
+      for (unsigned int i = 0; i < numValues; i++)
+        attr->set(i, values[i], silently);
+
+      return true;
+    }
+
+    return false;
+  }
+
+#else
+
   bool setAttr(unsigned int index, int value, bool silently = false)
   {
     Attr *attr = getAttr(index);
@@ -1088,7 +1124,8 @@ public:
 
     return false;
   }
-
+#endif
+  
   /**
    * @brief Gets number of attributes
    *
@@ -1136,10 +1173,11 @@ public:
   template<typename ATTRTYPE>
   static std::vector<unsigned int> lookup_column_indices (ATTRTYPE &attr, int max_num, const char **labels = NULL)
   {
+    int attrsize = attr.getSize();
     std::vector<unsigned int> checked;
-    checked.reserve(attr.getSize());    // make space for maximum size
+    checked.reserve(attrsize);    // make space for maximum size
     
-    for (int i = 0; i < attr.getSize(); i++)
+    for (int i = 0; i < attrsize; i++)
     {
       PiPo::Atom elem(attr[i]); // put attr element (of any type) into pipo Atom, either copying atom, or wrapping int or string
       // todo: define TYPE get(int) method for all pipo::attr derivations

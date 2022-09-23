@@ -177,6 +177,12 @@ PiPoHost::getAttrNames()
   return res;
 }
 
+
+PiPo::Attr *PiPoHost::getAttr (const std::string &attrName)
+{
+  return this->graph->getAttr(attrName.c_str());
+}
+
 bool
 PiPoHost::setAttr(const std::string &attrName, bool value)
 {
@@ -191,8 +197,13 @@ PiPoHost::setAttr(const std::string &attrName, bool value)
   return false;
 }
 
-bool
-PiPoHost::setAttr(const std::string &attrName, const std::string &value) // for enums
+
+bool PiPoHost::setAttr(const std::string &attrName, const std::string &value) // for enums and strings
+{
+  return setAttr(attrName, value.c_str());
+}
+
+bool PiPoHost::setAttr(const std::string &attrName, const char *value) // for enums and strings
 {
   PiPo::Attr *attr = this->graph->getAttr(attrName.c_str());
 
@@ -206,7 +217,7 @@ PiPoHost::setAttr(const std::string &attrName, const std::string &value) // for 
 
       for (int i = 0; i < list->size(); i++)
       {
-        if (strcmp(list->at(i), value.c_str()) == 0)
+        if (strcmp(list->at(i), value) == 0)
         {
           attr->set(0, i);
           return true;
@@ -215,7 +226,7 @@ PiPoHost::setAttr(const std::string &attrName, const std::string &value) // for 
     }
     else if (type == PiPo::Type::String)
     {
-      attr->set(0, value.c_str());
+      attr->set(0, value);
     }
   }
 
@@ -249,6 +260,33 @@ PiPoHost::setAttr(const std::string &attrName, double value)
 
   return false;
 }
+
+#if 1
+
+template<typename TYPE>
+bool PiPoHost::setAttr(const std::string &attrName, const std::vector<TYPE> &values)
+{
+  PiPo::Attr *attr = this->graph->getAttr(attrName.c_str());
+
+  if (attr != NULL)
+  {
+    PiPo::Type type = attr->getType();
+
+    int iAttr = attr->getIndex();
+    TYPE vals[values.size()];
+
+    for (unsigned int i = 0; i < values.size(); ++i)
+    {
+      vals[i] = values[i];
+    }
+
+    return this->graph->setAttr(iAttr, &vals[0], static_cast<unsigned int>(values.size()));
+  }
+
+  return false;
+}
+
+#else
 
 bool
 PiPoHost::setAttr(const std::string &attrName, const std::vector<int> &values)
@@ -295,6 +333,30 @@ PiPoHost::setAttr(const std::string &attrName, const std::vector<double> &values
 
   return false;
 }
+
+bool
+PiPoHost::setAttr(const std::string &attrName, const std::vector<const char *> &values)
+{
+  PiPo::Attr *attr = this->graph->getAttr(attrName.c_str());
+
+  if (attr != NULL)
+  {
+    PiPo::Type type = attr->getType();
+
+    int iAttr = attr->getIndex();
+    double vals[values.size()];
+
+    for (unsigned int i = 0; i < values.size(); ++i)
+    {
+      vals[i] = values[i];
+    }
+
+    return this->graph->setAttr(iAttr, &vals[0], static_cast<unsigned int>(values.size()));
+  }
+
+  return false;
+}
+#endif
 
 //--------------------------- TYPE INTROSPECTION -----------------------------//
 
@@ -679,3 +741,8 @@ PiPoOut::getLastFrame()
 
   return f;
 }
+
+// instantiate setAttr member function templates for commly used types
+template bool PiPoHost::setAttr(const std::string &, const std::vector<int> &);
+template bool PiPoHost::setAttr(const std::string &, const std::vector<double> &);
+template bool PiPoHost::setAttr(const std::string &, const std::vector<const char *> &);
