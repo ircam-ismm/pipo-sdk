@@ -243,7 +243,8 @@ struct PiPoStreamAttributes
     str.resize(buflen);
     return str;
   }
-};
+}; // end class PiPoStreamAttributes
+
 
 
 class PiPo
@@ -524,42 +525,41 @@ public:
   virtual int frames (double time, double weight, PiPoValue *values, unsigned int size, unsigned int num) = 0;
 
   /**
-   * @brief UNUSED: Signals segment start or end
+   * @brief Signals segment start or end
    *
-   * PiPo module:
-   * An implementation of this method calls propagateFrames() at the end of the segment.
+   * A PiPo module implementing this method calls propagateFrames()
+   * with the segment description at the end of the segment, and does
+   * NOT pass it on.
    *
-   * In the case of two sucessive calls to segment(), the second call implitly ends the last segment.
-   *
-   * If the module did not receive any frames - at all or since the last segment end -, the method should
-   * return 0 to the call segment(0.0, end) without calling propagateFrames().
-   * This permits the host to check whether a module implements the segment method or not.
+   * In the case of two sucessive calls to segment with start = true, the second call implicitly ends the last segment.
    *
    * \code
 
-   if(this->started)
+   if (this->started)
    {
-   // do what is to be done to finalize the segment description
-   this->propagateFrames(time, weight, values, size, num);
-   this->started = false;
+     // do what is to be done to finalize the segment description
+     this->propagateFrames(time, weight, segment_values, size, 1);
+     this->started = false;
    }
 
-   if(start)
+   if (start)
    {
-   // do what is to be done to initialize the segment description
+     // do what is to be done to initialize the segment description
+     this->started = true;
    }
 
-   return 0;
+   return 0;  // we don't pass on the segment() call, since here we did handle it
 
    * \endcode
    *
-   * @param time time of segment start of end
+   * @param time time of segment start or end
    * @param start flag, true for segment start, false for segment end
    * @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
    */
   virtual int segment(double time, bool start)
   {
-    return -1;
+    // the default implementation passes the segmentation call on to any module that knows what to do with it, notably a temporal modeling module.
+    return propagateSegment(time, start);
   }
 
   /**
@@ -576,7 +576,7 @@ public:
    */
   virtual int finalize(double inputEnd)
   {
-    return this->propagateFinalize(inputEnd);
+    return propagateFinalize(inputEnd);
   }
 
   
@@ -654,6 +654,28 @@ public:
       ret = this->receivers[i]->frames(time, weight, values, size, num);
 
       if(ret < 0)
+        break;
+    }
+
+    return ret;
+  }
+
+  /**
+   * @brief Propagates the segment control event.
+   *
+   * This method is called in the segment() method of a PiPo module.
+   *
+   * @return used as return value of the calling method
+   */
+  int propagateSegment (double time, bool start)
+  {
+    int ret = -1;
+
+    for (unsigned int i = 0; i < receivers.size(); i++)
+    {
+      ret = receivers[i]->segment(time, start);
+
+      if (ret < 0)
         break;
     }
 
@@ -790,7 +812,7 @@ public:
     int           getInt()    { return ((type == Int) ? this->data.itg : ((type == Double) ? (int)(this->data.dbl) : 0)); }
     double        getDouble() { return ((type == Double) ? this->data.dbl : ((type == Int) ? (double)(this->data.itg) : 0.)); }
     const char *  getString() { return (isString() ? this->data.str : ""); }
-  };
+  }; // class PiPo::Atom
 
   class Attr
   {
@@ -865,15 +887,16 @@ public:
     virtual int getInt(unsigned int i) = 0;
     virtual double getDbl(unsigned int i) = 0;
     virtual const char *getStr(unsigned int i) = 0;
-
+   
     virtual std::vector<const char *> *getEnumList(void) { return NULL; }
 
     void changed(bool silently = false) { this->has_changed = true; if (!silently && this->changesStream) this->pipo->streamAttributesChanged(this); }
     bool hasChanged() { return this->has_changed; }
     void resetChanged() { this->has_changed = false; }
     void rename(const char *name) { this->name = name; }
-  };
+  }; // end class PiPo::Attr
 
+  
   /**
    * PiPo enumerator attribute base class
    */
@@ -935,7 +958,7 @@ public:
 
       return index;
     }
-  };
+  }; // end class PiPo::EnumAttr
 
   /**
    * @brief Add attribute.
@@ -1098,7 +1121,8 @@ public:
 
     this->attrs[index]->clone(attr);
   }
-};
+
+}; // end class PiPo
 
 
 
@@ -1243,7 +1267,7 @@ private:
  *  Fixed Size Array Attribute
  *
  */
-/* waiting for C++11 */
+
 template< class TYPE, std::size_t SIZE>
 class PiPo::AttrArray
 {
@@ -1457,7 +1481,7 @@ public:
     if (pos >= 0  &&  pos < size())    
       erase(begin() + pos);
   }
-};
+}; // template class PiPoVarSizeAttr<TYPE>
 
 
 // specialisation of PiPoVarSizeAttr template for c-strings
@@ -1696,7 +1720,7 @@ public:
     {
       return &((*this)[0]);
     }
-};
+}; // end class PiPoVarSizeAttr<PiPo::Atom>
 
 /** EMACS **
  * Local variables:
