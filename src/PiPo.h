@@ -180,7 +180,8 @@ struct PiPoStreamAttributes
   };
 
   /**
-   * append string pointer array to labels array
+   * append string pointer array at end of labels array
+   * labels array must have allocated space for _width more elements (i.e. at least numLabels + _width)
    */
   void concat_labels (const char **_labels, unsigned int _width)
   {

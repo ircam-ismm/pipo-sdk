@@ -42,12 +42,14 @@ private:
   {
   private:
 #   define		 MAX_PAR 64
+#   define		 NUM_LABELS_INIT 16
     int			 count_;
     int			 numpar_;
     PiPoStreamAttributes sa_;	// combined stream attributes
     int			 paroffset_[MAX_PAR]; // cumulative column offsets in output array
     int			 parwidth_[MAX_PAR];  // column widths of parallel pipos
     int			 framesize_;		// output frame size = width * maxheight
+    std::vector<std::string> labelstore_;
 
     // working variables for merging of frames
     PiPoValue		*values_;
@@ -57,31 +59,24 @@ private:
 
   public:
     PiPoMerge (PiPo::Parent *parent)
-    : PiPo(parent), count_(0), numpar_(0), sa_(1024), framesize_(0), values_(NULL)
+    : PiPo(parent), count_(0), numpar_(0), sa_(NUM_LABELS_INIT), labelstore_(), framesize_(0), values_(NULL)
     {
 #ifdef DEBUG	// clean memory to make possible memory errors more consistent at least
       memset(paroffset_, 0, sizeof(*paroffset_) * MAX_PAR);
       memset(parwidth_,  0, sizeof(*parwidth_) * MAX_PAR);
 #endif
+      labelstore_.reserve(NUM_LABELS_INIT);
     }
 
     // copy constructor
     PiPoMerge (const PiPoMerge &other)
-    : PiPo(other.parent), count_(other.count_), numpar_(other.numpar_), sa_(other.sa_), framesize_(other.framesize_)
+    : PiPo(other.parent)
     {
 #if defined(__GNUC__) &&  PIPO_DEBUG >= 2
       printf("\n•••••• %s: COPY CONSTRUCTOR\n", __PRETTY_FUNCTION__); //db
 #endif
 
-#ifdef DEBUG	// clean memory to make possible memory errors more consistent at least
-      memset(paroffset_, 0, sizeof(*paroffset_) * MAX_PAR);
-      memset(parwidth_,  0, sizeof(*parwidth_) * MAX_PAR);
-#endif
-
-      memcpy(paroffset_, other.paroffset_, numpar_ * sizeof(int));
-      memcpy(parwidth_, other.parwidth_, numpar_ * sizeof(int));
-      values_ = (PiPoValue *) malloc(sa_.maxFrames * framesize_ * sizeof(PiPoValue));
-      memcpy(values_, other.values_, sa_.maxFrames * framesize_ * sizeof(PiPoValue));
+      copy_from(other);
     }
 
     // assignment operator
@@ -91,20 +86,7 @@ private:
       printf("\n•••••• %s: ASSIGNMENT OPERATOR\n", __PRETTY_FUNCTION__); //db
 #endif
 
-#ifdef DEBUG	// clean memory to make possible memory errors more consistent at least
-      memset(paroffset_, 0, sizeof(*paroffset_) * MAX_PAR);
-      memset(parwidth_,  0, sizeof(*parwidth_) * MAX_PAR);
-#endif
-
-      count_     = other.count_;
-      numpar_    = other.numpar_;
-      sa_        = other.sa_;
-      framesize_ = other.framesize_;
-      
-      memcpy(paroffset_, other.paroffset_, numpar_ * sizeof(int));
-      memcpy(parwidth_, other.parwidth_, numpar_ * sizeof(int));
-      values_ = (PiPoValue *) malloc(sa_.maxFrames * framesize_ * sizeof(PiPoValue));
-      memcpy(values_, other.values_, sa_.maxFrames * framesize_ * sizeof(PiPoValue));
+      copy_from(other);
 
       return *this;
     }
@@ -115,6 +97,56 @@ private:
       free(values_);
     }
 
+  private:
+    void copy_from (const PiPoMerge &other)
+    {
+#ifdef DEBUG	// clean memory to make possible memory errors more consistent at least
+      memset(paroffset_, 0, sizeof(*paroffset_) * MAX_PAR);
+      memset(parwidth_,  0, sizeof(*parwidth_) * MAX_PAR);
+#endif
+
+      parent      = other.parent;
+      count_      = other.count_;
+      numpar_     = other.numpar_;
+      sa_         = other.sa_; // does shallow copy of labels array
+      labelstore_ = other.labelstore_;
+      framesize_  = other.framesize_;
+
+      memcpy(paroffset_, other.paroffset_, numpar_ * sizeof(int));
+      memcpy(parwidth_, other.parwidth_, numpar_ * sizeof(int));
+      values_ = (PiPoValue *) malloc(sa_.maxFrames * framesize_ * sizeof(PiPoValue));
+      memcpy(values_, other.values_, sa_.maxFrames * framesize_ * sizeof(PiPoValue));
+
+      // redirect labels string pointers to copied labelstore_
+      for (int i = 0; i < sa_.numLabels; i++)
+	if (sa_.labels[i] != NULL)
+	  sa_.labels[i] = labelstore_[i].c_str();
+    }
+
+    // copy label strings into internal storage (parallel branches are not on stack anymore)
+    void append_labels (const char **labels, unsigned int width)
+    {
+      unsigned int new_num = sa_.numLabels + width;
+
+      if (new_num > sa_.labels_alloc)
+      {
+	sa_.labels = (const char **) realloc(sa_.labels, new_num * sizeof(const char **));
+	sa_.labels_alloc = new_num;
+      }
+      labelstore_.resize(new_num);
+
+      for (int i = sa_.numLabels, k = 0; i < new_num; i++, k++)
+      {
+        if (labels && labels[k])
+          labelstore_[i].assign(labels[k]);	// copy input c-string into std::string
+        else
+          labelstore_[i].assign("");  		// set empty string
+	sa_.labels[i] = labelstore_[i].c_str(); // have our labels point to internal label storage
+      }      
+
+      sa_.numLabels = new_num;
+    }
+    
   public:
     void start (size_t numpar)
     { // on start, record number of calls to expect from parallel pipos, each received stream call increments count_, when numpar_ is reached, merging has to be performed
@@ -142,11 +174,12 @@ private:
     	sa_.offset = offset;
     	sa_.dims[0] = width;
     	sa_.dims[1] = height;
-    	sa_.numLabels = 0;
     	sa_.hasVarSize = hasVarSize;
     	sa_.domain = domain;
     	sa_.maxFrames = maxFrames;
-	sa_.concat_labels(labels, width);
+
+	sa_.numLabels = 0;
+	append_labels(labels, width);
 	
 	paroffset_[0] = 0;
 	parwidth_[0] = width;
@@ -154,7 +187,7 @@ private:
       else
       { // apply merge rules with following pipos
 	// columns are concatenated
-	sa_.concat_labels(labels, width);
+	append_labels(labels, width);
       	sa_.dims[0] += width;
 	paroffset_[count_] = paroffset_[count_ - 1] + parwidth_[count_ - 1];
 	parwidth_[count_] = width;
@@ -172,7 +205,7 @@ private:
       }
       else
 	return 0; // continue receiving stream attributes
-    }
+    } // streamAttributes
 
     
     int reset ()
@@ -181,7 +214,7 @@ private:
 	return this->propagateReset();
       else
 	return 0; // continue receiving reset
-    }
+    } // reset
 
     
     int frames (double time, double weight, PiPoValue *values, unsigned int size, unsigned int num)
@@ -228,7 +261,7 @@ private:
 	return propagateFrames(time_, 0 /*weight to disappear*/, values_, numrows_ * sa_.dims[0], numframes_);
       else
 	return 0; // continue receiving frames
-    }
+    } // frames
 
 
     int finalize (double inputEnd)
