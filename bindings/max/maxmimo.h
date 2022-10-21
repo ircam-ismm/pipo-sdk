@@ -26,6 +26,7 @@
 typedef struct max_mimo_st {
   t_object head;
   Mimo *mimo;
+  long verbose;
   
 #ifdef PIPO_MAX_WITH_DOC
   void *dummy_attr[2];
@@ -197,19 +198,27 @@ typedef struct max_mimo_st {
           break; }\
         default: \
         break; }}}\
+  void warn_deferred(MaxMimoT *self);\
   static void *newMaxObject(t_symbol *s, long ac, t_atom *at) { \
     MaxMimoT *self = (MaxMimoT *)object_alloc(max ## mimoClass ## Class); \
-    if(self != NULL) { \
-      self->mimo = new mimoClass(NULL); \
-    } \
-    if(ac == 0) object_warn((t_object *)self, "mimo works only inside a mimo host!!! see mubu.model and pipo"); \
+    if(self != NULL) self->mimo = new mimoClass(NULL); \
+    self->verbose = 1; \
+    if(ac == 0) defer_low(self, (method) warn_deferred, NULL, 0, NULL); \
     return self; } \
+  void warn_deferred(MaxMimoT *self) { \
+    if(self->verbose != 0){ \
+      object_error_obtrusive((t_object *)self, "mimo works only inside a mimo host!!! see mubu.model and pipo\n"); \
+      object_warn((t_object *)self, "mimo works only inside a mimo host!!! see mubu.model and pipo\n"); } } \
   static void freeMaxObject(MaxMimoT *self) { delete self->mimo; } \
   static void helpnameMethod(MaxMimoT *self, char *str){ sprintf(str, "mimo.%s", mimoShortName);} \
-  static void bangMethod(MaxMimoT *self, t_symbol *s, short ac, t_atom *at){object_error((t_object *) self, "mimo works only inside a mimo host!!! see mubu.model and pipo");} \
-  static void listMethod(MaxMimoT *self, t_symbol *s, short ac, t_atom *at){object_error((t_object *) self, "mimo works only inside a mimo host!!! see mubu.model and pipo");}\
-  static void intMethod(MaxMimoT *self, long i){object_error((t_object *) self, "mimo works only inside a mimo host!!! see mubu.model and pipo");} \
-  static void floatMethod(MaxMimoT *self, double f){object_error((t_object *) self, "mimo works only inside a mimo host!!! see mubu.model and pipo");}\
+  static void bangMethod(MaxMimoT *self, t_symbol *s, short ac, t_atom *at){ \
+    if(self->verbose != 0) object_error((t_object *) self, "mimo works only inside a mimo host!!! see mubu.model and pipo");} \
+  static void listMethod(MaxMimoT *self, t_symbol *s, short ac, t_atom *at){ \
+    if(self->verbose != 0) object_error((t_object *) self, "mimo works only inside a mimo host!!! see mubu.model and pipo");}\
+  static void intMethod(MaxMimoT *self, long i){ \
+    if(self->verbose != 0) object_error((t_object *) self, "mimo works only inside a mimo host!!! see mubu.model and pipo");} \
+  static void floatMethod(MaxMimoT *self, double f){ \
+    if(self->verbose != 0) object_error((t_object *) self, "mimo works only inside a mimo host!!! see mubu.model and pipo");}\
   void ext_main(void *r) { \
     t_class *c = class_new("mimo." mimoName, (method)newMaxObject, (method)freeMaxObject, (long)sizeof(MaxMimoT), 0L, A_GIMME, 0); \
     class_initIrcamMax(c); \
@@ -222,6 +231,9 @@ typedef struct max_mimo_st {
     class_addmethod(c, (method)listMethod, "list", A_GIMME, 0);\
     class_addmethod(c, (method)intMethod, "int", A_LONG, 0);\
     class_addmethod(c, (method)floatMethod, "float", A_FLOAT, 0);\
+    CLASS_ATTR_LONG(c, "verbose", 0, MaxMimoT, verbose); \
+    CLASS_ATTR_STYLE_LABEL(c, "verbose", 0, "onoff", "Print Errors and Warning"); \
+    CLASS_ATTR_SAVE(c, "verbose", 0); \
     class_register(CLASS_BOX, c); \
     max ## mimoClass ## Class = c; }
 
@@ -235,19 +247,27 @@ typedef struct max_mimo_st {
 // max objectfile mimo.<short name> mimo.<long name>;
 #define MIMO_MAX_CLASS2(mimoName, mimoShortName, mimoClass) \
   static t_class *max_ ## mimoClass ## _class = NULL; \
+  void warn_deferred(MaxMimoT *self);\
   static void *new_max_object(t_symbol *s, long ac, t_atom *at) { \
     MaxMimoT *self = (MaxMimoT *) object_alloc(max_ ## mimoClass ## _class); \
     if (self != NULL) { self->mimo = new mimoClass(NULL); } \
-  if(ac == 0) { \
-   object_error_obtrusive((t_object *)self, "mimo works only inside a mimo host!!! see mubu.model and pipo\n"); \
-   object_warn((t_object *)self, "mimo works only inside a mimo host!!! see mubu.model and pipo\n"); } \
-    return self; } \
+  self->verbose = 1; \
+  if(ac == 0) defer_low(self, (method) warn_deferred, NULL, 0, NULL); \
+  return self; } \
+  void warn_deferred(MaxMimoT *self) { \
+  if(self->verbose != 0){ \
+    object_error_obtrusive((t_object *)self, "mimo works only inside a mimo host!!! see mubu.model and pipo\n"); \
+    object_warn((t_object *)self, "mimo works only inside a mimo host!!! see mubu.model and pipo\n"); } } \
   static void free_max_object(MaxMimoT *self) { delete self->mimo; } \
   static void helpnameMethod(MaxMimoT *self, char *str){ sprintf(str, "mimo.%s", mimoShortName);} \
-  static void bangMethod(MaxMimoT *self, t_symbol *s, short ac, t_atom *at){object_error((t_object *) self, "mimo works only inside a mimo host!!!");} \
-  static void listMethod(MaxMimoT *self, t_symbol *s, short ac, t_atom *at){object_error((t_object *) self, "mimo works only inside a mimo host!!!");}\
-  static void intMethod(MaxMimoT *self, long i){object_error((t_object *) self, "mimo works only inside a mimo host!!!");} \
-  static void floatMethod(MaxMimoT *self, double f){object_error((t_object *) self, "mimo works only inside a mimo host!!!");}\
+  static void bangMethod(MaxMimoT *self, t_symbol *s, short ac, t_atom *at){ \
+    if(self->verbose != 0) object_error((t_object *) self, "mimo works only inside a mimo host!!!");} \
+  static void listMethod(MaxMimoT *self, t_symbol *s, short ac, t_atom *at){ \
+    if(self->verbose != 0) object_error((t_object *) self, "mimo works only inside a mimo host!!!");}\
+  static void intMethod(MaxMimoT *self, long i){ \
+    if(self->verbose != 0) object_error((t_object *) self, "mimo works only inside a mimo host!!!");} \
+  static void floatMethod(MaxMimoT *self, double f){ \
+    if(self->verbose != 0) object_error((t_object *) self, "mimo works only inside a mimo host!!!");}\
   void ext_main(void *r) { \
     t_class *c = class_new("mimo." mimoName, (method) new_max_object, (method) free_max_object, (long) sizeof(MaxMimoT), 0L, A_GIMME, 0); \
     class_addmethod(c, (method)helpnameMethod, "helpname", A_CANT, 0);\
@@ -255,6 +275,9 @@ typedef struct max_mimo_st {
     class_addmethod(c, (method)listMethod, "list", A_GIMME, 0);\
     class_addmethod(c, (method)intMethod, "int", A_LONG, 0);\
     class_addmethod(c, (method)floatMethod, "float", A_FLOAT, 0);\
+    CLASS_ATTR_LONG(c, "verbose", 0, MaxMimoT, verbose); \
+    CLASS_ATTR_STYLE_LABEL(c, "verbose", 0, "onoff", "Print Errors and Warning"); \
+    CLASS_ATTR_SAVE(c, "verbose", 0); \
     class_register(CLASS_BOX, c); \
     max_ ## mimoClass ## _class = c; }
 
