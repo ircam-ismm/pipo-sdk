@@ -26,11 +26,12 @@
 typedef struct MaxPiPoSt {
   t_object head;
   PiPo *pipo;
-
+  long verbose;
+  
 #ifdef PIPO_MAX_WITH_DOC
   void *dummy_attr[2];
   long dummy_attr_long;
-
+  
   t_symbol classdigest;
   t_symbol classdescription;
   t_symbol classseealso;
@@ -241,25 +242,31 @@ typedef struct MaxPiPoSt {
 #define PIPO_MAX_CLASS2(pipoName, pipoShortName, pipoClass) \
   static t_class *max ## pipoClass ## Class = NULL; \
   static void *pipoPatchHandle; \
+  void warn_deferred(MaxPiPoT *self);\
   static void *newMaxObject(t_symbol *s, long ac, t_atom *at) { \
    MaxPiPoT *self = (MaxPiPoT *)object_alloc(max ## pipoClass ## Class); \
    if(self != NULL) { self->pipo = new pipoClass(NULL); } \
+   self->verbose = 1; \
    if(ac == 0) { \
-   object_error_obtrusive((t_object *)self, "pipo works only inside a pipo host!!! Double click or bang the object for more infos\n"); \
-   object_warn((t_object *)self, "pipo works only inside a pipo host!!! Double click or bang the object for more infos\n"); } \
+     defer_low(self, (method) warn_deferred, NULL, 0, NULL);} \
   return self; } \
+  void warn_deferred(MaxPiPoT *self) { \
+    if(self->verbose != 0){ \
+      object_error_obtrusive((t_object *)self, "pipo works only inside a pipo host!!! Double click or bang the object for more infos\n"); \
+      object_warn((t_object *)self, "pipo works only inside a pipo host!!! Double click or bang the object for more infos\n"); } } \
   static void openPiPoPatch(){ \
    if(pipoPatchHandle != NULL){ \
      if(NOGOOD(pipoPatchHandle)) pipoPatchHandle= NULL; \
-     else freeobject(pipoPatchHandle);}\
+     else freeobject((t_object *)pipoPatchHandle);}\
    pipoPatchHandle = stringload("AboutPiPoModules"); } \
   static void freeMaxObject(MaxPiPoT *self) { delete self->pipo; } \
   static void helpnameMethod(MaxPiPoT *self, char *str){ sprintf(str, "pipo.%s", pipoShortName);} \
   static void bangMethod(MaxPiPoT *self, t_symbol *s, short ac, t_atom *at){ openPiPoPatch(); }\
   static void listMethod(MaxPiPoT *self, t_symbol *s, short ac, t_atom *at){ \
-   object_error((t_object *) self, "pipo works only inside a pipo host!!! Double click or bang the object for more infos");}\
-  static void intMethod(MaxPiPoT *self, long i){object_error((t_object *) self, "pipo works only inside a pipo host!!! Double click or bang the object for more infos");} \
-  static void floatMethod(MaxPiPoT *self, double f){object_error((t_object *) self, "pipo works only inside a pipo host!!! Double click or bang the object for more infos");}\
+   if(self->verbose != 0) \
+   object_error((t_object *) self, "pipo works only inside a pipo host!!! Double click or bang the object for more infos");} \
+  static void intMethod(MaxPiPoT *self, long i){ if(self->verbose != 0) object_error((t_object *) self, "pipo works only inside a pipo host!!! Double click or bang the object for more infos");} \
+  static void floatMethod(MaxPiPoT *self, double f){if(self->verbose != 0) object_error((t_object *) self, "pipo works only inside a pipo host!!! Double click or bang the object for more infos");}\
   static void dblclickMethod(MaxPiPoT *self) { \
     openPiPoPatch();} \
   void ext_main(void *r) { \
@@ -270,6 +277,9 @@ typedef struct MaxPiPoSt {
     class_addmethod(c, (method)intMethod, "int", A_LONG, 0); \
     class_addmethod(c, (method)floatMethod, "float", A_FLOAT, 0); \
     class_addmethod(c, (method)dblclickMethod,"dblclick", A_CANT, 0); \
+    CLASS_ATTR_LONG(c, "verbose", 0, MaxPiPoT, verbose); \
+    CLASS_ATTR_STYLE_LABEL(c, "verbose", 0, "onoff", "Print Errors and Warning"); \
+    CLASS_ATTR_SAVE(c, "verbose", 0); \
     class_register(CLASS_BOX, c); \
     max ## pipoClass ## Class = c; }
 
