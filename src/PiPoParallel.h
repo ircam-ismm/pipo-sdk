@@ -118,7 +118,7 @@ private:
       memcpy(values_, other.values_, sa_.maxFrames * framesize_ * sizeof(PiPoValue));
 
       // redirect labels string pointers to copied labelstore_
-      for (int i = 0; i < sa_.numLabels; i++)
+      for (unsigned int i = 0; i < sa_.numLabels; i++)
 	if (sa_.labels[i] != NULL)
 	  sa_.labels[i] = labelstore_[i].c_str();
     }
