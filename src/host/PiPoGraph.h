@@ -1,4 +1,3 @@
-
 /** -*- mode: c++; c-basic-offset:2 -*-
  *
  * @file PiPoGraph.h
@@ -89,8 +88,8 @@ private:
   std::vector<std::string>   instancenamelist;
 
   // combined list of all attrs and their descriptions of all pipos in subgraphs, filled by copyPiPoAttributes()
-  std::vector<std::string *> attrNames;
-  std::vector<std::string *> attrDescrs;
+  std::vector<std::string> attrNames;
+  std::vector<std::string> attrDescrs;
   
   PiPoModuleFactory *moduleFactory;
 
@@ -105,18 +104,9 @@ public:
     this->topLevel = topLevel;
   }
 
-  ~PiPoGraph()
+  ~PiPoGraph ()
   {
-    if (this->topLevel)
-    {
-      for (unsigned int i = 0; i < attrNames.size(); ++i)
-        delete attrNames[i];
-
-      for (unsigned int i = 0; i < attrDescrs.size(); ++i)
-        delete attrDescrs[i];
-    }
-
-    this->clear();
+    clear();
   }
 
   // copy constructor: invoking assignment operator
@@ -133,14 +123,14 @@ public:
     topLevel	   = other.topLevel;
     representation = other.representation;
     moduleFactory  = other.moduleFactory; // copy pointer to singleton
-    graphType	   = graphType;
-    subGraphs	   = subGraphs;	   
-    op		   = op;	   
+    graphType	   = other.graphType;
+    subGraphs	   = other.subGraphs;	   
+    op		   = other.op;	   
 
     // clone pipos by re-instantiating them
     if (instantiate()  &&  wire())
     { // now refill arrays pipolist, instancenamelist, attrNames, attrDescrs
-      copyPiPoAttributes();
+      // don't call copyPiPoAttributes(); it will put instancename before each attr (which is redone by maxmubu host)
       linearize(this);
     }
 
@@ -168,11 +158,13 @@ public:
     }
   }
 
-  bool create (std::string graphStr)
+  bool create (std::string graphStr, bool copy_attrs = true)
   {
     if (parse(graphStr)  &&  instantiate()  &&  wire())
     {
-      copyPiPoAttributes();
+      if (copy_attrs)
+	copyPiPoAttributes();	// puts instancename before each attr (which is redone by certain hosts)
+      
       linearize(this);
       return true;
     }
@@ -437,7 +429,7 @@ private:
       PiPoGraph &subGraph = this->subGraphs[i];
 
       subGraph.copyPiPoAttributes();
-      PiPo *pipo = subGraph.getPiPo();
+      PiPo *pipo = subGraph.getPiPo(); /// insane: shadows this->pipo
       unsigned int numAttrs = pipo->getNumAttrs();
 
       if (subGraph.getGraphType() == leaf)
@@ -447,21 +439,14 @@ private:
         for (unsigned int iAttr = 0; iAttr < numAttrs; ++iAttr)
         {
           PiPo::Attr *attr = pipo->getAttr(iAttr);
-
-          std::string *attrName = new std::string(instanceName);
-          *attrName += ".";
-          *attrName += attr->getName();
-
-          std::string *attrDescr = new std::string(attr->getDescr());
-          *attrDescr += " (";
-          *attrDescr += instanceName;
-          *attrDescr += ")";
+          std::string attrName(instanceName + "." + attr->getName());
+          std::string attrDescr(std::string(attr->getDescr()) + " (" + instanceName + ")");
 
           attrNames.push_back(attrName);
           attrDescrs.push_back(attrDescr);
 
           PiPo *p = this->topLevel ? this : this->pipo;
-          p->addAttr(p, attrNames[attrNames.size() - 1]->c_str(), attrDescrs[attrDescrs.size() - 1]->c_str(), attr);
+          p->addAttr(p, attrNames[attrNames.size() - 1].c_str(), attrDescrs[attrDescrs.size() - 1].c_str(), attr);
         }
       }
 
@@ -475,7 +460,7 @@ private:
         {
           PiPo::Attr *attr = pipo->getAttr(iAttr);
           PiPo *p = this->topLevel ? this : this->pipo;
-          p->addAttr(p, subGraph.attrNames[iAttr]->c_str(), subGraph.attrDescrs[iAttr]->c_str(), attr);
+          p->addAttr(p, subGraph.attrNames[iAttr].c_str(), subGraph.attrDescrs[iAttr].c_str(), attr);
         }
       }
     }
@@ -489,7 +474,6 @@ private:
     {
       PiPoGraph &subGraph = this->subGraphs[i];
 
-      printf("\n< %d/%d ", i, subGraphs.size());
       subGraph.linearize(toplevel);
       PiPo *pipo = subGraph.getPiPo();
 
@@ -497,7 +481,6 @@ private:
       {
         std::string instanceName = subGraph.getInstanceName();
 
-	printf(" %s", instanceName.c_str());
 	toplevel->pipolist.push_back(pipo);
 	toplevel->instancenamelist.push_back(instanceName);
       }
@@ -506,7 +489,6 @@ private:
       {
 	// already done in linearize?
       }
-      printf("\n> %d/%d\n", i, subGraphs.size());
     }
   } // end linearize()
   
