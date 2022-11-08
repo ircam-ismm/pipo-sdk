@@ -1,4 +1,6 @@
-/**
+
+/** -*- mode: c++; c-basic-offset:2 -*-
+ *
  * @file PiPoGraph.h
  * @author Joseph Larralde
  *
@@ -70,7 +72,7 @@ class PiPoGraph : public PiPo
 private:
   bool topLevel;
   std::string representation;
-  PiPoGraphType graphType;
+  PiPoGraphType graphType = undefined;
 
   // parallel graphs if graphType is parallel
   // sequence of graphs if graphType is sequence (not sequence of PiPos)
@@ -80,16 +82,24 @@ private:
   // use op if we are a leaf to parse instanceName and to hold attributes
   PiPoOp op;
 
-  PiPo *pipo;
+  PiPo *pipo = nullptr; // points to the pipo that links the subgraph together: seq or parallel, or the leaf pipo
+
+  // linearised lists of contained pipos and their instance names, filled by linearize()
+  std::vector<PiPo *>	     pipolist; 
+  std::vector<std::string>   instancenamelist;
+
+  // combined list of all attrs and their descriptions of all pipos in subgraphs, filled by copyPiPoAttributes()
   std::vector<std::string *> attrNames;
   std::vector<std::string *> attrDescrs;
+  
   PiPoModuleFactory *moduleFactory;
 
 public:
-  PiPoGraph(PiPo::Parent *parent, PiPoModuleFactory *moduleFactory, bool topLevel = true) :
-  PiPo(parent)
+  PiPoGraph() = delete;
+    
+  PiPoGraph(PiPo::Parent *parent, PiPoModuleFactory *moduleFactory = NULL, bool topLevel = true)
+  : PiPo(parent)
   {
-    this->pipo = nullptr;
     this->parent = parent;
     this->moduleFactory = moduleFactory;
     this->topLevel = topLevel;
@@ -109,8 +119,39 @@ public:
     this->clear();
   }
 
-  void clear()
+  // copy constructor: invoking assignment operator
+  PiPoGraph (const PiPoGraph &other)
+  : PiPo(other)
   {
+    *this = other;
+  }
+
+  // assignment operator
+  const PiPoGraph& operator= (const PiPoGraph &other)
+  {
+    parent	   = other.parent;	// from pipo base class
+    topLevel	   = other.topLevel;
+    representation = other.representation;
+    moduleFactory  = other.moduleFactory; // copy pointer to singleton
+    graphType	   = graphType;
+    subGraphs	   = subGraphs;	   
+    op		   = op;	   
+
+    // clone pipos by re-instantiating them
+    if (instantiate()  &&  wire())
+    { // now refill arrays pipolist, instancenamelist, attrNames, attrDescrs
+      copyPiPoAttributes();
+      linearize(this);
+    }
+
+    return *this;
+  }
+
+  void clear ()
+  {
+    pipolist.clear();
+    instancenamelist.clear();
+
     for (unsigned int i = 0; i < this->subGraphs.size(); ++i)
       this->subGraphs[i].clear();
 
@@ -127,14 +168,19 @@ public:
     }
   }
 
-  bool create(std::string graphStr) {
-    if (parse(graphStr) && instantiate() && wire()) {
+  bool create (std::string graphStr)
+  {
+    if (parse(graphStr)  &&  instantiate()  &&  wire())
+    {
       copyPiPoAttributes();
+      linearize(this);
       return true;
     }
-
-    this->clear();
-    return false;
+    else
+    {
+      this->clear();
+      return false;
+    }
   }
 
 private:
@@ -342,8 +388,8 @@ private:
     {
       if (!this->op.instantiate(this->parent, this->moduleFactory))
         return false;
-      else
-        this->pipo = this->op.getPiPo();
+      
+      this->pipo = this->op.getPiPo();
     }
     else if (this->graphType == sequence)
     {
@@ -367,7 +413,6 @@ private:
 
   bool wire()
   {
-
     for (unsigned int i = 0; i < this->subGraphs.size(); ++i)
       this->subGraphs[i].wire();
 
@@ -382,6 +427,8 @@ private:
     return true;
   }
 
+  // recursively collect attr names and descriptions from subgraphs,
+  // append to attrNames and attrDescrs
   // TODO: add an option to get PiPoAttributes only from named modules ?
   void copyPiPoAttributes()
   {
@@ -420,6 +467,7 @@ private:
 
       if (subGraph.getGraphType() == sequence || subGraph.getGraphType() == parallel)
       {
+	// aopend subgraph attrs to this graph attr list
         attrNames.insert(attrNames.end(), subGraph.attrNames.begin(), subGraph.attrNames.end());
         attrDescrs.insert(attrDescrs.end(), subGraph.attrDescrs.begin(), subGraph.attrDescrs.end());
 
@@ -431,11 +479,90 @@ private:
         }
       }
     }
+  } // end copyPiPoAttributes()
+
+  
+  // recursively collect pipos from subgraphs, put into list for indexed access by host
+  void linearize (PiPoGraph *toplevel)
+  {
+    for (unsigned int i = 0; i < this->subGraphs.size(); ++i)
+    {
+      PiPoGraph &subGraph = this->subGraphs[i];
+
+      printf("\n< %d/%d ", i, subGraphs.size());
+      subGraph.linearize(toplevel);
+      PiPo *pipo = subGraph.getPiPo();
+
+      if (subGraph.getGraphType() == leaf)
+      {
+        std::string instanceName = subGraph.getInstanceName();
+
+	printf(" %s", instanceName.c_str());
+	toplevel->pipolist.push_back(pipo);
+	toplevel->instancenamelist.push_back(instanceName);
+      }
+
+      if (subGraph.getGraphType() == sequence || subGraph.getGraphType() == parallel)
+      {
+	// already done in linearize?
+      }
+      printf("\n> %d/%d\n", i, subGraphs.size());
+    }
+  } // end linearize()
+  
+  /** @name PiPoGraph query methods */
+  /** @{ */
+public:
+  size_t getSize()
+  {
+    return pipolist.size();
   }
 
-  std::string getInstanceName()
+  int getIndex (const char *instanceName) 
   {
-    return (this->graphType == leaf) ? std::string(this->op.getInstanceName()) : "";
+    for (unsigned int i = 0; i < instancenamelist.size(); i++)
+    {
+      if (strcmp(instancenamelist[i].c_str(), instanceName) == 0) // todo: use map
+        return i;
+    }
+
+    return -1;
+  }
+
+  PiPo *getPiPo()
+  {
+    return this->pipo;
+  }
+
+  PiPo *getHead()
+  {
+    return this->pipo;
+  }
+
+  // access to linearised list of pipos in graph by index
+  PiPo *getPiPo (unsigned int index)
+  {
+    return pipolist[index];
+  }
+  
+  PiPo *getPiPo (const char *instanceName)
+  {
+    int index = getIndex(instanceName);
+
+    if(index >= 0)
+      return getPiPo(index);
+
+    return NULL;
+  }
+
+  const char *getInstanceName ()
+  {
+    return this->graphType == leaf  ?  this->op.getInstanceName()  :  "";
+  }
+
+  const char *getInstanceName (unsigned int index)
+  {
+    return instancenamelist[index].c_str();
   }
 
   PiPoGraphType getGraphType()
@@ -443,17 +570,13 @@ private:
     return this->graphType;
   }
 
-public:
-  PiPo *getPiPo()
-  {
-    return this->pipo;
-  }
-
+  
   //=============== OVERRIDING ALL METHODS FROM THE BASE CLASS ===============//
 
   void setParent(PiPo::Parent *parent) override
   {
-    this->pipo->setParent(parent);
+    if (pipo != NULL)
+      this->pipo->setParent(parent);
 
     for (unsigned int i = 0; i < this->subGraphs.size(); ++i)
       this->subGraphs[i].setParent(parent);
@@ -466,7 +589,8 @@ public:
 
   void setReceiver(PiPo *receiver, bool add = false) override
   {
-    this->pipo->setReceiver(receiver);
+    if (pipo != NULL)
+      this->pipo->setReceiver(receiver);
   }
 
   int reset() override
