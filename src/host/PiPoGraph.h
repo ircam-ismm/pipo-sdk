@@ -88,8 +88,8 @@ private:
   std::vector<std::string>   instancenamelist;
 
   // combined list of all attrs and their descriptions of all pipos in subgraphs, filled by copyPiPoAttributes()
-  std::vector<std::string> attrNames;
-  std::vector<std::string> attrDescrs;
+  std::vector<std::string *> attrNames;
+  std::vector<std::string *> attrDescrs;
   
   PiPoModuleFactory *moduleFactory;
 
@@ -106,6 +106,15 @@ public:
 
   ~PiPoGraph ()
   {
+    if (this->topLevel)
+    {
+      for (unsigned int i = 0; i < attrNames.size(); ++i)
+        delete attrNames[i];
+
+      for (unsigned int i = 0; i < attrDescrs.size(); ++i)
+        delete attrDescrs[i];
+    }
+
     clear();
   }
 
@@ -127,7 +136,7 @@ public:
     subGraphs	   = other.subGraphs;	   
     op		   = other.op;	   
 
-    // clone pipos by re-instantiating them
+    // clone pipos by re-instantiating them (only for top level graph, not for subgraphs)
     if (instantiate()  &&  wire())
     { // now refill arrays pipolist, instancenamelist, attrNames, attrDescrs
       // don't call copyPiPoAttributes(); it will put instancename before each attr (which is redone by maxmubu host)
@@ -439,14 +448,14 @@ private:
         for (unsigned int iAttr = 0; iAttr < numAttrs; ++iAttr)
         {
           PiPo::Attr *attr = pipo->getAttr(iAttr);
-          std::string attrName(instanceName + "." + attr->getName());
-          std::string attrDescr(std::string(attr->getDescr()) + " (" + instanceName + ")");
+          std::string *attrName  = new std::string(instanceName + "." + attr->getName());
+          std::string *attrDescr = new std::string(std::string(attr->getDescr()) + " (" + instanceName + ")");
 
           attrNames.push_back(attrName);
           attrDescrs.push_back(attrDescr);
 
           PiPo *p = this->topLevel ? this : this->pipo;
-          p->addAttr(p, attrNames[attrNames.size() - 1].c_str(), attrDescrs[attrDescrs.size() - 1].c_str(), attr);
+          p->addAttr(p, attrNames[attrNames.size() - 1]->c_str(), attrDescrs[attrDescrs.size() - 1]->c_str(), attr);
         }
       }
 
@@ -460,7 +469,7 @@ private:
         {
           PiPo::Attr *attr = pipo->getAttr(iAttr);
           PiPo *p = this->topLevel ? this : this->pipo;
-          p->addAttr(p, subGraph.attrNames[iAttr].c_str(), subGraph.attrDescrs[iAttr].c_str(), attr);
+          p->addAttr(p, subGraph.attrNames[iAttr]->c_str(), subGraph.attrDescrs[iAttr]->c_str(), attr);
         }
       }
     }
