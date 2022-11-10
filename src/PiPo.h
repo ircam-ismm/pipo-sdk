@@ -962,7 +962,7 @@ public:
   }; // end class PiPo::EnumAttr
 
   /**
-   * @brief Add attribute.
+   * @brief Add attribute.  Input attr's index, name, descr fields will be overwritten.
    */
   void addAttr(PiPo *pipo, const char *name, const char *descr, Attr *attr, bool clear = false)
   {
@@ -970,6 +970,7 @@ public:
       this->attrs.clear();
 
     /* overwrite index, name, and description */
+    //NB: this is a pretty serious side effect, that the input attr is modified
     attr->setIndex((unsigned int) pipo->attrs.size());
     attr->setName(name);
     attr->setDescr(descr);
@@ -1132,7 +1133,7 @@ public:
    *
    * @return number of attributes
    */
-  unsigned int getNumAttrs(void)
+  unsigned int getNumAttrs(void) const
   {
     return (unsigned int) this->attrs.size();
   }
