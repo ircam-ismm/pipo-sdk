@@ -80,7 +80,7 @@ public:
 
   // duplicate from other graph, reinstantiate pipos
   // (this is called to create independent graphs for each pipo process, duplicating the graph and its attributes built by host)
-  void duplicate (const PiPoChain *other)
+  bool duplicate (const PiPoChain *other)
   {
     this->parent = other->parent;
     this->moduleFactory = other->moduleFactory;
@@ -98,7 +98,7 @@ public:
     this->connect(NULL);
     this->moduleFactory = NULL; // why????
 
-    return *this;
+    return true;
   }
 
   ~PiPoChain(void)

@@ -120,8 +120,14 @@ public:
 
   // duplicate from other graph, reinstantiate pipos
   // (this is called to create independent graphs for each pipo process, duplicating the graph and its attributes built by host)
-  void duplicate (const PiPoGraph *other)
+  bool duplicate (const PiPoGraph *other)
   {
+    if (other->pipo == NULL) // parsing had syntax error: no pipo created (but graph is partially filled)
+    { // create empty graph
+      clear();
+      return false; 
+    }
+    
     parent	   = other->parent;	// from pipo base class
     topLevel	   = other->topLevel;
     representation = other->representation;
@@ -155,6 +161,8 @@ public:
       // don't call copyPiPoAttributes(); it will put instancename before each attr (which is redone by maxmubu host)
       linearize(this);
     }
+
+    return true;
   }
 
   void clear ()
