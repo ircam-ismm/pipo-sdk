@@ -118,32 +118,43 @@ public:
     clear();
   }
 
-  // copy constructor: invoking assignment operator
-  PiPoGraph (const PiPoGraph &other)
-  : PiPo(other)
+  // duplicate from other graph, reinstantiate pipos
+  // (this is called to create independent graphs for each pipo process, duplicating the graph and its attributes built by host)
+  void duplicate (const PiPoGraph *other)
   {
-    *this = other;
-  }
+    parent	   = other->parent;	// from pipo base class
+    topLevel	   = other->topLevel;
+    representation = other->representation;
+    moduleFactory  = other->moduleFactory; // copy pointer to singleton
+    graphType	   = other->graphType;
+    subGraphs	   = other->subGraphs;     // copy vector and PiPoGraph elements before reinstantiating
 
-  // assignment operator
-  const PiPoGraph& operator= (const PiPoGraph &other)
-  {
-    parent	   = other.parent;	// from pipo base class
-    topLevel	   = other.topLevel;
-    representation = other.representation;
-    moduleFactory  = other.moduleFactory; // copy pointer to singleton
-    graphType	   = other.graphType;
-    subGraphs	   = other.subGraphs;	   
-    op		   = other.op;	   
+    // duplicate sub graphs
+    for (int i = 0; i < other->subGraphs.size(); i++)
+      subGraphs[i].duplicate(&other->subGraphs[i]);
 
     // clone pipos by re-instantiating them (only for top level graph, not for subgraphs)
-    if (instantiate()  &&  wire())
+    switch (graphType)
+    {
+      case leaf:// for graph leafs, reinstantiate pipo in new op, copy attrs via cloneAttrs()
+        op.set(0, parent, moduleFactory, other->op);
+        pipo = op.getPiPo();
+      break;
+
+      case sequence:
+        this->pipo = new PiPoSequence(this->parent);
+      break;
+        
+      case parallel:
+        this->pipo = new PiPoParallel(this->parent);
+      break;
+    }
+    
+    if (topLevel  &&  wire())
     { // now refill arrays pipolist, instancenamelist, attrNames, attrDescrs
       // don't call copyPiPoAttributes(); it will put instancename before each attr (which is redone by maxmubu host)
       linearize(this);
     }
-
-    return *this;
   }
 
   void clear ()
@@ -155,17 +166,12 @@ public:
       this->subGraphs[i].clear();
 
     if (this->graphType != leaf && this->pipo != nullptr)
-    {
-      // delete parallels and sequences instantiated with new
-      delete this->pipo;
-      this->pipo = nullptr;
-    }
+      delete this->pipo;     // delete parallels and sequences instantiated by graph with new (no op)
     else
-    {
-      // let op clear itself
-      this->op.clear();
-    }
-  }
+      this->op.clear();      // let op clear itself (and free pipo)
+
+    this->pipo = nullptr;
+}
 
   bool create (std::string graphStr, bool copy_attrs = true)
   {
@@ -187,8 +193,8 @@ public:
 private:
   //======================== PARSE GRAPH EXPRESSION ==========================//
 
-  bool parse(std::string graphStr) {
-
+  bool parse(std::string graphStr)
+  {
     //=================== BASIC SYNTAX RULES CHECKING ========================//
 
     //========== check if we have the right number of '<' and '>' ============//
@@ -383,7 +389,7 @@ private:
 
   //================ ONCE EXPRESSION PARSED, INSTANTIATE OPs =================//
 
-  bool instantiate()
+  bool instantiate ()
   {
     if (this->graphType == leaf)
     {
