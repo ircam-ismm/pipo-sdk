@@ -1,4 +1,4 @@
-/**
+/** -*- mode: c++; c-basic-offset:2 -*-
  * @file PiPoHost.h
  * @author Norbert.Schnell@ircam.fr
  *
@@ -63,10 +63,10 @@
 class PiPoChain : public PiPoSequence
 {
   std::vector<PiPoOp> ops;
-  // these vectors of pointers seem necessary in copyPiPoAttributes
+  // these vectors of pointers seem necessary in unused copyPiPoAttributes() 
   std::vector<std::string *> attrNames;
   std::vector<std::string *> attrDescrs;
-  //PiPo::Parent *parent; //FIXME: remove? pipo has a parent member already!
+
   PiPoModuleFactory *moduleFactory;
 
 public:
@@ -78,31 +78,25 @@ public:
     this->moduleFactory = moduleFactory;
   }
 
-  // copy constructor: invoking assignment operator
-  PiPoChain(const PiPoChain &other)
-  : PiPoSequence(NULL), ops()
+  // duplicate from other graph, reinstantiate pipos
+  // (this is called to create independent graphs for each pipo process, duplicating the graph and its attributes built by host)
+  void duplicate (const PiPoChain *other)
   {
-    *this = other;
-  }
+    this->parent = other->parent;
+    this->moduleFactory = other->moduleFactory;
 
-  // assignment operator
-  const PiPoChain& operator=(const PiPoChain &other)
-  {
-    this->parent = other.parent;
-    this->moduleFactory = other.moduleFactory;
-
-    unsigned long numOps = other.ops.size();
+    unsigned long numOps = other->ops.size();
     this->ops.clear();
     this->ops.resize(numOps);
 
     for (unsigned int i = 0; i < numOps; i++)
     {
-      this->ops[i].set(i, this->parent, this->moduleFactory, other.ops[i]); // clone pipos by re-instantiating them
+      this->ops[i].set(i, this->parent, this->moduleFactory, other->ops[i]); // clone pipos by re-instantiating them
       this->add(this->ops[i].getPiPo(), false); // rebuild PiPoSequence to point to cloned pipos
     }
 
     this->connect(NULL);
-    this->moduleFactory = NULL;
+    this->moduleFactory = NULL; // why????
 
     return *this;
   }
@@ -176,7 +170,7 @@ public:
     return false;
   }
 
-  void copyPiPoAttributes()
+  void copyPiPoAttributes() // unused?
   {
     for(unsigned int iPiPo = 0; iPiPo < this->getSize(); iPiPo++)
     {
@@ -214,7 +208,7 @@ public:
   size_t getSize()
   {
     return this->ops.size();
-  };
+  }
 
   int getIndex(const char *instanceName)
   {
@@ -227,8 +221,7 @@ public:
     return -1;
   }
 
-  // make getPiPo(unsigned int index) visible for this class PiPoChain :
-
+  // make PiPoSequence base class's getPiPo(unsigned int index) visible for this class PiPoChain :
   using PiPoSequence::getPiPo;
 
   PiPo *getPiPo(const char *instanceName)
