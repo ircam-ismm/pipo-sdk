@@ -10,7 +10,14 @@
 #ifndef _MAX_PIPO_HOST_
 #define _MAX_PIPO_HOST_
 
+#define USE_PIPO_GRAPH 1
+
+#if USE_PIPO_GRAPH
+#include "PiPoGraph.h"
+typedef PiPoGraph PiPoChain; // alias typedef, to be removed when graph works exactly like chain
+#else
 #include "PiPoChain.h"
+#endif
 #include "MaxPiPo.h"
 #include "ext.h"
 #include "ext_obex.h"
@@ -32,6 +39,7 @@
 #define atom_getnum(p) (((p)->a_type == A_FLOAT)? (double)((p)->a_w.w_float): (double)((p)->a_w.w_long))
 #define atom_setvoid(p) ((p)->a_type = A_NOTHING)
 
+// possible specialisation: template<class PiPoChain>
 class MaxPiPoHost : public PiPo::Parent
 {
   class MaxPiPoModuleFactory : public PiPoModuleFactory
@@ -89,7 +97,7 @@ class MaxPiPoHost : public PiPo::Parent
   private:
     t_object *ext;
     std::string prefix;
-  };
+  }; // end class MaxPiPoHost::MaxPiPoModuleFactory
 
 //#define PIPO_MAX_LABELS 64
 
@@ -124,7 +132,11 @@ class MaxPiPoHost : public PiPo::Parent
 protected:
   t_object *ext;
   MaxPiPoModuleFactory moduleFactory;
+#if USE_PIPO_GRAPH
+  PiPoGraph chain;
+#else
   PiPoChain chain;
+#endif
   PiPoStreamAttributes inputStreamAttrs;
   PiPoStreamAttributes outputStreamAttrs;
   t_systhread_mutex mutex;
@@ -147,12 +159,13 @@ public:
   {
     systhread_mutex_unlock(this->mutex);
   };
-  
+
   PiPoChain *getChain(void) { return &this->chain; };
   PiPo *setChainDescription(const char *str, PiPo *receiver);
 
   typedef t_max_err (*MaxAttrGetterT)(t_object *ext, void *attr, long *pac, t_atom **pat);
   typedef t_max_err (*MaxAttrSetterT)(t_object *ext, void *attr, long ac, t_atom *at);
+  void declarePiPoAttributes (PiPo *pipo, unsigned int iPiPo, const char *instanceName, MaxAttrGetterT getAttrMeth, MaxAttrSetterT setAttrMeth);
   void copyPiPoAttributes(MaxAttrGetterT getAttrMeth, MaxAttrSetterT setAttrMeth);
 
   void getMaxAttr(const char *attrName, long *pac, t_atom **pat, PiPoChain *chain = NULL);
