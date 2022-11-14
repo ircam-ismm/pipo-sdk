@@ -141,6 +141,7 @@ PiPo *MaxPiPoHost::setChainDescription(const char *str, PiPo *receiver)
 #if USE_PIPO_GRAPH
   if (chain.create(str, false)) // does instantiate and wire to connect graph pipos
   {
+    chain.setReceiver(receiver); // connect last module to receiving pipo
     return chain.getPiPo();
   }
 #else
