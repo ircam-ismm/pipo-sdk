@@ -161,9 +161,9 @@ public:
       this->pipo->cloneAttrs(other.pipo);
   }
 
-  PiPo *getPiPo() { return this->pipo; };
-  const char *getInstanceName() { return this->instanceName.c_str(); };
-  bool isInstanceName(const char *str) { return (this->instanceName.compare(str) == 0); };
+  PiPo *getPiPo() const { return this->pipo; }
+  const char *getInstanceName() const { return this->instanceName.c_str(); }
+  bool isInstanceName(const char *str) const { return (this->instanceName.compare(str) == 0); }
 };
 
 /** EMACS **
