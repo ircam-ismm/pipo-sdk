@@ -100,7 +100,7 @@ public:
   : PiPo(parent)
   {
     parent         = _parent;
-    modulefactory_ = _moduleFactory;
+    modulefactory_ = _modulefactory;
     toplevel_      = _toplevel;
   }
 
@@ -128,12 +128,12 @@ public:
       return false; 
     }
     
-    parent         = other->parent;     // from pipo base class
-    toplevel_      = other->toplevel_;
+    parent          = other->parent;     // from pipo base class
+    toplevel_       = other->toplevel_;
     representation_ = other->representation_;
     modulefactory_  = other->modulefactory_; // copy pointer to singleton
-    graphtype_     = other->graphtype_;
-    subgraphs_     = other->subgraphs_;     // copy vector and PiPoGraph elements before reinstantiating
+    graphtype_      = other->graphtype_;
+    subgraphs_      = other->subgraphs_;     // copy vector and PiPoGraph elements before reinstantiating
 
     // duplicate sub graphs
     for (int i = 0; i < other->subgraphs_.size(); i++)
@@ -156,7 +156,7 @@ public:
       break;
     }
     
-    if (toplevel_  &&  wire())
+    if (toplevel_  &&  wire()) // connect sequence/parallel subgraphs recursively
     { // now refill arrays pipolist_, instancenamelist_, attrnames_, attrdescrs_
       // don't call copyPiPoAttributes(); it will put instancename before each attr (which is redone by maxmubu host)
       linearize(this);
@@ -173,7 +173,7 @@ public:
     for (unsigned int i = 0; i < subgraphs_.size(); ++i)
       subgraphs_[i].clear();
 
-    if (graphtype_ != leaf && pipo_ != nullptr)
+    if (graphtype_ != leaf  &&  pipo_ != nullptr)
       delete pipo_;     // delete parallels and sequences instantiated by graph with new (no op)
     else
       op_.clear();      // let op clear itself (and free pipo)
@@ -393,7 +393,7 @@ private:
     }
 
     return false;
-  }
+  } // end parse()
 
   //================ ONCE EXPRESSION PARSED, INSTANTIATE OPs =================//
 
@@ -424,7 +424,7 @@ private:
     }
 
     return true;
-  }
+  } // end instantiate()
 
   bool wire()
   {
@@ -510,6 +510,7 @@ private:
       // else: sequence/parallel is already done in recursive call to linearize()
     }
   } // end linearize()
+
   
   /** @name PiPoGraph query methods */
   /** @{ */
@@ -576,7 +577,7 @@ public:
 
   void setParent(PiPo::Parent *parent) override
   {
-    if (pipo != NULL)
+    if (pipo_ != NULL)
       pipo_->setParent(parent);
 
     for (unsigned int i = 0; i < subgraphs_.size(); ++i)
@@ -590,7 +591,7 @@ public:
 
   void setReceiver(PiPo *receiver, bool add = false) override
   {
-    if (pipo != NULL)
+    if (pipo_ != NULL)
       pipo_->setReceiver(receiver);
   }
 
@@ -615,8 +616,8 @@ public:
                                double domain, unsigned int maxFrames) override
   {
     return pipo_->streamAttributes(hasTimeTags, rate, offset,
-                                           width, height, labels, hasVarSize,
-                                           domain, maxFrames);
+				   width, height, labels, hasVarSize,
+				   domain, maxFrames);
   }
 
   int frames (double time, double weight, PiPoValue *values,
