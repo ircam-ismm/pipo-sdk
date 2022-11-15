@@ -1,4 +1,4 @@
-/**
+/** -*- mode: c++; c-basic-offset:2 -*-
  * @file PiPoHost.cpp
  * @author Norbert.Schnell@ircam.fr
  *
@@ -125,21 +125,23 @@ PiPoHost::clearGraph()
 // }
 
 // override this method when inheriting !!!
-void
-PiPoHost::onNewFrame(double time, double weight, PiPoValue *values, unsigned int size)
+void PiPoHost::onNewFrame (double time, double weight, PiPoValue *values, unsigned int size)
 {
-  std::cout << time << std::endl;
-  std::cout << "please override this method" << std::endl;
+  std::cout << "onNewFrame: " << time << " please override this method" << std::endl;
 }
 
-std::vector<PiPoValue>
-PiPoHost::getLastFrame()
+// override this method when inheriting !!!
+void PiPoHost::onFinalize (double time)
+{
+    std::cout << "onFinalize: " << time << " please override this method" << std::endl;
+}
+
+std::vector<PiPoValue> PiPoHost::getLastFrame ()
 {
   return this->out->getLastFrame();
 }
 
-int
-PiPoHost::setInputStreamAttributes(const PiPoStreamAttributes &sa, bool propagate)
+int PiPoHost::setInputStreamAttributes (const PiPoStreamAttributes &sa, bool propagate)
 {
   this->inputStreamAttrs = sa;
 
@@ -151,21 +153,24 @@ PiPoHost::setInputStreamAttributes(const PiPoStreamAttributes &sa, bool propagat
   return 0;
 }
 
-PiPoStreamAttributes&
-PiPoHost::getOutputStreamAttributes()
+PiPoStreamAttributes& PiPoHost::getOutputStreamAttributes ()
 {
   return this->outputStreamAttrs;
 }
 
-int
-PiPoHost::frames(double time, double weight, PiPoValue *values, unsigned int size,
-                 unsigned int num)
+int PiPoHost::frames (double time, double weight, PiPoValue *values, unsigned int size, unsigned int num)
 {
   return this->graph->frames(time, weight, values, size, num);
 }
 
-std::vector<std::string>
-PiPoHost::getAttrNames()
+int PiPoHost::finalize (double time)
+{
+  return this->graph->finalize(time);
+}
+
+
+
+std::vector<std::string> PiPoHost::getAttrNames ()
 {
   std::vector<std::string> res;
 
@@ -671,16 +676,16 @@ PiPoOut::PiPo((PiPo::Parent *)host)
 
 PiPoOut::~PiPoOut() {}
 
-int
-PiPoOut::streamAttributes(bool hasTimeTags,
-                          double rate, double offset,
-                          unsigned int width, unsigned int height,
-                          const char **labels, bool hasVarSize,
-                          double domain, unsigned int maxFrames)
+int PiPoOut::streamAttributes (bool hasTimeTags,
+			       double rate, double offset,
+			       unsigned int width, unsigned int height,
+			       const char **labels, bool hasVarSize,
+			       double domain, unsigned int maxFrames)
 {
   this->host->setOutputStreamAttributes(hasTimeTags, rate, offset, width, height,
                                         labels, hasVarSize, domain, maxFrames);
 
+  //TODO: remove
   for (int i = 0; i < PIPO_OUT_RING_SIZE; ++i)
   {
     ringBuffer[i].resize(width * height);
@@ -689,9 +694,9 @@ PiPoOut::streamAttributes(bool hasTimeTags,
   return 0;
 }
 
-int
-PiPoOut::frames(double time, double weight, PiPoValue *values,
-                unsigned int size, unsigned int num)
+// called as last element in host chain: receives result frames
+int PiPoOut::frames (double time, double weight, PiPoValue *values,
+		     unsigned int size, unsigned int num)
 {
   if (num > 0)
   {
@@ -729,8 +734,17 @@ PiPoOut::frames(double time, double weight, PiPoValue *values,
   return 0;
 }
 
-std::vector<PiPoValue>
-PiPoOut::getLastFrame()
+
+// called as last element in host chain: receives result frames
+int PiPoOut::finalize (double time)
+{
+  this->host->onFinalize(time);
+
+  return 0;
+}
+
+//TODO: remove
+std::vector<PiPoValue> PiPoOut::getLastFrame ()
 {
   std::vector<PiPoValue> f;
 

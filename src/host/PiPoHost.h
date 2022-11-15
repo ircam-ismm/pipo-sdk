@@ -1,4 +1,4 @@
-/**
+/**  -*- mode: c++; c-basic-offset:2 -*-
  * @file PiPoHost.h
  * @author Norbert.Schnell@ircam.fr
  *
@@ -80,17 +80,21 @@ public:
   virtual void signalWarning(PiPo *pipo, std::string errorMsg);
 
   // override this method when inheriting !!!
-  // virtual void onNewFrame(std::function<void (double, double, PiPoValue *, unsigned int)> f);
   virtual void onNewFrame(double time, double weight, PiPoValue *values, unsigned int size);
 
-  virtual std::vector<PiPoValue> getLastFrame();
+  // override this method when inheriting !!!
+  virtual void onFinalize (double time);
+
+  virtual std::vector<PiPoValue> getLastFrame(); //TODO: remove
 
   virtual int setInputStreamAttributes(const PiPoStreamAttributes &sa, bool propagate = true);
 
   virtual PiPoStreamAttributes &getOutputStreamAttributes();
 
-  virtual int frames(double time, double weight, PiPoValue *values, unsigned int size,
-                     unsigned int num);
+  // push frames/finalize through pipo module graph, will call onNewFrame() / onFinalize() on output
+  //NB: could be renamed, this is NOT PiPo::frames(), but a host function !!!
+  virtual int frames (double time, double weight, PiPoValue *values, unsigned int size, unsigned int num);
+  virtual int finalize (double time);
 
   virtual std::vector<std::string> getAttrNames();
   virtual PiPo::Attr *getAttr(const std::string &attrName);
@@ -139,7 +143,7 @@ private:
   // fix all dependencies to compile with the c++11 flag before (Pm2, ircam_descriptor, ...)
   // std::atomic<int> writeIndex, readIndex;
   int writeIndex, readIndex;
-  std::vector<std::vector<PiPoValue> > ringBuffer;
+  std::vector<std::vector<PiPoValue> > ringBuffer; //TODO: remove, because unused
 
 public:
   PiPoOut(PiPoHost *host);
@@ -149,12 +153,14 @@ public:
                        double rate, double offset,
                        unsigned int width, unsigned int height,
                        const char **labels, bool hasVarSize,
-                       double domain, unsigned int maxFrames);
+                       double domain, unsigned int maxFrames) override;
 
-  int frames(double time, double weight, PiPoValue *values,
-             unsigned int size, unsigned int num);
+  int frames (double time, double weight, PiPoValue *values,
+	      unsigned int size, unsigned int num) override;
 
-  std::vector<PiPoValue> getLastFrame();
+  int finalize (double time) override;
+    
+  std::vector<PiPoValue> getLastFrame(); //TODO: remove
 };
 
 #endif /* _PIPO_HOST_*/
