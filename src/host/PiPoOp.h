@@ -145,8 +145,12 @@ public:
       this->pipo->setParent(parent);
       return true;
     }
+    else
+    { // pipo not found in factory
+      printf("PiPo Host ERROR: can't create PiPo %s, not found.\n", this->pipoName.c_str());
 
-    return false;
+      return false;
+    }
   }
 
   void set(unsigned int index, PiPo::Parent *parent, PiPoModuleFactory *moduleFactory, const PiPoOp &other)
