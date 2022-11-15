@@ -66,27 +66,23 @@ PiPoHost::~PiPoHost()
 }
 
 // implementation of PiPo::Parent methods
-void
-PiPoHost::streamAttributesChanged(PiPo *pipo, PiPo::Attr *attr)
+void PiPoHost::streamAttributesChanged (PiPo *pipo, PiPo::Attr *attr)
 {
   this->propagateInputStreamAttributes();
 }
 
-void
-PiPoHost::signalError(PiPo *pipo, std::string errorMsg)
+void PiPoHost::signalError (PiPo *pipo, std::string errorMsg)
 {
   std::cout << "Error : " << errorMsg << std::endl;
 }
 
-void
-PiPoHost::signalWarning(PiPo *pipo, std::string errorMsg)
+void PiPoHost::signalWarning (PiPo *pipo, std::string errorMsg)
 {
   std::cout << "Warning : " << errorMsg << std::endl;
 }
 
 // own methods
-bool
-PiPoHost::setGraph(std::string name)
+bool PiPoHost::setGraph (std::string name)
 {
   if (this->graph != nullptr)
   {
@@ -107,8 +103,7 @@ PiPoHost::setGraph(std::string name)
   return false;
 }
 
-void
-PiPoHost::clearGraph()
+void PiPoHost::clearGraph ()
 {
   if (this->graph != nullptr)
   {
@@ -232,6 +227,7 @@ bool PiPoHost::setAttr(const std::string &attrName, const char *value) // for en
     else if (type == PiPo::Type::String)
     {
       attr->set(0, value);
+      return true;
     }
   }
 
