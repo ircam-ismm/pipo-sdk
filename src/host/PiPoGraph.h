@@ -591,7 +591,7 @@ public:
 
   void setReceiver(PiPo *receiver, bool add = false) override
   {
-    //if (pipo_ != NULL)
+    if (pipo_ != NULL) // can be called by setupProcs although pipo graph is not yet wired (???)
       pipo_->setReceiver(receiver);
   }
 
