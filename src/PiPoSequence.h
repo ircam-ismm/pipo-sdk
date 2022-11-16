@@ -1,4 +1,4 @@
-/**
+/** -*- mode: c++; c-basic-offset:2 -*-
 
 @file PiPoSequence.h
 @author Diemo.Schwarz@ircam.fr

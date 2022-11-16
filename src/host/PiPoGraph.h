@@ -97,9 +97,8 @@ public:
   PiPoGraph() = delete;
     
   PiPoGraph(PiPo::Parent *_parent, PiPoModuleFactory *_modulefactory = NULL, bool _toplevel = true)
-  : PiPo(parent)
+  : PiPo(_parent)
   {
-    parent         = _parent;
     modulefactory_ = _modulefactory;
     toplevel_      = _toplevel;
   }
@@ -153,6 +152,10 @@ public:
         
       case parallel:
         pipo_ = new PiPoParallel(parent);
+      break;
+
+      default:
+        return false;
       break;
     }
     

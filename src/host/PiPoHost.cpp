@@ -271,7 +271,7 @@ bool PiPoHost::setAttr(const std::string &attrName, const std::vector<TYPE> &val
 
   if (attr != NULL)
   {
-    PiPo::Type type = attr->getType();
+    //unused PiPo::Type type = attr->getType();
 
     int iAttr = attr->getIndex();
     TYPE vals[values.size()];
