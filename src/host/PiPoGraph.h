@@ -117,14 +117,49 @@ public:
     clear();
   }
 
+  void clear ()
+  {
+    pipolist_.clear();
+    instancenamelist_.clear();
+
+    for (unsigned int i = 0; i < subgraphs_.size(); ++i)
+      subgraphs_[i].clear();
+
+    if (graphtype_ != leaf  &&  pipo_ != nullptr)
+      delete pipo_;     // delete parallels and sequences instantiated by graph with new (no op)
+    else
+      op_.clear();      // let op clear itself (and free pipo)
+
+    pipo_ = nullptr;
+  } // end clear()
+  
+  bool create (std::string graphStr, bool copy_attrs = true)
+  {
+    if (parse(graphStr)  &&  instantiate()  &&  wire())
+    {
+      if (copy_attrs)
+        copyPiPoAttributes();   // puts instancename before each attr (which is redone by certain hosts)
+      
+      linearize(this);
+      return true;
+    }
+    else
+    {
+      clear();
+      // we could call parent->signalError() here, but this might output messages at the wrong time
+      return false;  //TODO: return error code from parsing
+    }
+  } // end create()
+
   // duplicate from other graph, reinstantiate pipos
   // (this is called to create independent graphs for each pipo process, duplicating the graph and its attributes built by host)
   bool duplicate (const PiPoGraph *other)
   {
-    if (other->pipo_ == NULL) // parsing had syntax error: no pipo created (but graph is partially filled)
-    { // create empty graph
+    if (other->pipo_ == NULL)
+    { // parsing had syntax error: no pipo was created, but graph is partially filled --> leave empty graph
       clear();
-      return false; 
+      // we could call parent->signalError() here, but this might output (many) messages at the wrong time, let the host handle it
+      return false; //TODO: return error code from parsing
     }
     
     parent          = other->parent;     // from pipo base class
@@ -166,40 +201,7 @@ public:
     }
 
     return true;
-  }
-
-  void clear ()
-  {
-    pipolist_.clear();
-    instancenamelist_.clear();
-
-    for (unsigned int i = 0; i < subgraphs_.size(); ++i)
-      subgraphs_[i].clear();
-
-    if (graphtype_ != leaf  &&  pipo_ != nullptr)
-      delete pipo_;     // delete parallels and sequences instantiated by graph with new (no op)
-    else
-      op_.clear();      // let op clear itself (and free pipo)
-
-    pipo_ = nullptr;
-}
-
-  bool create (std::string graphStr, bool copy_attrs = true)
-  {
-    if (parse(graphStr)  &&  instantiate()  &&  wire())
-    {
-      if (copy_attrs)
-        copyPiPoAttributes();   // puts instancename before each attr (which is redone by certain hosts)
-      
-      linearize(this);
-      return true;
-    }
-    else
-    {
-      clear();
-      return false;
-    }
-  }
+  } // end duplicate()
 
 private:
   //======================== PARSE GRAPH EXPRESSION ==========================//
@@ -219,7 +221,7 @@ private:
         cnt--;
 
     if (cnt != 0)
-      return false;
+      return false; //TODO: return parse error message
 
     // TODO : add more syntax checking here ?
 
@@ -287,7 +289,7 @@ private:
         op_.parse(representation_.c_str(), pos);
 
         // leaf string representation cannot be empty
-        return (graphStr.length() > 0);
+        return (graphStr.length() > 0); //TODO: return parse error message if false
       }
       break;
 
@@ -334,7 +336,7 @@ private:
           }
           else if (graphStr[i] == ',' && subLevelsCnt == 0)
             // cannot have first-level commas in a sequence
-            return false;
+            return false; //TODO: return parse error message
         }
 
         if (graphStr[graphStr.length() - 1] != '>')
@@ -350,10 +352,10 @@ private:
           PiPoGraph &g = subgraphs_[subgraphs_.size() - 1];
 
           if (!g.parse(graphStr.substr(subStrings[i].first, subStrings[i].second)))
-            return false;
+            return false; //TODO: return parse error message
         }
 
-        return (subLevelsCnt == 0);
+        return (subLevelsCnt == 0); //TODO: return parse error message if false
       }
       break;
 
@@ -383,10 +385,10 @@ private:
           unsigned int blockLength = commaIndices[i + 1] - blockStart - 1;
 
           if (!g.parse(graphStr.substr(blockStart, blockLength)))
-            return false;
+            return false; //TODO: return parse error message
         }
 
-        return (subLevelsCnt == 0);
+        return (subLevelsCnt == 0); //TODO: return parse error message if false
       }
       break;
 
@@ -395,7 +397,7 @@ private:
       break;
     }
 
-    return false;
+    return false; //TODO: return parse error message
   } // end parse()
 
   //================ ONCE EXPRESSION PARSED, INSTANTIATE OPs =================//
