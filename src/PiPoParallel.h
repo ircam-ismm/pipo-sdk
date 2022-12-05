@@ -31,7 +31,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include <stdlib.h> //db
 #include "PiPo.h"
 
-#define PIPO_DEBUG DEBUG*0
+#define PIPO_DEBUG DEBUG*1
 
 class PiPoParallel : public PiPo
 {
@@ -43,10 +43,11 @@ private:
   private:
 #   define		 MAX_PAR 64
 #   define		 NUM_LABELS_INIT 16
-    int			 count_;
-    int			 numpar_;
+    int			 count_  = 0;
+    int			 branch_ = 0;
+    int			 numpar_ = 0;
     PiPoStreamAttributes sa_;	// combined stream attributes
-    int			 paroffset_[MAX_PAR]; // cumulative column offsets in output array
+    int			 paroffset_[MAX_PAR]; // cumulative column offsets in output array TODO: use vector
     int			 parwidth_[MAX_PAR];  // column widths of parallel pipos
     int			 framesize_;		// output frame size = width * maxheight
     std::vector<std::string> labelstore_;
@@ -59,7 +60,7 @@ private:
 
   public:
     PiPoMerge (PiPo::Parent *parent)
-    : PiPo(parent), count_(0), numpar_(0), sa_(NUM_LABELS_INIT), labelstore_(), framesize_(0), values_(NULL)
+    : PiPo(parent), sa_(NUM_LABELS_INIT), labelstore_(), framesize_(0), values_(NULL)
     {
 #ifdef DEBUG	// clean memory to make possible memory errors more consistent at least
       memset(paroffset_, 0, sizeof(*paroffset_) * MAX_PAR);
@@ -107,6 +108,7 @@ private:
 
       parent      = other.parent;
       count_      = other.count_;
+      branch_     = other.branch_;
       numpar_     = other.numpar_;
       sa_         = other.sa_; // does shallow copy of labels array
       labelstore_ = other.labelstore_;
@@ -141,8 +143,10 @@ private:
           labelstore_[i].assign(labels[k]);	// copy input c-string into std::string
         else
           labelstore_[i].assign("");  		// set empty string
-	sa_.labels[i] = labelstore_[i].c_str(); // have our labels point to internal label storage
-      }      
+      }
+
+      for (int i = 0; i < new_num; i++)
+        sa_.labels[i] = labelstore_[i].c_str(); // have our labels point to (possibly moved) internal label storage
 
       sa_.numLabels = new_num;
     }
@@ -152,6 +156,12 @@ private:
     { // on start, record number of calls to expect from parallel pipos, each received stream call increments count_, when numpar_ is reached, merging has to be performed
       numpar_ = (int) numpar;
       count_  = 0;
+      branch_ = 0;
+    }
+
+    void setbranch (size_t i)
+    { // frames method sets branch explicitly (if one's result is missing)
+      branch_  = i;
     }
 
 // TODO: signal end of parallel pipos, accomodates for possibly missing calls down the chain
@@ -161,10 +171,10 @@ private:
 
   public:
     int streamAttributes (bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
-    { // collect stream attributes declarations from parallel pipos
+    { // PiPoMerge: collect stream attributes declarations from parallel pipos
 #if PIPO_DEBUG >= 1
-      printf("PiPoParallel streamAttributes timetags %d  rate %f  offset %f  width %d  height %d  labels %s  varsize %d  domain %f  maxframes %d\n",
-	     hasTimeTags, rate, offset, width, height, labels ? labels[0] : "n/a", hasVarSize, domain, maxFrames);
+      printf("PiPoMerge %d (%d/%d) streamAttributes timetags %d  rate %f  offset %f  width %d  height %d  labels %s  varsize %d  domain %f  maxframes %d\n", count_, branch_, numpar_, 
+	     hasTimeTags, rate, offset, width, height, labels && width > 0 ? labels[0] : "n/a", hasVarSize, domain, maxFrames);
 #endif
 
       if (count_ == 0)
@@ -173,7 +183,7 @@ private:
     	sa_.rate = rate;
     	sa_.offset = offset;
     	sa_.dims[0] = width;
-    	sa_.dims[1] = height;
+    	sa_.dims[1] = height; //FIXME: what to do with empty frame with height 0?
     	sa_.hasVarSize = hasVarSize;
     	sa_.domain = domain;
     	sa_.maxFrames = maxFrames;
@@ -199,13 +209,13 @@ private:
       if (++count_ == numpar_)
       { // last parallel pipo, now reserve memory and pass merged stream attributes onwards
         framesize_ = sa_.dims[0] * sa_.dims[1];
-	values_ = (PiPoValue *) realloc(values_, sa_.maxFrames * framesize_ * sizeof(PiPoValue)); // alloc space for maxmal block size
+	values_ = (PiPoValue *) realloc(values_, sa_.maxFrames * framesize_ * sizeof(PiPoValue)); // alloc space for maximal block size
 	
 	return propagateStreamAttributes(sa_.hasTimeTags, sa_.rate, sa_.offset, sa_.dims[0], sa_.dims[1], sa_.labels, sa_.hasVarSize, sa_.domain, sa_.maxFrames);
       }
       else
 	return 0; // continue receiving stream attributes
-    } // streamAttributes
+    } // end PiPoMerge::streamAttributes()
 
     
     int reset ()
@@ -214,11 +224,11 @@ private:
 	return this->propagateReset();
       else
 	return 0; // continue receiving reset
-    } // reset
-
+    } // end PiPoMerge::reset()
     
+
     int frames (double time, double weight, PiPoValue *values, unsigned int size, unsigned int num)
-    { // collect data from parallel pipos
+    { // PiPoMerge: collect data from parallel pipos
       if (count_ >= numpar_) // bug is still there
       {
 #ifdef WIN32
@@ -230,11 +240,11 @@ private:
       }
       //assert(size / parwidth_[count_] == 1);
 
-      int width = parwidth_[count_];
-      unsigned int height = size / width;	// number of input rows
+      int width = parwidth_[branch_];
+      unsigned int height = width > 0  ?  size / width  :  1;	// number of input rows, 1 if empty frame
       
-      if (count_ == 0)
-      { // first parallel pipo determines time tag, num. rows and frames
+      if (count_++ == 0)
+      { // first actually arriving parallel branch determines time tag, num. rows and frames
 	time_      = time;
 	numrows_   = height;
 	numframes_ = num;
@@ -251,17 +261,18 @@ private:
 	for (unsigned int k = 0; k < height; k++)   // for all rows to be kept
         {
           //printf("merge::frames %p\n  values_ %p + %d + %d + %d,\n  values %p + %d,\n  size %d\n",
-          //       this, values_, i * framesize_, k * sa_.dims[0], paroffset_[count_], values, i * size, parwidth_[count_] * sizeof(PiPoValue));
-	  //TODO: zero pad if num rows here: size / parwidth_[count_] < numrows_
-	  memcpy(values_ + i * framesize_ + k * sa_.dims[0] + paroffset_[count_],
+          //       this, values_, i * framesize_, k * sa_.dims[0], paroffset_[branch_], values, i * size, parwidth_[branch_] * sizeof(PiPoValue));
+	  //TODO: zero pad if num rows here: size / parwidth_[branch_] < numrows_
+	  memcpy(values_ + i * framesize_ + k * sa_.dims[0] + paroffset_[branch_],
 		 values  + i * size + k * width,  width * sizeof(PiPoValue));
         }
-      
-      if (++count_ == numpar_) // last parallel pipo: pass on to receiver(s)
+
+      if (branch_ == numpar_ - 1) // last parallel pipo: pass on to receiver(s) //TODO: in desync case (with last branch not outputting), this might never happen ---> need check in parallel::frames
+	// NOTE: when no branch produces output, merge::frames is never called, which is ok
 	return propagateFrames(time_, 0 /*weight to disappear*/, values_, numrows_ * sa_.dims[0], numframes_);
       else
 	return 0; // continue receiving frames
-    } // frames
+    } // end PiPoMerge::frames()
 
 
     int finalize (double inputEnd)
@@ -273,10 +284,10 @@ private:
 	return this->propagateFinalize(time_);
       else
 	return 0; // continue receiving finalize
-    }
+    } // end PiPoMerge::finalize()
   }; // end class PiPoMerge
 
-  PiPoMerge merge;
+  PiPoMerge merge; // the merge pipo module at the end of the parallel section
 
 public:
   // constructor
@@ -347,26 +358,67 @@ public:
   /** start stream preparation */
   int streamAttributes (bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
   {
+    int ret = 0;
+
     merge.start(receivers.size());
-    return PiPo::propagateStreamAttributes(hasTimeTags, rate, offset, width, height, labels, hasVarSize, domain, maxFrames);
-  }
+    for(unsigned int i = 0; i < this->receivers.size(); i++)
+    {
+      merge.setbranch(i);
+      ret = this->receivers[i]->streamAttributes(hasTimeTags, rate, offset, width, height, labels, hasVarSize, domain, maxFrames);
+
+      if(ret < 0)
+        break;
+    }
+
+    return ret;
+  } // end PiPoParallel::streamAttributes()
   
   int reset ()
   {
     merge.start(receivers.size());
     return PiPo::propagateReset();
   }
-  
   /** @} end of preparation of processing methods */
 
+  
   /** @name processing */
   /** @{ */
+  int segment (double time, bool start) 
+  { // PiPoParallel: pass segment call to parallel branches, count branches since propagateFrames() might be called
+    int ret = -1;
 
+    merge.start(receivers.size());
+    for (unsigned int i = 0; i < receivers.size(); i++)
+    {
+      merge.setbranch(i);
+      ret = receivers[i]->segment(time, start);
+	
+      if (ret < 0)
+	break;
+    }
+
+    return ret;
+  } // end PiPoParallel::segment()
+
+  
   int frames (double time, double weight, PiPoValue *values, unsigned int size, unsigned int num)
   {
     merge.start(receivers.size());
-    return PiPo::propagateFrames(time, weight, values, size, num);
-  }
+
+    int ret = -1;
+
+    for (unsigned int i = 0; i < receivers.size(); i++)
+    {
+      merge.setbranch(i); // tell merge which branch's output to expect
+      ret = receivers[i]->frames(time, weight, values, size, num);
+
+      if(ret < 0)
+        break;
+    }
+
+    merge.finish();
+    return ret;
+  } // end PiPoParallel::frames()
   
   int finalize (double inputEnd)
   {
