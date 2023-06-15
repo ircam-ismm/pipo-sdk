@@ -216,7 +216,7 @@ struct PiPoStreamAttributes
             "offset\t\t= %f\n"
             "width\t\t= %d\n"
             "height\t\t= %d\n"
-            "labels\t\t= %s... (num %d)\n"
+            "labels\t\t= %s%s%s (num %d)\n"
             "labels_alloc\t= %d\n"
             "hasVarSize\t= %d\n"
             "domain\t\t= %f\n"
@@ -224,6 +224,8 @@ struct PiPoStreamAttributes
             "ringTail\t= %d\n",
             (int) hasTimeTags, rate, offset, dims[0], dims[1],
             labels && numLabels > 0 && labels[0] != NULL  ?  labels[0]  :  "n/a",
+	    numLabels > 1  ?  "..."  :  "",
+	    numLabels > 1  ?  (labels && labels[numLabels - 1] != NULL  ?  labels[numLabels - 1]  :  "n/a")  :  "",
             numLabels, labels_alloc,
             (int) hasVarSize, domain, maxFrames, ringTail);
     
