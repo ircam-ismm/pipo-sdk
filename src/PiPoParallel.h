@@ -196,13 +196,30 @@ private:
       }
       else
       { // apply merge rules with following pipos
+	std::string errmsg = "";
+	
+	// check that timetags, rate, maxframes, height... are compatible
+	if (sa_.hasTimeTags == 1  ||  hasTimeTags == 1) // accept only sampled for now
+	  errmsg += "Only sampled streams can be put in parallel.  ";
+	if (sa_.rate != rate)
+	  errmsg += "Streams differ in rate (" + std::to_string(sa_.rate) + " and " + std::to_string(rate) + ").  ";
+	if (sa_.dims[1] != height)
+	  errmsg += "Streams differ in frame height (" + std::to_string(sa_.dims[1]) + " and " + std::to_string(height) + ").  ";
+	if (sa_.hasVarSize == 1  ||  hasVarSize == 1) // accept only fixed height for now
+	  errmsg += "Only streams with fixed frame size can be put in parallel.  ";
+
+	if (errmsg.size() > 0)
+	{
+	  signalError("Incompatible parallel streams: " + errmsg);
+	  return -1;
+	}
+	
 	// columns are concatenated
 	append_labels(labels, width);
       	sa_.dims[0] += width;
 	paroffset_[count_] = paroffset_[count_ - 1] + parwidth_[count_ - 1];
 	parwidth_[count_] = width;
-
-	//TODO: check maxframes, height, should not differ
+	
 	//TODO: option to transpose column vectors
       }
       
@@ -231,11 +248,7 @@ private:
     { // PiPoMerge: collect data from parallel pipos
       if (count_ >= numpar_) // bug is still there
       {
-#ifdef WIN32
-        printf("%s: ARGH! count_ %d >= numpar_ %d\n", __FUNCSIG__, count_, numpar_);
-#else
-        printf("%s: ARGH! count_ %d >= numpar_ %d\n", __PRETTY_FUNCTION__, count_, numpar_);
-#endif
+        printf("PiPoMerge::frames(%f): ARGH! count_ %d >= numpar_ %d\n", time, count_, numpar_);
         count_ = numpar_ - 1;
       }
       //assert(size / parwidth_[count_] == 1);
