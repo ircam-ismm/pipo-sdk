@@ -176,6 +176,7 @@ private:
       printf("PiPoMerge %d (%d/%d) streamAttributes timetags %d  rate %f  offset %f  width %d  height %d  labels %s  varsize %d  domain %f  maxframes %d\n", count_, branch_, numpar_, 
 	     hasTimeTags, rate, offset, width, height, labels && width > 0 ? labels[0] : "n/a", hasVarSize, domain, maxFrames);
 #endif
+      int ret = 0;
 
       if (count_ == 0)
       {	// first parallel pipo defines most stream attributes, we store then here
@@ -211,9 +212,9 @@ private:
 	if (errmsg.size() > 0)
 	{
 	  signalError("Incompatible parallel streams: " + errmsg);
-	  return -1;
+	  ret = -1;
 	}
-	
+
 	// columns are concatenated
 	append_labels(labels, width);
       	sa_.dims[0] += width;
@@ -228,10 +229,12 @@ private:
         framesize_ = sa_.dims[0] * sa_.dims[1];
 	values_ = (PiPoValue *) realloc(values_, sa_.maxFrames * framesize_ * sizeof(PiPoValue)); // alloc space for maximal block size
 	
-	return propagateStreamAttributes(sa_.hasTimeTags, sa_.rate, sa_.offset, sa_.dims[0], sa_.dims[1], sa_.labels, sa_.hasVarSize, sa_.domain, sa_.maxFrames);
+	if (ret == 0)
+	  return propagateStreamAttributes(sa_.hasTimeTags, sa_.rate, sa_.offset, sa_.dims[0], sa_.dims[1], sa_.labels, sa_.hasVarSize, sa_.domain, sa_.maxFrames);
       }
-      else
-	return 0; // continue receiving stream attributes
+      // else: continue receiving stream attributes
+      
+      return ret; 
     } // end PiPoMerge::streamAttributes()
 
     
