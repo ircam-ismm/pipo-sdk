@@ -63,12 +63,12 @@
 
 class PiPoGraph : public PiPo
 {
+private:
   typedef enum PiPoGraphTypeE
   {
     undefined = -1, leaf = 0, sequence, parallel
   } PiPoGraphType;
 
-private:
   bool          toplevel_;
   std::string   representation_;
   PiPoGraphType graphtype_ = undefined;
@@ -212,14 +212,20 @@ private:
 
     //========== check if we have the right number of '<' and '>' ============//
 
-    int cnt = 0;
+    int  cnt   = 0;
+    bool camel = false; // true if we have a sequence of parallel sections like in <a>b<c>
 
     for (unsigned int i = 0; i < graphStr.length(); ++i)
+    {
       if (graphStr[i] == '<')
         cnt++;
       else if (graphStr[i] == '>')
         cnt--;
 
+      if (cnt == 0  &&  i < graphStr.length() - 1) // we are outside a parallel section before the end of the graph
+	camel = true; 
+    }
+    
     if (cnt != 0)
       return false; //TODO: return parse error message
 
@@ -228,7 +234,7 @@ private:
     //======= determine the type of graph (leaf, sequence or parallel) =======//
 
     unsigned int trims = 0;
-    while (graphStr[0] == '<' && graphStr[graphStr.length() - 1] == '>')
+    while (graphStr[0] == '<' && graphStr[graphStr.length() - 1] == '>'  &&  !camel)
     {
       graphStr = graphStr.substr(1, graphStr.length() - 2);
       trims++;
@@ -241,7 +247,7 @@ private:
 
     // if we have surrounding "<...>" and first-level commas, we are a parallel
     if (trims > 0)
-    {
+    { 
       int subLevelsCnt = 0;
 
       for (unsigned int i = 0; i < graphStr.length(); ++i)
@@ -260,10 +266,8 @@ private:
         }
     }
 
-    // if we don't have any sequential / parallelism symbol,
-    // and we are not a single top-level pipo
-    // (because we need to be inside a PiPoGraph at the top-level),
-    // then we are a leaf :
+    // if we don't have any sequential / parallelism symbol, and we are not a single top-level pipo 
+    // (because we need to be inside a PiPoGraph at the top-level), then we are a leaf :
     if (graphStr.find("<") >= std::string::npos &&
         graphStr.find(">") >= std::string::npos &&
         graphStr.find(",") >= std::string::npos &&
@@ -275,7 +279,6 @@ private:
 
     switch (graphtype_)
     {
-
       //========================== leaf graph, we are a single PiPo, trim spaces
       case leaf:
       {
@@ -314,7 +317,7 @@ private:
           }
           else if (graphStr[i] == '<')
           {
-            if (subLevelsCnt == 0)
+            if (subLevelsCnt == 0  &&  i > lastStartIndex) // avoid fail with <a><b> which would push (i, 0)
             {
               subStrings.push_back(std::pair<unsigned int, unsigned int>(
                 lastStartIndex, i - lastStartIndex
