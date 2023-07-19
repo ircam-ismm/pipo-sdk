@@ -46,6 +46,7 @@ private:
     int			 count_  = 0;
     int			 branch_ = 0;
     int			 numpar_ = 0;
+    int			 numseg_ = 0;
     PiPoStreamAttributes sa_;	// combined stream attributes
     int			 paroffset_[MAX_PAR]; // cumulative column offsets in output array TODO: use vector
     int			 parwidth_[MAX_PAR];  // column widths of parallel pipos
@@ -110,6 +111,7 @@ private:
       count_      = other.count_;
       branch_     = other.branch_;
       numpar_     = other.numpar_;
+      numseg_     = other.numseg_;
       sa_         = other.sa_; // does shallow copy of labels array
       labelstore_ = other.labelstore_;
       framesize_  = other.framesize_;
@@ -152,9 +154,12 @@ private:
     }
     
   public: // PiPoMerge control functions called by PiPoParallel's pipo functions at start of parallel branches
-    void start (size_t numpar)
+    void start (size_t numpar, bool reset = false)
     { // on start, record number of calls to expect from parallel pipos, each received stream call increments count_, when numpar_ is reached, merging has to be performed
-      numpar_ = (int) numpar;
+      if (reset)
+	numseg_ = 0;
+      
+      numpar_ = (int) numpar - numseg_;
       count_  = 0;
       branch_ = 0;
     } // end PiPoMerge::start()
@@ -171,7 +176,7 @@ private:
     int streamAttributes (bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
     { // PiPoMerge: collect stream attributes declarations from parallel pipos
 #if PIPO_DEBUG >= 1
-      printf("PiPoMerge %d (%d/%d) streamAttributes timetags %d  rate %f  offset %f  width %d  height %d  labels %s  varsize %d  domain %f  maxframes %d\n", count_, branch_, numpar_, 
+      printf("PiPoMerge %d (count %d / numpar %d - seg %d) streamAttributes timetags %d  rate %f  offset %f  width %d  height %d  labels %s  varsize %d  domain %f  maxframes %d\n", count_, branch_, numpar_, numseg_,
 	     hasTimeTags, rate, offset, width, height, labels && width > 0 ? labels[0] : "n/a", hasVarSize, domain, maxFrames);
 #endif
       int ret = 0;
@@ -195,25 +200,37 @@ private:
       }
       else
       { // apply merge rules with following pipos
-	std::string errmsg = "";
-	
-	// check that timetags, rate, maxframes, height... are compatible
-	if (sa_.hasTimeTags == 1  ||  hasTimeTags == 1) // accept only sampled for now
-	  errmsg += "Only sampled streams can be put in parallel.  ";
-	if (height > 0  &&  width > 0  &&  sa_.rate != rate)
-	  errmsg += "Streams differ in rate (" + std::to_string(sa_.rate) + " and " + std::to_string(rate) + ").  ";
-	if (height > 0  &&  width > 0  &&  sa_.dims[1] != height)
-	  // zero-size streams (as from segmenters) are ignored when their time structure is compatible
-	  errmsg += "Streams differ in frame height (" + std::to_string(sa_.dims[1]) + " and " + std::to_string(height) + ").  ";
-	if (sa_.hasVarSize == 1  ||  hasVarSize == 1) // accept only fixed height for now
-	  errmsg += "Only streams with fixed frame size can be put in parallel.  ";
-	  
-	if (errmsg.size() > 0)
+	if (height > 0  &&  width > 0)
 	{
-	  signalError("Incompatible parallel streams: " + errmsg);
-	  ret = -1;
+	  std::string errmsg = "";
+	
+	  // check that timetags, rate, maxframes, height... are compatible
+	  if (sa_.hasTimeTags == 1  ||  hasTimeTags == 1) // accept only sampled for now
+	    errmsg += "Only sampled streams can be put in parallel.  ";
+	  if (height > 0  &&  width > 0  &&  sa_.rate != rate)
+	    errmsg += "Streams differ in rate (" + std::to_string(sa_.rate) + " and " + std::to_string(rate) + ").  ";
+	  if (sa_.dims[1] != height)
+	    // zero-size streams (as from segmenters) are ignored when their time structure is compatible
+	    errmsg += "Streams differ in frame height (" + std::to_string(sa_.dims[1]) + " and " + std::to_string(height) + ").  ";
+	  if (sa_.hasVarSize == 1  ||  hasVarSize == 1) // accept only fixed height for now
+	    errmsg += "Only streams with fixed frame size can be put in parallel.  ";
+	  
+	  if (errmsg.size() > 0)
+	  {
+	    signalError("Incompatible parallel streams: " + errmsg);
+	    ret = -1;
+	  }
 	}
-
+	else
+	{ // detect parallel branch that produces only segment() calls, no data output
+	  // (preliminarily detected via 0 size frames, but beware, also old-style segmenters like onseg can produce 0 size frames as markers)
+	  // we'll remove it from the count of expected calls
+#if PIPO_DEBUG
+	  printf("PiPoMerge::streamAttributes: detected zero size frame output from branch %d of %d, eliding branch\n", count_, numpar_);
+#endif
+	  numseg_++;
+	}
+	
 	// columns are concatenated
 	append_labels(labels, width);
       	sa_.dims[0] += width;
@@ -375,7 +392,7 @@ public:
   {
     int ret = 0;
 
-    merge.start(receivers.size());
+    merge.start(receivers.size(), true);
     for(unsigned int i = 0; i < this->receivers.size(); i++)
     {
       merge.setbranch(i);
