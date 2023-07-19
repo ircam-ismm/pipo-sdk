@@ -29,6 +29,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 #include <assert.h> //db
 #include <stdlib.h> //db
+#include <sstream>
 #include "PiPo.h"
 
 #define PIPO_DEBUG DEBUG*1
@@ -202,22 +203,22 @@ private:
       { // apply merge rules with following pipos
 	if (height > 0  &&  width > 0)
 	{
-	  std::string errmsg = "";
+	  std::ostringstream errmsg;
 	
 	  // check that timetags, rate, maxframes, height... are compatible
-	  if (sa_.hasTimeTags == 1  ||  hasTimeTags == 1) // accept only sampled for now
-	    errmsg += "Only sampled streams can be put in parallel.  ";
+	  if (sa_.hasTimeTags != hasTimeTags)
+	    errmsg << "Streams must be either all sampled or all timetagged (" << sa_.hasTimeTags << " vs. " << hasTimeTags << ").  "; 
 	  if (height > 0  &&  width > 0  &&  sa_.rate != rate)
-	    errmsg += "Streams differ in rate (" + std::to_string(sa_.rate) + " and " + std::to_string(rate) + ").  ";
+	    errmsg << "Streams differ in rate (" << sa_.rate << " and " << rate << ").  ";
 	  if (sa_.dims[1] != height)
 	    // zero-size streams (as from segmenters) are ignored when their time structure is compatible
-	    errmsg += "Streams differ in frame height (" + std::to_string(sa_.dims[1]) + " and " + std::to_string(height) + ").  ";
+	    errmsg << "Streams differ in frame height (" << sa_.dims[1] << " and " << height << ").  ";
 	  if (sa_.hasVarSize == 1  ||  hasVarSize == 1) // accept only fixed height for now
-	    errmsg += "Only streams with fixed frame size can be put in parallel.  ";
+	    errmsg << "Only streams with fixed frame size can be put in parallel.  ";
 	  
-	  if (errmsg.size() > 0)
+	  if (errmsg.str().size() > 0)
 	  {
-	    signalError("Incompatible parallel streams: " + errmsg);
+	    signalError("Incompatible parallel streams: " + errmsg.str());
 	    ret = -1;
 	  }
 	}
