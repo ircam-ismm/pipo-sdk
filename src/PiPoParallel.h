@@ -151,25 +151,23 @@ private:
       sa_.numLabels = new_num;
     }
     
-  public:
+  public: // PiPoMerge control functions called by PiPoParallel's pipo functions at start of parallel branches
     void start (size_t numpar)
     { // on start, record number of calls to expect from parallel pipos, each received stream call increments count_, when numpar_ is reached, merging has to be performed
       numpar_ = (int) numpar;
       count_  = 0;
       branch_ = 0;
-    }
+    } // end PiPoMerge::start()
 
     void setbranch (size_t i)
-    { // frames method sets branch explicitly (if one's result is missing)
+    { // PiPoParallel's streamAttributes() and frames() methods set branch explicitly (to detect if one branch's result is missing)
       branch_  = i;
     }
 
 // TODO: signal end of parallel pipos, accomodates for possibly missing calls down the chain
-    void finish ()
-    {
-    }
+    void finish () { }
 
-  public:
+  public: // PiPoMerge pipo functions, called by last pipos of parallel branches
     int streamAttributes (bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
     { // PiPoMerge: collect stream attributes declarations from parallel pipos
 #if PIPO_DEBUG >= 1
@@ -202,13 +200,14 @@ private:
 	// check that timetags, rate, maxframes, height... are compatible
 	if (sa_.hasTimeTags == 1  ||  hasTimeTags == 1) // accept only sampled for now
 	  errmsg += "Only sampled streams can be put in parallel.  ";
-	if (sa_.rate != rate)
+	if (height > 0  &&  width > 0  &&  sa_.rate != rate)
 	  errmsg += "Streams differ in rate (" + std::to_string(sa_.rate) + " and " + std::to_string(rate) + ").  ";
-	if (sa_.dims[1] != height)
+	if (height > 0  &&  width > 0  &&  sa_.dims[1] != height)
+	  // zero-size streams (as from segmenters) are ignored when their time structure is compatible
 	  errmsg += "Streams differ in frame height (" + std::to_string(sa_.dims[1]) + " and " + std::to_string(height) + ").  ";
 	if (sa_.hasVarSize == 1  ||  hasVarSize == 1) // accept only fixed height for now
 	  errmsg += "Only streams with fixed frame size can be put in parallel.  ";
-
+	  
 	if (errmsg.size() > 0)
 	{
 	  signalError("Incompatible parallel streams: " + errmsg);
@@ -440,7 +439,7 @@ public:
   {
     merge.start(receivers.size());
     return PiPo::propagateFinalize(inputEnd);
-  }
+  } // end PiPoParallel::finalize()
 
   /** @} end of processing methods */
   /** @} end of overloaded PiPo methods */
