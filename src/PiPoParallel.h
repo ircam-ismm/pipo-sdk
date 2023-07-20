@@ -37,6 +37,8 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 class PiPoParallel : public PiPo
 {
 private:
+  typedef enum { caller_other, caller_streamAttributes, caller_segment } Caller;
+    
   /** class to merge several parallel pipo data streams, combining columns
    */
   class PiPoMerge : public PiPo
@@ -155,12 +157,15 @@ private:
     }
     
   public: // PiPoMerge control functions called by PiPoParallel's pipo functions at start of parallel branches
-    void start (size_t numpar, bool reset = false)
+    void start (size_t numpar, Caller caller = caller_other)
     { // on start, record number of calls to expect from parallel pipos, each received stream call increments count_, when numpar_ is reached, merging has to be performed
-      if (reset)
+      if (caller == caller_streamAttributes)
 	numseg_ = 0;
       
-      numpar_ = (int) numpar - numseg_;
+      if (caller == caller_segment)
+	numpar_ = (int) numpar; // segment call is propagated from every parallel branch
+      else
+	numpar_ = (int) numpar - numseg_;
       count_  = 0;
       branch_ = 0;
     } // end PiPoMerge::start()
@@ -393,7 +398,7 @@ public:
   {
     int ret = 0;
 
-    merge.start(receivers.size(), true);
+    merge.start(receivers.size(), caller_streamAttributes);
     for(unsigned int i = 0; i < this->receivers.size(); i++)
     {
       merge.setbranch(i);
@@ -420,7 +425,7 @@ public:
   { // PiPoParallel: pass segment call to parallel branches, count branches since propagateFrames() might be called
     int ret = -1;
 
-    merge.start(receivers.size());
+    merge.start(receivers.size(), caller_segment);
     for (unsigned int i = 0; i < receivers.size(); i++)
     {
       merge.setbranch(i);
