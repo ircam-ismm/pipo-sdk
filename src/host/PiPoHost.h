@@ -108,6 +108,9 @@ public:
   template<typename TYPE>
   bool setAttr(const std::string &attrName, const std::vector<TYPE> &values);
 
+  template<typename TYPE>
+  bool setAttr(const std::string &attrName, const TYPE values[], size_t num);
+
 //  virtual bool setAttr(const std::string &attrName, const std::vector<int> &values);
   //virtual bool setAttr(const std::string &attrName, const std::vector<double> &values);
 

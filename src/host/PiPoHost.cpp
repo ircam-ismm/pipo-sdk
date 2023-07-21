@@ -265,7 +265,7 @@ PiPoHost::setAttr(const std::string &attrName, double value)
 #if 1
 
 template<typename TYPE>
-bool PiPoHost::setAttr(const std::string &attrName, const std::vector<TYPE> &values)
+bool PiPoHost::setAttr (const std::string &attrName, const std::vector<TYPE> &values)
 {
   PiPo::Attr *attr = this->graph->getAttr(attrName.c_str());
 
@@ -274,19 +274,33 @@ bool PiPoHost::setAttr(const std::string &attrName, const std::vector<TYPE> &val
     //unused PiPo::Type type = attr->getType();
 
     int iAttr = attr->getIndex();
-    TYPE vals[values.size()];
+/*    TYPE vals[values.size()];
 
     for (unsigned int i = 0; i < values.size(); ++i)
     {
       vals[i] = values[i];
     }
-
-    return this->graph->setAttr(iAttr, &vals[0], static_cast<unsigned int>(values.size()));
+*/
+    return this->graph->setAttr(iAttr, &values[0], static_cast<unsigned int>(values.size()));
   }
 
   return false;
 }
+/* does not link
+template<typename TYPE>
+bool PiPoHost::setAttr (const std::string &attrName, const TYPE values[], size_t num)
+{
+  PiPo::Attr *attr = this->graph->getAttr(attrName.c_str());
 
+  if (attr != NULL)
+  {
+    int iAttr = attr->getIndex();
+    return this->graph->setAttr(iAttr, values, static_cast<unsigned int>(num));
+  }
+
+  return false;
+}
+*/
 #else
 
 bool
