@@ -1,4 +1,4 @@
-/** -*- mode: c++; c-basic-offset:2 -*-
+/** -*- mode: c++; c-basic-offset:2; c-file-style: "stroustrup" -*-
 
 @file PiPoParallel.h
 @author Diemo.Schwarz@ircam.fr
@@ -30,17 +30,166 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include <assert.h> //db
 #include <stdlib.h> //db
 #include <sstream>
+#include <float.h> // for DBL_MAX
 #include "PiPo.h"
 
 #define PIPO_DEBUG DEBUG*1
+#define PIPO_GRAPH_SYNC 0
 
 class PiPoParallel : public PiPo
 {
 private:
-  typedef enum { caller_other, caller_streamAttributes, caller_segment } Caller;
-    
-  /** class to merge several parallel pipo data streams, combining columns
+  /** class for buffering and resynchonising streams at merge 
+      Notes:
+      - first stream gives output rate, other streams are latched (and resampled)
+      - streams can produce frames (possibly empty) and segments
+      - streams can arrive one after the other (whole data needs to be buffered)
    */
+  typedef enum { stream_none, stream_frames, stream_segment } StreamType;
+
+#if PIPO_GRAPH_SYNC
+  class StreamBuffer
+  {
+    class Stream
+    {
+    public:
+      double rate_;
+      unsigned int maxsize_;
+
+      struct Frames {
+	double time;
+	std::vector<PiPoValue> values;
+
+	Frames (double t, std::vector<PiPoValue> v)
+	: time(t), values(v) { }
+      };
+      struct Segments {
+	double time;
+	bool   start;
+
+	Segments (double t, bool s)
+	: time(t), start(s) { }
+      };
+    
+      std::vector<struct Frames>   frames_;
+      std::vector<struct Segments> segments_;
+
+      Stream (double r, unsigned int m)
+      : rate_(r), maxsize_(m)
+      { }
+
+      
+      // @return type of first stream element (frame, segment, or none)
+      StreamType get_first ()
+      {
+	StreamType ret = stream_none;
+	double outtime = DBL_MAX;
+	
+	if (!frames_.empty())
+	{
+	  ret     = stream_frames;
+	  outtime = frames_.front().time;
+	}
+
+	// if frame and segment at same time, frame takes precedence
+	if (!segments_.empty()  &&  outtime > segments_.front().time)
+	{
+	  ret     = stream_segment;
+	}
+	
+	return ret;
+      }
+
+      // @return true if there was data
+      bool get_first_time (double &outtime)
+      {
+	if (!frames_.empty())
+	  outtime = frames_.front().time;
+	else
+	  outtime = DBL_MAX;
+	
+	if (!segments_.empty())
+	  outtime = std::min(outtime, segments_.front().time);
+	
+	return outtime < DBL_MAX;
+      }
+
+      // @return true if there was data
+      bool get_last_time (double &outtime)
+      {
+	if (!frames_.empty())
+	  outtime = frames_.back().time;
+	else
+	  outtime = -DBL_MAX;
+	
+	if (!segments_.empty())
+	  outtime = std::max(outtime, segments_.back().time);
+	
+	return outtime > -DBL_MAX;
+      }
+    }; // end class Stream
+
+    std::vector<Stream> streams_;
+
+  public:
+    /// declare stream
+    // (sync is handled with time tags)
+    // @param rate	 can serve to heuristically determine initial buffer size from rate ratios 
+    // @param framesize	 max size of frames to buffer
+    void add_stream (double rate, unsigned int framesize)
+    {
+      streams_.emplace_back(rate, framesize);
+    }
+
+    // input one frame of data for stream 
+    void add_frame (int streamid, double time, PiPoValue *values, unsigned int size)
+    {
+      // copy values array to end of frames buffer
+      streams_[streamid].frames_.emplace_back(time, std::vector<PiPoValue>(values, values + size));
+    }
+
+    // input segmentation mark for stream
+    void add_segment (int streamid, double time, bool start)
+    {
+      streams_[streamid].segments_.emplace_back(time, start);
+    }
+
+    StreamType advance_stream_to (int streamid, double t0)
+    {
+      double time;
+      while ((time = get_first(streamid, time)) <= t0)
+      {
+	
+      }
+    }
+
+    StreamType has_output (int streamid)
+    { // check if either a frame arrived at every stream, or a segment at any stream
+      StreamType ret = stream_none;
+
+      return ret;
+    }
+
+    StreamType has_output (int streamid)
+    { // check if given stream has data
+      return streams_[streamid].get_first();
+    }
+
+    // copies merged frame data into values, removes frames from streams
+    void get_frame (double &time, PiPoValue *values, unsigned int &size)
+    {
+      
+    }
+
+    // get and remove segment info from streams
+    void get_segment (double &time, bool &start)
+    {
+      // NB: segments at same time and with same flag should be merged (they could come from before the parallel sections and be duplicates)
+    }
+  }; // end class StreamBuffer
+#endif
+  
+  /** class to merge several parallel pipo data streams, combining columns */
   class PiPoMerge : public PiPo
   {
   private:
@@ -62,6 +211,10 @@ private:
     unsigned int	 numrows_;
     unsigned int	 numframes_;
 
+#if PIPO_GRAPH_SYNC    
+    StreamBuffer	 streambuffer_;
+#endif
+    
   public:
     PiPoMerge (PiPo::Parent *parent)
     : PiPo(parent), sa_(NUM_LABELS_INIT), labelstore_(), framesize_(0), values_(NULL)
@@ -157,15 +310,9 @@ private:
     }
     
   public: // PiPoMerge control functions called by PiPoParallel's pipo functions at start of parallel branches
-    void start (size_t numpar, Caller caller = caller_other)
+    void start (size_t numpar)
     { // on start, record number of calls to expect from parallel pipos, each received stream call increments count_, when numpar_ is reached, merging has to be performed
-      if (caller == caller_streamAttributes)
-	numseg_ = 0;
-      
-      if (caller == caller_segment)
-	numpar_ = (int) numpar; // segment call is propagated from every parallel branch
-      else
-	numpar_ = (int) numpar - numseg_;
+      numpar_ = (int) numpar;
       count_  = 0;
       branch_ = 0;
     } // end PiPoMerge::start()
@@ -271,6 +418,12 @@ private:
 
     int frames (double time, double weight, PiPoValue *values, unsigned int size, unsigned int num)
     { // PiPoMerge: collect data from parallel pipos
+#if PIPO_GRAPH_SYNC
+      // buffer single frames
+      for (int i = 0; i < num, i++)
+	streambuffer_.add_frame(branch_, time + i * frameperiod_, values + i * size, size);
+
+#else
       if (count_ >= numpar_) // bug is still there
       {
         printf("PiPoMerge::frames(%f): ARGH! count_ %d >= numpar_ %d\n", time, count_, numpar_);
@@ -304,15 +457,54 @@ private:
 	  memcpy(values_ + i * framesize_ + k * sa_.dims[0] + paroffset_[branch_],
 		 values  + i * size + k * width,  width * sizeof(PiPoValue));
         }
+#endif
+      
+      if (branch_ == numpar_ - 1)
+      { // last parallel pipo: pass on to receiver(s) //TODO: in desync case (with last branch not outputting), this might never happen ---> need check in parallel::frames
+#if PIPO_GRAPH_SYNC
+	// all branches have sent something: catch up to this (last) branch's first time
+	// (frames data is sampled at first branch's timebase),
+	// and then continue to re-play buffered frames this way
+	StreamType what;
+	double t0;
+	    
+	while ((what = get_first(0, t0)) != stream_none)
+	{ // we still have a time point in branch 0
+	  if (what == stream_frame)
+	  { // frame: catch up all streams until this branch 0's frame time
+	    for (int stream = 1; stream < numpar_; stream++)
+	    {
+	      streambuffer_.advance_stream_to(stream, t0);
 
-      if (branch_ == numpar_ - 1) // last parallel pipo: pass on to receiver(s) //TODO: in desync case (with last branch not outputting), this might never happen ---> need check in parallel::frames
+	    }
+	  }
+	  else
+	  { // catch up with and propagate segments from all streams immediately
+	    double tout;
+	    bool start;
+	    pop_segment(0, tout, start);
+	    propagateSegment(tout, start);
+	  }
+	}
+#else
 	// NOTE: when no branch produces output, merge::frames is never called, which is ok
 	return propagateFrames(time_, 0 /*weight to disappear*/, values_, numrows_ * sa_.dims[0], numframes_);
+#endif
+      }
       else
 	return 0; // continue receiving frames
     } // end PiPoMerge::frames()
 
+#if PIPO_GRAPH_SYNC
+    int segment (double time, bool start) 
+    { // PiPoMerge: receive segment call from parallel branches
+      streambuffer_.add_segment(branch_, time, start);
 
+      // don't propagate here
+      return 0;
+    } // end PiPoMerge::segment()
+#endif
+    
     int finalize (double inputEnd)
     {
       if (count_ == 0)
@@ -398,7 +590,7 @@ public:
   {
     int ret = 0;
 
-    merge.start(receivers.size(), caller_streamAttributes);
+    merge.start(receivers.size());
     for(unsigned int i = 0; i < this->receivers.size(); i++)
     {
       merge.setbranch(i);
@@ -425,7 +617,7 @@ public:
   { // PiPoParallel: pass segment call to parallel branches, count branches since propagateFrames() might be called
     int ret = -1;
 
-    merge.start(receivers.size(), caller_segment);
+    merge.start(receivers.size());
     for (unsigned int i = 0; i < receivers.size(); i++)
     {
       merge.setbranch(i);
