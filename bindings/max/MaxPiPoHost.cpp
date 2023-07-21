@@ -466,12 +466,16 @@ void MaxPiPoHost::streamAttributesChanged(PiPo *pipo, PiPo::Attr *attr)
 
 void MaxPiPoHost::signalError(PiPo *pipo, std::string errorMsg)
 {
-  object_error(this->ext, errorMsg.c_str());
+  // std::string msg ="error in pipo chain " + chain.getString() + ": " + errorMsg; // don't know if it is overkill to print the chain text, one can double click to get there
+  std::string msg ="error in PiPo chain: " + errorMsg;
+  object_error(this->ext, msg.c_str()); 
 }
 
 void MaxPiPoHost::signalWarning(PiPo *pipo, std::string errorMsg)
 {
-  object_warn(this->ext, errorMsg.c_str());
+  // std::string msg ="warning in pipo chain " + chain.getString() + ": " + errorMsg;  // don't know if it is overkill to print the chain text
+  std::string msg ="warning in PiPo chain: " + errorMsg;
+  object_warn(this->ext, msg.c_str());
 }
 
 void MaxPiPoHost::setInputDims(int width, int size, bool propagate)
