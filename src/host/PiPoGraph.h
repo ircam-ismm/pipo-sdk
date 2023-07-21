@@ -63,12 +63,13 @@
 
 class PiPoGraph : public PiPo
 {
-private:
+public:
   typedef enum PiPoGraphTypeE
   {
     undefined = -1, leaf = 0, sequence, parallel
   } PiPoGraphType;
 
+private:
   bool          toplevel_;
   std::string   representation_;
   PiPoGraphType graphtype_ = undefined;
@@ -578,6 +579,11 @@ public:
   PiPoGraphType getGraphType()
   {
     return graphtype_;
+  }
+
+  std::string &getString()
+  {
+    return representation_;
   }
 
   
