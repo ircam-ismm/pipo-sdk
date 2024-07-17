@@ -67,6 +67,7 @@ public:
     this->filled = false;
   };
     
+  // input one frame of num <= width values
   int input (T *values, unsigned int num, PiPoValue scale = 1.0)
   {  
     T *ringValues = &this->vector[this->index * this->width];

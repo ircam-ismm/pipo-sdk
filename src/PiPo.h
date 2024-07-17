@@ -180,6 +180,18 @@ struct PiPoStreamAttributes
   };
 
   /**
+   * look up column by name
+   * @return label index or -1 if not found
+   */
+  int lookup_label (const char *name) const
+  {
+    for (int i = 0; i < numLabels; i++)
+      if (strcmp(name, labels[0]) == 0)
+	return i;
+    return -1; // not found
+  }
+
+  /**
    * append string pointer array at end of labels array
    * labels array must have allocated space for _width more elements (i.e. at least numLabels + _width)
    */
