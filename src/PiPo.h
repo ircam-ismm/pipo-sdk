@@ -905,7 +905,11 @@ public:
    */
   class EnumAttr : public Attr
   {
+#if __cplusplus < 201703L // c++11 or c++14
     struct strCompare : public std::binary_function<const char *, const char *, bool>
+#else // from c++17 on, std::binary_function is no longer necessary and has been removed
+    struct strCompare
+#endif
     {
       bool operator() (const char *str1, const char *str2) const { return std::strcmp(str1, str2) < 0; }
     };
