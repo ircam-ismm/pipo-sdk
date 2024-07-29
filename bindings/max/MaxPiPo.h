@@ -142,7 +142,7 @@ typedef struct MaxPiPoSt {
       const char * attrDescr = getAttrDescription(attrName_c); \
       enum PiPo::Type type = attr->getType(); \
       char attrIndexStr[256]; \
-      sprintf(attrIndexStr, "%d", 256 + iAttr); \
+      snprintf(attrIndexStr, 256, "%d", 256 + iAttr); \
       switch(type) { \
         case PiPo::Undefined: \
           break; \
