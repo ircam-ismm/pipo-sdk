@@ -33,7 +33,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include <float.h> // for DBL_MAX
 #include "PiPo.h"
 
-#define PIPO_DEBUG DEBUG*1
+#define PIPO_DEBUG DEBUG*0
 #define PIPO_GRAPH_SYNC 0
 
 class PiPoParallel : public PiPo
@@ -328,7 +328,7 @@ private:
   public: // PiPoMerge pipo functions, called by last pipos of parallel branches
     int streamAttributes (bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
     { // PiPoMerge: collect stream attributes declarations from parallel pipos
-#if PIPO_DEBUG >= 1
+#if PIPO_DEBUG > 1
       printf("PiPoMerge %d (count %d / numpar %d - seg %d) streamAttributes timetags %d  rate %f  offset %f  width %d  height %d  labels %s  varsize %d  domain %f  maxframes %d\n", count_, branch_, numpar_, numseg_,
 	     hasTimeTags, rate, offset, width, height, labels && width > 0 ? labels[0] : "n/a", hasVarSize, domain, maxFrames);
 #endif

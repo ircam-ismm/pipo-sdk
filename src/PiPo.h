@@ -186,7 +186,7 @@ struct PiPoStreamAttributes
   int lookup_label (const char *name) const
   {
     for (int i = 0; i < numLabels; i++)
-      if (strcmp(name, labels[0]) == 0)
+      if (strcmp(name, labels[i]) == 0)
 	return i;
     return -1; // not found
   }
@@ -457,10 +457,14 @@ public:
 #endif
   {
 #if __cplusplus >= 201103L  &&  !defined(WIN32)
+# if DEBUG * 0
     printf("pipo::getVersion -> %f\n", PiPo::sdk_version);
+# endif
     return PiPo::sdk_version;
 #else
+# if DEBUG * 0
     printf("pipo::getVersion -> %f\n", PIPO_SDK_VERSION);
+# endif
     return PIPO_SDK_VERSION;
 #endif
   }
