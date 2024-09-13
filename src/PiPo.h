@@ -185,9 +185,10 @@ struct PiPoStreamAttributes
    */
   int lookup_label (const char *name) const
   {
-    for (int i = 0; i < numLabels; i++)
-      if (strcmp(name, labels[i]) == 0)
-	return i;
+    if (labels)
+      for (int i = 0; i < numLabels; i++)
+        if (labels[i] != NULL  &&  strcmp(name, labels[i]) == 0)
+          return i;
     return -1; // not found
   }
 
@@ -1195,7 +1196,7 @@ public:
   // @return vector<int> of valid column indices ( 0 .. max_num - 1), empty attr list returns vector of all indices 0 .. max_num - 1
 
   template<typename ATTRTYPE>
-  static std::vector<unsigned int> lookup_column_indices (ATTRTYPE &attr, int max_num, const char **labels = NULL)
+  static std::vector<unsigned int> lookup_column_indices (ATTRTYPE &attr, int max_num, const char **labels = NULL, bool *is_contiguous = NULL)
   {
     int attrsize = attr.getSize();
     std::vector<unsigned int> checked;
@@ -1229,6 +1230,11 @@ public:
       }
     }
 
+    // if we requested to return this flag, see if checked will contain a contiguous sequence of indices checked[0]..checked[checked.size() - 1]
+    if (is_contiguous)
+      // TODO: see if user requested contiguous sequence
+      *is_contiguous = checked.size() == 0;
+    
     if (checked.size() == 0)
     {
       // fill with all indices
