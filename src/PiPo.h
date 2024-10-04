@@ -798,7 +798,7 @@ public:
    *
    */
 public:
-  enum Type { Undefined, Bool, Enum, Int, Float, Double, String, Function, Dictionary };
+  enum Type { Undefined, Bool, Enum, Int, Float, Double, String, Function, Dictionary, AtomType };
 
   // dummy enum used for specialization of templates
   enum Enumerate { };
@@ -814,9 +814,11 @@ public:
         int itg;
     } data;
   public:
+    Atom()                { this->type = Int; this->data.itg = 0; } // default ctor, better use int, since Undefined atoms are unhandled in Max bridge
     Atom(const char *s)   { this->type = String; this->data.str = s; }
     Atom(double d)        { this->type = Double; this->data.dbl = d; }
     Atom(int i)           { this->type = Int; this->data.itg = i; }
+    Atom(unsigned int i)  { this->type = Int; this->data.itg = i; }
     friend bool operator==(Atom &at1, Atom &at2)
     {
         return ((at1.isNumber() && at2.isNumber() && at1.getDouble() == at2.getDouble())
@@ -826,12 +828,18 @@ public:
     {
         return !(at1 == at2);
     }
-    bool          isNumber()  { return type == Int || type == Double; }
-    bool          isString()  { return type == String || type == Dictionary; }
-    PiPo::Type    getType()   { return type; }
-    int           getInt()    { return ((type == Int) ? this->data.itg : ((type == Double) ? (int)(this->data.dbl) : 0)); }
-    double        getDouble() { return ((type == Double) ? this->data.dbl : ((type == Int) ? (double)(this->data.itg) : 0.)); }
-    const char *  getString() { return (isString() ? this->data.str : ""); }
+    bool          isNumber()  const { return type == Int || type == Double; }
+    bool          isString()  const { return type == String || type == Dictionary; }
+    PiPo::Type    getType()   const { return type; }
+    int           getInt()    const { return ((type == Int) ? this->data.itg : ((type == Double) ? (int)(this->data.dbl) : 0)); }
+    double        getDouble() const { return ((type == Double) ? this->data.dbl : ((type == Int) ? (double)(this->data.itg) : 0.)); }
+    const char *  getString() const { return (isString() ? this->data.str : ""); }
+
+    // implicit cast conversion operators
+    operator int ()	      const { return getInt(); }
+    operator double ()	      const { return getDouble(); }
+    operator const char* ()   const { return getString(); }
+    
   }; // class PiPo::Atom
 
   class Attr
@@ -874,6 +882,8 @@ public:
         this->type = Double;
       else if(type == &typeid(std::string) || type == &typeid(const char *))
         this->type = String;
+      else if(type == &typeid(PiPo::Atom))
+        this->type = AtomType;
       else
         this->type = Undefined;
 
@@ -907,7 +917,9 @@ public:
     virtual int getInt(unsigned int i) = 0;
     virtual double getDbl(unsigned int i) = 0;
     virtual const char *getStr(unsigned int i) = 0;
-   
+    virtual PiPo::Atom getAtom(unsigned int i) = 0;
+    //virtual void *getPtr() = 0;  // return pointer to first data element
+
     virtual std::vector<const char *> *getEnumList(void) { return NULL; }
 
     void changed(bool silently = false) { this->has_changed = true; if (!silently && this->changesStream) this->pipo->streamAttributesChanged(this); }
@@ -1283,7 +1295,9 @@ public:
   int getInt(unsigned int i = 0) { return (int)this->value; }
   double getDbl(unsigned int i = 0) { return (double)this->value; }
   const char *getStr(unsigned int i = 0) { return NULL; }
-};
+  PiPo::Atom getAtom(unsigned int i) { return PiPo::Atom(value); }
+  TYPE *getPtr() { return &value; } // return pointer to first data element
+  };
 
 template <>
 class PiPoScalarAttr<const char *> : public PiPo::Attr
@@ -1314,6 +1328,8 @@ public:
   int getInt(unsigned int i = 0) { return 0; }
   double getDbl(unsigned int i = 0) { return 0; }
   const char *getStr(unsigned int i = 0) { return this->value; }
+  PiPo::Atom getAtom(unsigned int i) { return PiPo::Atom(value); }
+  const char **getPtr() { return &value; } // return pointer to first data element
 };
 
 template <>
@@ -1323,8 +1339,8 @@ private:
   unsigned int value;
 
 public:
-  PiPoScalarAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream, unsigned int initVal = 0) :
-  EnumAttr(pipo, name, descr, &typeid(enum PiPo::Enumerate), changesStream)
+  PiPoScalarAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream, unsigned int initVal = 0)
+  : EnumAttr(pipo, name, descr, &typeid(enum PiPo::Enumerate), changesStream)
   {
     this->value = initVal;
   }
@@ -1345,6 +1361,8 @@ public:
   int getInt(unsigned int i = 0) { return (int)this->value; }
   double getDbl(unsigned int i = 0) { return (double)this->value; }
   const char *getStr(unsigned int i = 0) { return this->getEnumTag(this->value); }
+  PiPo::Atom getAtom(unsigned int i) { return PiPo::Atom(value); }
+  unsigned int *getPtr() { return &value; } // return pointer to first data element
 };
 
 
@@ -1395,21 +1413,23 @@ private:
 template< class TYPE, std::size_t SIZE>
 class PiPo::AttrArray
 {
+protected:
   TYPE values[SIZE];
   static const int size = SIZE;
 
 public:
+  AttrArray() : values() { }
   TYPE const& operator [] (unsigned int index) const { return this->values[index]; }
-  TYPE& operator [] (unsigned int index) { return &this->values[index]; }
+  TYPE& operator [] (unsigned int index) { return this->values[index]; }
 };
 
 template <typename TYPE, unsigned int SIZE>
 class PiPoArrayAttr : public PiPo::Attr, public PiPo::AttrArray<TYPE, SIZE>
 {
 public:
-  PiPoArrayAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream, TYPE initVal = (TYPE)0) :
-  Attr(pipo, name, descr, &typeid(TYPE), changesStream, true, false),
-  PiPo::AttrArray<TYPE, SIZE>()
+  PiPoArrayAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream, TYPE initVal = (TYPE)0)
+  :  Attr(pipo, name, descr, &typeid(TYPE), changesStream, true, false),
+     PiPo::AttrArray<TYPE, SIZE>()
   {
     for(unsigned int i = 0; i < SIZE; i++)
       (*this)[i] = initVal;
@@ -1455,10 +1475,25 @@ public:
 
   const char *getStr(unsigned int i)
   {
-    if (i < SIZE)
+    if (i >= SIZE)
       i = SIZE - 1;
 
     return (const char *)(*this)[i];
+  }
+
+  PiPo::Atom getAtom (unsigned int i)
+  {
+    if (i >= SIZE)
+      i = SIZE - 1;
+
+    return PiPo::Atom((*this)[i]);
+  }
+
+  using PiPo::AttrArray<TYPE, SIZE>::values;
+
+  TYPE *getPtr()  // return pointer to first data element
+  {
+    return &(values[0]);
   }
 };
 
@@ -1528,6 +1563,14 @@ public:
 
     return NULL;
   }
+
+  PiPo::Atom getAtom (unsigned int i)
+  {
+    if (i < SIZE)
+      i = SIZE - 1;
+
+    return PiPo::Atom((*this)[i]);
+  }
 };
 
 /***********************************************
@@ -1590,6 +1633,14 @@ public:
   }
 
   const char *getStr(unsigned int i) { return NULL; }
+
+  PiPo::Atom getAtom (unsigned int i)
+  {
+    if (i >= this->size())
+      i = (unsigned int) this->size() - 1;
+
+    return PiPo::Atom((*this)[i]);
+  }
 
   TYPE *getPtr()  // return pointer to first data element
   {
@@ -1680,6 +1731,14 @@ public:
     return NULL;
   }
 
+  PiPo::Atom getAtom (unsigned int i)
+  {
+    if (i >= this->size())
+      i = (unsigned int) this->size() - 1;
+
+    return PiPo::Atom((*this)[i]);
+  }
+
   void remove (int pos) // remove element at index pos
   {
     if (pos >= 0  &&  pos < (int) size())
@@ -1758,6 +1817,14 @@ public:
       return this->getEnumTag((*this)[i]);
 
     return NULL;
+  }
+
+  PiPo::Atom getAtom (unsigned int i)
+  {
+    if (i >= this->size())
+      i = (unsigned int) this->size() - 1;
+
+    return PiPo::Atom((*this)[i]);
   }
 
   //TODO: use base class or member-only specialization to reuse PiPoVarSizeAttr::remove
@@ -1839,6 +1906,14 @@ public:
 
       return (*this)[i].getString();
     }
+
+  PiPo::Atom getAtom (unsigned int i)
+  {
+    if (i >= this->size())
+      i = (unsigned int) this->size() - 1;
+    
+    return (*this)[i];
+  }
 
     PiPo::Atom *getPtr()  // return pointer to first data element
     {

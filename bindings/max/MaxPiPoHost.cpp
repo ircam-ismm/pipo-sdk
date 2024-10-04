@@ -60,7 +60,7 @@ getMaxAttributeList(PiPo *pipo, unsigned int attrId, long *pac, t_atom **pat)
   {
     case PiPo::Undefined:
       break;
-      
+
     case PiPo::Bool:
     case PiPo::Int:
     {
@@ -69,6 +69,7 @@ getMaxAttributeList(PiPo *pipo, unsigned int attrId, long *pac, t_atom **pat)
       
       break;
     }
+
     case PiPo::Enum:
     {
       if(attr->getIsArray() || attr->getIsVarSize())
@@ -94,6 +95,7 @@ getMaxAttributeList(PiPo *pipo, unsigned int attrId, long *pac, t_atom **pat)
       }
       break;
     }
+
     case PiPo::Float:
     case PiPo::Double:
     {
@@ -102,6 +104,7 @@ getMaxAttributeList(PiPo *pipo, unsigned int attrId, long *pac, t_atom **pat)
       
       break;
     }
+
     case PiPo::String:
     case PiPo::Dictionary:
     {
@@ -111,6 +114,51 @@ getMaxAttributeList(PiPo *pipo, unsigned int attrId, long *pac, t_atom **pat)
       break;
     }
       
+    case PiPo::AtomType:
+    {
+      int attrsize = attr->getSize();
+
+      for (int i = 0; i < attrsize; i++)
+      {
+        PiPo::Atom elem = attr->getAtom(i); // put attr element (of any type) into pipo Atom, either copying atom, or wrapping int or string
+        // todo: define TYPE get(int) method for all pipo::attr derivations
+
+        switch (elem.getType())
+        {
+          case PiPo::Double:
+            atom_setfloat((*pat) + i, elem.getDouble());
+            break;
+
+          case PiPo::Int:
+            atom_setlong((*pat) + i, elem.getInt());
+            break;
+
+          case PiPo::String:
+            atom_setsym((*pat) + i, elem.getString() ? gensym(elem.getString()) : gensym("")); // why didn't this crash before the NULL check?
+            break;
+
+          default:
+            break;
+        }
+      }
+
+
+      /*
+       if (attr->getIsArray() || attr->getIsVarSize())
+      {
+        PiPo::Atom *values =  attr->getPtr();
+
+        for (unsigned int i = 0; i < attr->getSize(); i++)
+        {
+
+        PiPo::Type atomtype = attr->get(i)->getType();
+
+        atom_setsym((*pat) + i, attr->getStr(i) ? gensym(attr->getStr(i)) : gensym("")); // why didn't this crash before the NULL check?
+
+*/
+    }
+    break;
+
     default:
       break;
   }
