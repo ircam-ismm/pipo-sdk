@@ -1330,7 +1330,8 @@ public:
   const char *getStr(unsigned int i = 0) { return this->value; }
   PiPo::Atom getAtom(unsigned int i) { return PiPo::Atom(value); }
   const char **getPtr() { return &value; } // return pointer to first data element
-};
+}; // end class template PiPoScalarAttr<TYPE>
+
 
 template <>
 class PiPoScalarAttr<enum PiPo::Enumerate> : public PiPo::EnumAttr
@@ -1363,7 +1364,7 @@ public:
   const char *getStr(unsigned int i = 0) { return this->getEnumTag(this->value); }
   PiPo::Atom getAtom(unsigned int i) { return PiPo::Atom(value); }
   unsigned int *getPtr() { return &value; } // return pointer to first data element
-};
+}; // end class PiPoScalarAttr<Enumerate>
 
 
 /** specialisation of string attr that can receive a dictionary structure from the host and transmits this as a json string to the pipo module.
@@ -1455,7 +1456,13 @@ public:
     this->changed(silently);
   }
 
-  void set(unsigned int i, const char *val, bool silently = false) { }
+  void set(unsigned int i, const char *val, bool silently = false) 
+  {
+    if (i < SIZE)
+      (*this)[i] = (TYPE) val; // use TYPE's conversion
+
+    this->changed(silently);
+  }
 
   int getInt(unsigned int i)
   {
@@ -1582,11 +1589,10 @@ template <typename TYPE>
 class PiPoVarSizeAttr : public PiPo::Attr, public std::vector<TYPE>
 {
 public:
-  PiPoVarSizeAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream, unsigned int size = 0, TYPE initVal = (TYPE)0) :
-  Attr(pipo, name, descr, &typeid(TYPE), changesStream, false, true),
-  std::vector<TYPE>(size, initVal)
-  {
-  }
+  PiPoVarSizeAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream, unsigned int size = 0, TYPE initVal = (TYPE)0)
+  : Attr(pipo, name, descr, &typeid(TYPE), changesStream, false, true),
+    std::vector<TYPE>(size, initVal)
+  { }
 
   void clone(Attr *other) { *(dynamic_cast<std::vector<TYPE> *>(this)) = *(dynamic_cast<std::vector<TYPE> *>(other)); }
 
