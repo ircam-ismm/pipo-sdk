@@ -281,7 +281,7 @@ bool PiPoHost::setAttr (const std::string &attrName, const std::vector<TYPE> &va
       vals[i] = values[i];
     }
 */
-    return this->graph->setAttr(iAttr, &values[0], static_cast<unsigned int>(values.size()));
+    return this->graph->setAttr(iAttr, values.data(), static_cast<unsigned int>(values.size()));
   }
 
   return false;
@@ -320,7 +320,7 @@ PiPoHost::setAttr(const std::string &attrName, const std::vector<int> &values)
       vals[i] = values[i];
     }
 
-    return this->graph->setAttr(iAttr, &vals[0], static_cast<unsigned int>(values.size()));
+    return this->graph->setAttr(iAttr, vals.data(), static_cast<unsigned int>(values.size()));
   }
 
   return false;
@@ -343,7 +343,7 @@ PiPoHost::setAttr(const std::string &attrName, const std::vector<double> &values
       vals[i] = values[i];
     }
 
-    return this->graph->setAttr(iAttr, &vals[0], static_cast<unsigned int>(values.size()));
+    return this->graph->setAttr(iAttr, vals.data(), static_cast<unsigned int>(values.size()));
   }
 
   return false;
@@ -366,7 +366,7 @@ PiPoHost::setAttr(const std::string &attrName, const std::vector<const char *> &
       vals[i] = values[i];
     }
 
-    return this->graph->setAttr(iAttr, &vals[0], static_cast<unsigned int>(values.size()));
+    return this->graph->setAttr(iAttr, vals.data(), static_cast<unsigned int>(values.size()));
   }
 
   return false;

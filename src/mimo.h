@@ -147,7 +147,7 @@ public:
     
     for (unsigned int i = 0; i < this->receivers.size(); i++)
     {
-      ret = dynamic_cast<Mimo *>(this->receivers[i])->setup(numbuffers, 1, bufsize, &streamattr[0]);
+      ret = dynamic_cast<Mimo *>(this->receivers[i])->setup(numbuffers, 1, bufsize, &streamattr[0]); //TODO: what if numtracks == 0?
       
       if (ret < 0)
         break;

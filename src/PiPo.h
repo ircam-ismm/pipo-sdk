@@ -352,7 +352,7 @@ public:
               unsigned int size, unsigned int num)
   {
     double     f      = factor_attr_.get(); // get gain factor here, as it could change while running
-    PiPoValue *outptr = &buffer_[0];
+    PiPoValue *outptr = buffer_.data();
 
     for (unsigned int i = 0; i < num; i++)
     {
@@ -363,7 +363,7 @@ public:
       values += framesize_;
     }
 
-    return propagateFrames(time, weight, &buffer_[0], size, num);
+    return propagateFrames(time, weight, buffer_.data(), size, num);
   }
 };
 \endcode
@@ -952,6 +952,7 @@ public:
     Attr(pipo, name, descr, type, changesStream, isArray, isVarSize),
     enumList(), enumListDoc(), enumMap()
     {
+      printf("EnumAttr ctor %s typeid %s\n", name, typeid(*this).name()); //db xxxxxx
     }
 
     void addEnumItem(const char *item, const char *doc = "undocumented")
@@ -963,7 +964,7 @@ public:
       this->enumMap[item] = idx;
     }
 
-    std::vector<const char *> *getEnumList(void)
+    std::vector<const char *> *getEnumList(void) override
     {
       return &this->enumList;
     }
