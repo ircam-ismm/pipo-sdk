@@ -1651,7 +1651,7 @@ public:
 
   TYPE *getPtr()  // return pointer to first data element
   {
-    return &((*this)[0]);
+    return this->data();
   }
 
   using std::vector<TYPE>::size;
@@ -1924,7 +1924,7 @@ public:
 
     PiPo::Atom *getPtr()  // return pointer to first data element
     {
-      return &((*this)[0]);
+      return this->data();
     }
 }; // end class PiPoVarSizeAttr<PiPo::Atom>
 
