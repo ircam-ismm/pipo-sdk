@@ -948,12 +948,10 @@ public:
     std::map<const char *, unsigned int, strCompare> enumMap;
 
   public:
-    EnumAttr(PiPo *pipo, const char *name, const char *descr, const std::type_info *type, bool changesStream, bool isArray = false, bool isVarSize = false) :
-    Attr(pipo, name, descr, type, changesStream, isArray, isVarSize),
-    enumList(), enumListDoc(), enumMap()
-    {
-      printf("EnumAttr ctor %s typeid %s\n", name, typeid(*this).name()); //db xxxxxx
-    }
+    EnumAttr(PiPo *pipo, const char *name, const char *descr, const std::type_info *type, bool changesStream, bool isArray = false, bool isVarSize = false)
+    : Attr(pipo, name, descr, type, changesStream, isArray, isVarSize),
+      enumList(), enumListDoc(), enumMap()
+    { }
 
     void addEnumItem(const char *item, const char *doc = "undocumented")
     {
