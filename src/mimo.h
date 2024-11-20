@@ -30,7 +30,7 @@ public:
       separate one from the main app. We can't even work on a
       std::stringstream passed by reference, since probably the
       reallocations also use the heap. */
-  virtual char *to_json (char *out, size_t size) throw() = 0;
+  virtual char *to_json (char *out, size_t size) noexcept(false) = 0;
 
   /** get model from json string */
   virtual int from_json (const char *json_string) = 0;

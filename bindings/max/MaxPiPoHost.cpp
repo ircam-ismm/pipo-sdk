@@ -268,6 +268,7 @@ void MaxPiPoHost::declarePiPoAttributes (PiPo *pipo, unsigned int iPiPo, const c
         object_attr_addattr_parse(this->ext, attrName.c_str(), "style", USESYM(symbol), 0, "onoff");
       else if(type == PiPo::Enum)
       {
+        //printf("enumList of %s\n", typeid(*attr).name());
         vector<const char *> *enumList = attr->getEnumList();
 
         if(enumList != NULL && enumList->size() > 0)

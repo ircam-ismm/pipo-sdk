@@ -210,7 +210,7 @@ typedef struct max_mimo_st {
       object_error_obtrusive((t_object *)self, "mimo works only inside a mimo host!!! see mubu.model and pipo\n"); \
       object_warn((t_object *)self, "mimo works only inside a mimo host!!! see mubu.model and pipo\n"); } } \
   static void freeMaxObject(MaxMimoT *self) { delete self->mimo; } \
-  static void helpnameMethod(MaxMimoT *self, char *str){ sprintf(str, "mimo.%s", mimoShortName);} \
+  static void helpnameMethod(MaxMimoT *self, char *str){ snprintf(str, 32 /*conservative guess*/, "mimo.%s", mimoShortName);} \
   static void bangMethod(MaxMimoT *self, t_symbol *s, short ac, t_atom *at){ \
     if(self->verbose != 0) object_error((t_object *) self, "mimo works only inside a mimo host!!! see mubu.model and pipo");} \
   static void listMethod(MaxMimoT *self, t_symbol *s, short ac, t_atom *at){ \
@@ -259,7 +259,7 @@ typedef struct max_mimo_st {
     object_error_obtrusive((t_object *)self, "mimo works only inside a mimo host!!! see mubu.model and pipo\n"); \
     object_warn((t_object *)self, "mimo works only inside a mimo host!!! see mubu.model and pipo\n"); } } \
   static void free_max_object(MaxMimoT *self) { delete self->mimo; } \
-  static void helpnameMethod(MaxMimoT *self, char *str){ sprintf(str, "mimo.%s", mimoShortName);} \
+  static void helpnameMethod(MaxMimoT *self, char *str){ snprintf(str, 32 /*conservative guess*/, "mimo.%s", mimoShortName);} \
   static void bangMethod(MaxMimoT *self, t_symbol *s, short ac, t_atom *at){ \
     if(self->verbose != 0) object_error((t_object *) self, "mimo works only inside a mimo host!!!");} \
   static void listMethod(MaxMimoT *self, t_symbol *s, short ac, t_atom *at){ \

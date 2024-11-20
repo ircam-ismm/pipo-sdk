@@ -213,7 +213,7 @@ typedef struct MaxPiPoSt {
       object_error_obtrusive((t_object *)self, "pipo works only inside a pipo host!!! Double click or bang the object for more infos\n"); \
       object_warn((t_object *)self, "pipo works only inside a pipo host!!! Double click or bang the object for more infos\n"); } } \
   static void freeMaxObject(MaxPiPoT *self) { delete self->pipo; } \
-  static void helpnameMethod(MaxPiPoT *self, char *str){ sprintf(str, "pipo.%s", pipoShortName);} \
+  static void helpnameMethod(MaxPiPoT *self, char *str){ snprintf(str, 32 /*conservative guess*/, "pipo.%s", pipoShortName);} \
   static void bangMethod(MaxPiPoT *self, t_symbol *s, short ac, t_atom *at){ stringload("HowToUsePiPoModules");} \
   static void listMethod(MaxPiPoT *self, t_symbol *s, short ac, t_atom *at){ \
     if(self->verbose != 0) object_error((t_object *) self, "pipo works only inside a pipo host!!! Double click or bang the object for more infos");}\
@@ -271,7 +271,7 @@ typedef struct MaxPiPoSt {
      else freeobject((t_object *)pipoPatchHandle);}\
    pipoPatchHandle = stringload("AboutPiPoModules"); } \
   static void freeMaxObject(MaxPiPoT *self) { delete self->pipo; } \
-  static void helpnameMethod(MaxPiPoT *self, char *str){ sprintf(str, "pipo.%s", pipoShortName);} \
+  static void helpnameMethod(MaxPiPoT *self, char *str){ snprintf(str, 32 /*conservative guess*/, "pipo.%s", pipoShortName);} \
   static void bangMethod(MaxPiPoT *self, t_symbol *s, short ac, t_atom *at){ openPiPoPatch(); }\
   static void listMethod(MaxPiPoT *self, t_symbol *s, short ac, t_atom *at){ \
    if(self->verbose != 0) \
