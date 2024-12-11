@@ -466,7 +466,7 @@ void MaxPiPoHost::propagateInputAttributes(void)
     head->streamAttributes(this->inputStreamAttrs.hasTimeTags,
                            this->inputStreamAttrs.rate,
                            this->inputStreamAttrs.offset,
-                           this->inputStreamAttrs.dims[0],
+                           this->inputStreamAttrs.dims[0], //TODO: this can be wrong, set by setInputDims()
                            this->inputStreamAttrs.dims[1],
                            labels,
                            this->inputStreamAttrs.hasVarSize,

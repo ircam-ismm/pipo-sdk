@@ -186,7 +186,7 @@ struct PiPoStreamAttributes
   int lookup_label (const char *name) const
   {
     if (labels)
-      for (int i = 0; i < numLabels; i++)
+      for (unsigned int i = 0; i < numLabels; i++)
         if (labels[i] != NULL  &&  strcmp(name, labels[i]) == 0)
           return i;
     return -1; // not found
@@ -1207,7 +1207,7 @@ public:
   // @return vector<int> of valid column indices ( 0 .. max_num - 1), empty attr list returns vector of all indices 0 .. max_num - 1
 
   template<typename ATTRTYPE>
-  static std::vector<unsigned int> lookup_column_indices (ATTRTYPE &attr, int max_num, const char **labels = NULL, bool *is_contiguous = NULL)
+  static std::vector<unsigned int> lookup_column_indices (ATTRTYPE &attr, unsigned int max_num, const char **labels = NULL, bool *is_contiguous = NULL)
   {
     int attrsize = attr.getSize();
     std::vector<unsigned int> checked;
