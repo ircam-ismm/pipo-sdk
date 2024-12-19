@@ -774,7 +774,10 @@ public:
   void signalError(std::string errorMsg)
   {
     if(this->parent != NULL)
-      this->parent->signalError(this, errorMsg);
+      if (this->receivers.size() > 0)
+        this->parent->signalError(this, errorMsg);
+      else // if no receivers, streamAttributes() has been called by MaxPiPoHost::propagateInputAttributes() with PiPoStreamAttributes not reflecting the actual track setup on the abstract pipo chain of the host that is to be instantiated later in each pipoproc by setupProcs() -> MaxPiPoProc::set() -> setupChain().  That's why we suppress error messages here.
+        printf("PiPo::signalError (no receivers): %s\n", errorMsg.c_str());
     else
       printf("PiPo::signalError (not parent): %s\n", errorMsg.c_str());
   }
@@ -785,7 +788,10 @@ public:
   void signalWarning(std::string errorMsg)
   {
     if(this->parent != NULL)
-      this->parent->signalWarning(this, errorMsg);
+      if (this->receivers.size() > 0)
+        this->parent->signalWarning(this, errorMsg);
+      else
+        printf("PiPo::signalWarning (no receivers): %s\n", errorMsg.c_str());
     else
       printf("PiPo::signalWarning (not parent): %s\n", errorMsg.c_str());
   }
