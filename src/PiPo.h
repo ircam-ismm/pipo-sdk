@@ -1223,6 +1223,7 @@ public:
     {
       PiPo::Atom elem(attr[i]); // put attr element (of any type) into pipo Atom, either copying atom, or wrapping int or string
       // todo: define TYPE get(int) method for all pipo::attr derivations
+      //printf("lookup_column_indices %d %d %d / %s\n", i, (int) elem.getType(), elem.getInt(), elem.getString());
 
       switch (elem.getType())
       {
@@ -1248,8 +1249,8 @@ public:
     }
 
     // if we requested to return this flag, see if checked will contain a contiguous sequence of indices checked[0]..checked[checked.size() - 1]
-    if (is_contiguous)
-      // TODO: see if user requested contiguous sequence
+    if (is_contiguous != nullptr)
+      // TODO: check if user gave a contiguous sub-sequence
       *is_contiguous = checked.size() == 0;
     
     if (checked.size() == 0)
