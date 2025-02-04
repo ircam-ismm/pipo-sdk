@@ -56,7 +56,7 @@
 #define PIPO_MAX_LABELS 1024
 
 #ifndef PIPO_SDK_VERSION
-#define PIPO_SDK_VERSION 0.4
+#define PIPO_SDK_VERSION 0.5
 
 #endif
 
@@ -923,8 +923,8 @@ public:
     virtual int getInt(unsigned int i) = 0;
     virtual double getDbl(unsigned int i) = 0;
     virtual const char *getStr(unsigned int i) = 0;
-    virtual PiPo::Atom getAtom(unsigned int i) = 0;
-    //virtual void *getPtr() = 0;  // return pointer to first data element
+    //virtual PiPo::Atom getAtom(unsigned int i) = 0; // moved to end of class to avoid changing ABI
+    //virtual void *getPtr() = 0;  // return pointer to first data element (defined with correct return type in templated derived classes of PiPo::Attr)
 
     virtual std::vector<const char *> *getEnumList(void) { return NULL; }
 
@@ -932,6 +932,8 @@ public:
     bool hasChanged() { return this->has_changed; }
     void resetChanged() { this->has_changed = false; }
     void rename(const char *name) { this->name = name; }
+
+    virtual PiPo::Atom getAtom(unsigned int i) = 0;
   }; // end class PiPo::Attr
 
   
@@ -1001,6 +1003,7 @@ public:
     }
   }; // end class PiPo::EnumAttr
 
+  
   /**
    * @brief Add attribute.  Input attr's index, name, descr fields will be overwritten.
    */
@@ -1430,6 +1433,7 @@ public:
   TYPE& operator [] (unsigned int index) { return this->values[index]; }
 };
 
+
 template <typename TYPE, unsigned int SIZE>
 class PiPoArrayAttr : public PiPo::Attr, public PiPo::AttrArray<TYPE, SIZE>
 {
@@ -1508,7 +1512,8 @@ public:
   {
     return &(values[0]);
   }
-};
+}; // end template class PiPoArrayAttr
+
 
 template <unsigned int SIZE>
 class PiPoArrayAttr<enum PiPo::Enumerate, SIZE> : public PiPo::EnumAttr, public PiPo::AttrArray<unsigned int, SIZE>
@@ -1584,7 +1589,9 @@ public:
 
     return PiPo::Atom((*this)[i]);
   }
-};
+}; // end template class PiPoArrayAttr specialization for PiPo::Enumerate
+
+
 
 /***********************************************
  *
@@ -1845,7 +1852,7 @@ public:
     if (pos >= 0  &&  pos < (int) size())
       erase(begin() + pos);
   }
-};
+}; // end template class specialisation of PiPoVarSizeAttr for pipo enum type
 
 
 // specialisation of PiPoVarSizeAttr template for pipo atom type

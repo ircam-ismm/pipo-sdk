@@ -45,7 +45,7 @@
 #include <string>
 #include <vector>
 
-const float PIPO_MIN_SDK_VERSION_REQUIRED = 0.2;
+const float PIPO_MIN_SDK_VERSION_REQUIRED = 0.5;
 
 /**
  * element of pipo chain, points to pipo pipo
