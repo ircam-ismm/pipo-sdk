@@ -46,7 +46,7 @@ class MaxPiPoHost : public PiPo::Parent
   {
     class MaxPiPoModule : public PiPoModule
     {
-      MaxPiPoT *maxPiPo;
+      MaxPiPoT *maxPiPo = NULL;
 
     public:
       MaxPiPoModule(MaxPiPoT *maxPiPo)
@@ -86,6 +86,14 @@ class MaxPiPoHost : public PiPo::Parent
 
       if(maxPiPo != NULL)
       {
+        if (maxPiPo->pipo != NULL  &&  maxPiPo->pipo->getVersion() < PIPO_MIN_SDK_VERSION_REQUIRED)
+        { // check if version of created pipo is compatible with host
+          object_error((t_object *) this->ext, "module %s version %.1f is smaller than minimum required version %.1f\n",
+                       pipoClassNameStr.c_str(), maxPiPo->pipo->getVersion(), PIPO_MIN_SDK_VERSION_REQUIRED);
+          //TODO: clean up? destroy unusable pipo
+          return NULL;
+        }
+
         module = new MaxPiPoModule(maxPiPo);
         return maxPiPo->pipo;
       }

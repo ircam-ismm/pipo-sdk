@@ -57,6 +57,7 @@
 
 #ifndef PIPO_SDK_VERSION
 #define PIPO_SDK_VERSION 0.5
+#define PIPO_SDK_VERSION_INT 5	// major * 10 + minor (0..9)
 
 #endif
 
@@ -418,12 +419,13 @@ public:
   };
 
 protected:
+  int sdk_version_int = PIPO_SDK_VERSION_INT;	//WARNING: don't move this field, it needs to be first to make the version check work for pre 0.5 because at this memory address older pipos have the parent pointer and it is 0 at the moment the check is run
   Parent *parent;
   std::vector<PiPo *> receivers; /**< list of receivers */
 
 private:
   std::vector<Attr *> attrs; /**< list of attributes */
-#if __cplusplus >= 201103L  &&  !defined(WIN32)
+#if 1 //__cplusplus >= 201103L  &&  !defined(WIN32)
   constexpr static const float sdk_version = PIPO_SDK_VERSION; /**< pipo SDK version (for inspection) */
 #endif
 
@@ -454,17 +456,20 @@ public:
 #ifdef PIPO_TESTING
   virtual float getVersion() // only for unit tests: allow to override version to simulate an out-of-date pipo module
 #else
-  static  float getVersion()
+  float getVersion()
 #endif
   {
-#if __cplusplus >= 201103L  &&  !defined(WIN32)
+    printf("pipo::getVersion -> %f static %f int %d\n", PIPO_SDK_VERSION, sdk_version, sdk_version_int);
+    return (float) sdk_version_int / 10.;
+
+#if 0 //__cplusplus >= 201103L  &&  !defined(WIN32)
 # if DEBUG * 0
     printf("pipo::getVersion -> %f\n", PiPo::sdk_version);
 # endif
     return PiPo::sdk_version;
 #else
 # if DEBUG * 0
-    printf("pipo::getVersion -> %f\n", PIPO_SDK_VERSION);
+    printf("pipo::getVersion -> %f int %d\n", PIPO_SDK_VERSION);
 # endif
     return PIPO_SDK_VERSION;
 #endif
