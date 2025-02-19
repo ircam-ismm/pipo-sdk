@@ -1,7 +1,7 @@
 /**
  *
  * @file MaxPiPo.h
- * @author Norbert.Schnell@ircam.fr
+ * @author ISMM Team @IRCAM
  * 
  * @brief Max/MSP extension of Plugin Interface for Processing Objects
  * 
