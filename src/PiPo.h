@@ -99,9 +99,14 @@ struct PiPoStreamAttributes
     { // copy label pointers array (but not strings, they're interned symbols!)
       this->labels = new const char *[width];
       this->labels_alloc = width;
-
-      for (unsigned int i = 0; i < width; i++)
-        this->labels[i] = labels[i];
+      
+      for (int i = 0; i < this->labels_alloc; i++)
+      {
+        if(labels[i] != NULL)
+          this->labels[i] = labels[i];
+        else
+          this->labels[i] = NULL;
+      }
     }
     else
     {
@@ -940,10 +945,20 @@ public:
    */
   class EnumAttr : public Attr
   {
-#if __cplusplus < 201703L // c++11 or c++14
+//#if __cplusplus < 201703L // c++11 or c++14
+#ifdef WIN32
+#if (!(defined(_MSVC_LANG) && _MSVC_LANG >= 201703L) && !(defined(_STL_LANG) && _STL_LANG >= 201703L))
+//#if (defined(_STL_LANG) && _STL_LANG >= 201703L)
     struct strCompare : public std::binary_function<const char *, const char *, bool>
 #else // from c++17 on, std::binary_function is no longer necessary and has been removed
     struct strCompare
+#endif
+#else
+#if (__cplusplus < 201703L)
+      struct strCompare : public std::binary_function<const char *, const char *, bool>
+#else // from c++17 on, std::binary_function is no longer necessary and has been removed
+    struct strCompare
+#endif
 #endif
     {
       bool operator() (const char *str1, const char *str2) const { return std::strcmp(str1, str2) < 0; }
