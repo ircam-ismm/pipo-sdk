@@ -269,7 +269,7 @@ void MaxPiPoHost::declarePiPoAttributes (PiPo *pipo, unsigned int iPiPo, const c
       else if(type == PiPo::Enum)
       {
         //printf("enumList of %s\n", typeid(*attr).name());
-        vector<const char *> *enumList = attr->getEnumList();
+        vector<const char *> *enumList = ((PiPo::EnumAttr *)attr)->getEnumList();
 
         if(enumList != NULL && enumList->size() > 0)
         {
@@ -489,7 +489,10 @@ void MaxPiPoHost::setOutputAttributes(bool hasTimeTags, double rate, double offs
       numLabels = PIPO_MAX_LABELS;
     
     for(int i = 0; i < numLabels; i++)
-      this->outputStreamAttrs.labels[i] = gensym(labels[i]);
+      if(labels[i] != NULL)
+        this->outputStreamAttrs.labels[i] = gensym(labels[i]);
+      else
+        this->outputStreamAttrs.labels[i] = NULL;
     
     this->outputStreamAttrs.numLabels = width;
   }

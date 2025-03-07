@@ -56,7 +56,8 @@
 #define PIPO_MAX_LABELS 1024
 
 #ifndef PIPO_SDK_VERSION
-#define PIPO_SDK_VERSION 0.4
+#define PIPO_SDK_VERSION 0.5
+#define PIPO_SDK_VERSION_INT 5	// major * 10 + minor (0..9)
 
 #endif
 
@@ -423,14 +424,12 @@ public:
   };
 
 protected:
+  int sdk_version_int = PIPO_SDK_VERSION_INT;	//WARNING: don't move this field, it needs to be first to make the version check work for old pipos pre 0.5 because at this memory address older pipos have the parent pointer and it is 0 at the moment the check is run
   Parent *parent;
   std::vector<PiPo *> receivers; /**< list of receivers */
 
 private:
   std::vector<Attr *> attrs; /**< list of attributes */
-#if __cplusplus >= 201103L  &&  !defined(WIN32)
-  constexpr static const float sdk_version = PIPO_SDK_VERSION; /**< pipo SDK version (for inspection) */
-#endif
 
 public:
   PiPo(Parent *parent, PiPo *receiver = NULL)
@@ -459,21 +458,15 @@ public:
 #ifdef PIPO_TESTING
   virtual float getVersion() // only for unit tests: allow to override version to simulate an out-of-date pipo module
 #else
-  static  float getVersion()
+  float getVersion()
 #endif
   {
-#if __cplusplus >= 201103L  &&  !defined(WIN32)
-# if DEBUG * 0
-    printf("pipo::getVersion -> %f\n", PiPo::sdk_version);
-# endif
-    return PiPo::sdk_version;
-#else
-# if DEBUG * 0
-    printf("pipo::getVersion -> %f\n", PIPO_SDK_VERSION);
-# endif
-    return PIPO_SDK_VERSION;
+# if DEBUG * 1
+    printf("pipo::getVersion -> %f int %d\n", PIPO_SDK_VERSION, sdk_version_int);
 #endif
+    return (float) sdk_version_int / 10.;
   }
+  
 
   /**
    * @brief Sets PiPo parent.
@@ -928,8 +921,8 @@ public:
     virtual int getInt(unsigned int i) = 0;
     virtual double getDbl(unsigned int i) = 0;
     virtual const char *getStr(unsigned int i) = 0;
-    virtual PiPo::Atom getAtom(unsigned int i) = 0;
-    //virtual void *getPtr() = 0;  // return pointer to first data element
+    //virtual PiPo::Atom getAtom(unsigned int i) = 0; // moved to end of class to avoid changing ABI
+    //virtual void *getPtr() = 0;  // return pointer to first data element (defined with correct return type in templated derived classes of PiPo::Attr)
 
     virtual std::vector<const char *> *getEnumList(void) { return NULL; }
 
@@ -937,6 +930,8 @@ public:
     bool hasChanged() { return this->has_changed; }
     void resetChanged() { this->has_changed = false; }
     void rename(const char *name) { this->name = name; }
+
+    virtual PiPo::Atom getAtom(unsigned int i) = 0;
   }; // end class PiPo::Attr
 
   
@@ -946,19 +941,10 @@ public:
   class EnumAttr : public Attr
   {
 //#if __cplusplus < 201703L // c++11 or c++14
-#ifdef WIN32
-#if (!(defined(_MSVC_LANG) && _MSVC_LANG >= 201703L) && !(defined(_STL_LANG) && _STL_LANG >= 201703L))
-//#if (defined(_STL_LANG) && _STL_LANG >= 201703L)
+#if (defined(WIN32) && (!(defined(_MSVC_LANG) && _MSVC_LANG >= 201703L) && !(defined(_STL_LANG) && _STL_LANG >= 201703L)))
     struct strCompare : public std::binary_function<const char *, const char *, bool>
 #else // from c++17 on, std::binary_function is no longer necessary and has been removed
     struct strCompare
-#endif
-#else
-#if (__cplusplus < 201703L)
-      struct strCompare : public std::binary_function<const char *, const char *, bool>
-#else // from c++17 on, std::binary_function is no longer necessary and has been removed
-    struct strCompare
-#endif
 #endif
     {
       bool operator() (const char *str1, const char *str2) const { return std::strcmp(str1, str2) < 0; }
@@ -1016,6 +1002,7 @@ public:
     }
   }; // end class PiPo::EnumAttr
 
+  
   /**
    * @brief Add attribute.  Input attr's index, name, descr fields will be overwritten.
    */
@@ -1445,6 +1432,7 @@ public:
   TYPE& operator [] (unsigned int index) { return this->values[index]; }
 };
 
+
 template <typename TYPE, unsigned int SIZE>
 class PiPoArrayAttr : public PiPo::Attr, public PiPo::AttrArray<TYPE, SIZE>
 {
@@ -1523,7 +1511,8 @@ public:
   {
     return &(values[0]);
   }
-};
+}; // end template class PiPoArrayAttr
+
 
 template <unsigned int SIZE>
 class PiPoArrayAttr<enum PiPo::Enumerate, SIZE> : public PiPo::EnumAttr, public PiPo::AttrArray<unsigned int, SIZE>
@@ -1599,7 +1588,9 @@ public:
 
     return PiPo::Atom((*this)[i]);
   }
-};
+}; // end template class PiPoArrayAttr specialization for PiPo::Enumerate
+
+
 
 /***********************************************
  *
@@ -1860,7 +1851,7 @@ public:
     if (pos >= 0  &&  pos < (int) size())
       erase(begin() + pos);
   }
-};
+}; // end template class specialisation of PiPoVarSizeAttr for pipo enum type
 
 
 // specialisation of PiPoVarSizeAttr template for pipo atom type
