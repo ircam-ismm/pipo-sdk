@@ -61,6 +61,10 @@
 
 #endif
 
+
+#define PIPO_ERROR -1
+#define PIPO_OK     0
+
 typedef float PiPoValue;
 
 
@@ -499,7 +503,7 @@ public:
    * @param hasVarSize  a boolean representing whether the frames have a variable height (respecting the given frame height as maximum)
    * @param domain      extent of a frame in the given domain (e.g. duration or frequency range)
    * @param maxFrames   maximum number of frames in a block exchanged between two modules (window size for audio)
-   * @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
+   * @return PIPO_OK (0) for ok or a negative error code (to be specified), PIPO_ERROR (-1) for an unspecified error
    */
   virtual int streamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames) = 0;
 
@@ -512,7 +516,7 @@ public:
    * PiPo host:
    * A terminating receiver module provided by a PiPo host usally simply returns 0.
    *
-   * @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
+   * @return PIPO_OK (0) for ok or a negative error code (to be specified), PIPO_ERROR (-1) for an unspecified error
    */
   virtual int reset(void)
   {
@@ -538,7 +542,7 @@ public:
    TODO: should be const!!!
    * @param size        actual number of elements in each frame (number of channels for audio, can differ from width * height for varsize frames!)
    * @param num         number of frames (number of sample framess for audio input)
-   * @return            0 for ok or a negative error code (to be specified), -1 for an unspecified error
+   * @return		PIPO_OK (0) for ok or a negative error code (to be specified), PIPO_ERROR (-1) for an unspecified error
    */
   virtual int frames (double time, double weight, PiPoValue *values, unsigned int size, unsigned int num) = 0;
 
@@ -572,7 +576,7 @@ public:
    *
    * @param time time of segment start or end
    * @param start flag, true for segment start, false for segment end
-   * @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
+   * @return PIPO_OK (0) for ok or a negative error code (to be specified), PIPO_ERROR (-1) for an unspecified error
    */
   virtual int segment(double time, bool start)
   {
@@ -590,7 +594,7 @@ public:
    * A terminating receiver module provided by a PiPo host usally simply returns 0.
    *
    * @param inputEnd end time of the finalized input stream
-   * @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
+   * @return PIPO_OK (0) for ok or a negative error code (to be specified), PIPO_ERROR (-1) for an unspecified error
    */
   virtual int finalize(double inputEnd)
   {
@@ -612,7 +616,7 @@ public:
    * @param hasVarSize a boolean representing whether the frames have a variable height (respecting the given frame height as maximum)
    * @param domain extent of a frame in the given domain (e.g. duration or frequency range)
    * @param maxFrames maximum number of frames in a block exchanged between two modules
-   * @return used as return value of the calling method
+   * @return PIPO_OK (0) for ok or a negative error code (to be specified), PIPO_ERROR (-1) for an unspecified error, used as return value of the calling method
    */
   int propagateStreamAttributes(bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames)
   {
@@ -634,7 +638,7 @@ public:
    *
    * This method is called in the reset() method of a PiPo module.
    *
-   * @return used as return value of the calling method
+   * @return PIPO_OK (0) for ok or a negative error code (to be specified), PIPO_ERROR (-1) for an unspecified error, used as return value of the calling method
    */
   int propagateReset(void)
   {
@@ -661,7 +665,7 @@ public:
    * @param values  interleaved frames values, row by row (interleaving channels or columns), frame by frame
    * @param size  total size of each frame (number of values = width * height)
    * @param num   number of frames
-   * @return    used as return value of the calling method
+   * @return PIPO_OK (0) for ok or a negative error code (to be specified), PIPO_ERROR (-1) for an unspecified error, used as return value of the calling method
    */
   int propagateFrames(double time, double weight, PiPoValue *values, unsigned int size, unsigned int num)
   {
@@ -683,7 +687,7 @@ public:
    *
    * This method is called in the segment() method of a PiPo module.
    *
-   * @return used as return value of the calling method
+   * @return PIPO_OK (0) for ok or a negative error code (to be specified), PIPO_ERROR (-1) for an unspecified error, used as return value of the calling method
    */
   int propagateSegment (double time, bool start)
   {
@@ -705,7 +709,7 @@ public:
    *
    * This method is called in the finalize() method of a PiPo module.
    *
-   * @return used as return value of the calling method
+   * @return PIPO_OK (0) for ok or a negative error code (to be specified), PIPO_ERROR (-1) for an unspecified error, used as return value of the calling method
    */
   int propagateFinalize(double inputEnd)
   {

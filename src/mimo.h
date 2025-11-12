@@ -90,6 +90,9 @@ struct mimo_buffer
 class Mimo : public PiPo
 {
 public:
+  enum Status { Error = -1, OK = 0 , Continue = 1}; // follows PIPO_ERROR, PIPO_OK
+  static bool is_ok (const int s) { return s >= OK; }
+  
   // constructor
   Mimo (PiPo::Parent *parent, Mimo *receiver = NULL)
   : PiPo(parent, receiver)
@@ -108,7 +111,7 @@ public:
       @param numtracks	number of tracks per input buffer with training data
       @param bufsizes	array[numbuffers * numtracks] of numbers of frames for each input buffer and track
       @param streamattr	array[numtracks] attributes of input data for each input track
-      @return 0 for ok or a negative error code (to be specified), -1 for an unspecified error
+      @return Mimo::OK (0) for ok or a negative error code (to be specified), Mimo::Error (-1) for an unspecified error
   */
   virtual int setup (int numbuffers, int numtracks, const int bufsizes[], const PiPoStreamAttributes *streamattr[]) = 0;
     
@@ -123,7 +126,7 @@ public:
       @param trackindex		index of current input track (up to numtracks - 1)
       @param numbuffers		number of buffers
       @param buffers		array[numbuffers] of buffer data
-      @return			status flag: continue training (> 0), stop training (== 0), error (< 0)
+      @return			status flag: Continue (> 0) continue training, Ok (0) stop training, Error (< 0)
   */
   virtual int train (int itercount, int trackindex, int numbuffers, const mimo_buffer buffers[]) = 0;
   
@@ -141,31 +144,35 @@ public:
   /** return trained model parameters */
   virtual mimo_model_data *getmodel () = 0;
 
+  // @return Mimo::OK (0) for ok or a negative error code (to be specified), Mimo::Error (-1) for an unspecified error
   int propagateSetup (int numbuffers, int numtracks, const int bufsize[], const PiPoStreamAttributes *streamattr[])
   {
-    int ret = 0;
+    int ret = OK;
     
     for (unsigned int i = 0; i < this->receivers.size(); i++)
     {
       ret = dynamic_cast<Mimo *>(this->receivers[i])->setup(numbuffers, 1, bufsize, &streamattr[0]); //TODO: what if numtracks == 0?
       
-      if (ret < 0)
+      if (!is_ok(ret))
         break;
     }
     
     return ret;
   }
 
+  // @return Mimo::OK (0) for training finished, Mimo::Continue (1) to continue training, or a negative error code (to be specified), Mimo::Error (-1) for an unspecified error
   int propagateTrain (int itercount, int trackindex, int numbuffers, const mimo_buffer buffers[])
   {
-    int ret = 0;
+    int ret = OK;
     
     for (unsigned int i = 0; i < this->receivers.size(); i++)
     { // winds up calling MimoProcReceiver::train to transmit output data for one track in all buffers
-      ret = dynamic_cast<Mimo *>(this->receivers[i])->train(itercount, trackindex, numbuffers, buffers);
+      int r = dynamic_cast<Mimo *>(this->receivers[i])->train(itercount, trackindex, numbuffers, buffers);
       
-      if (ret < 0)
+      if (!is_ok(r))
         break;
+
+      ret = std::max(r, ret); // continue if any receiver wants to continue
     }
     
     return ret;
