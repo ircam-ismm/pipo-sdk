@@ -4,8 +4,9 @@
 
 #include "PiPo.h"
 #include <memory>
+#include <algorithm>
 
-
+#define Max(a, b) ((a) > (b) ? (a) : (b))
 
 /** interface for a class that holds the mimo module-specific model parameters resulting from training
 */
@@ -172,7 +173,11 @@ public:
       if (!is_ok(r))
         break;
 
+#ifdef WIN32
+      ret = Max(r, ret);
+#else
       ret = std::max(r, ret); // continue if any receiver wants to continue
+#endif
     }
     
     return ret;
