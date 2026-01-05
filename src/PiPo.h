@@ -56,8 +56,8 @@
 #define PIPO_MAX_LABELS 1024
 
 #ifndef PIPO_SDK_VERSION
-#define PIPO_SDK_VERSION 0.5
-#define PIPO_SDK_VERSION_INT 5	// major * 10 + minor (0..9)
+#define PIPO_SDK_VERSION 0.6
+#define PIPO_SDK_VERSION_INT 6	// major * 10 + minor (0..9)
 
 #endif
 
@@ -425,6 +425,9 @@ public:
 
     /** called by pipo to signal warning in parameters */
     virtual void signalWarning(PiPo *pipo, std::string errorMsg) { };
+
+    /** called by pipo to signal warning in parameters */
+    virtual void signalProgress(PiPo *pipo, int progress) { };
   };
 
 protected:
@@ -796,6 +799,15 @@ public:
         printf("PiPo::signalWarning (no receivers): %s\n", errorMsg.c_str());
     else
       printf("PiPo::signalWarning (not parent): %s\n", errorMsg.c_str());
+  }
+
+  /**
+   * pass Mimo training progress to be output by the host.
+   */
+  void signalProgress (float progress)
+  {
+    if (parent != NULL)
+      parent->signalProgress(this, progress);
   }
 
 
