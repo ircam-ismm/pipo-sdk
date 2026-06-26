@@ -11,12 +11,11 @@
 
 #include <assert.h>
 
-#include "MaxPiPoHost.h"
+#include "PDPiPoHost.h"
 
 #include <string.h>
 #include <vector>
-#include "ext.h"	// for ext_dictionary.h and
-#include "ext_dictobj.h"
+#include "m_pd.h"
 
 using namespace std;
 

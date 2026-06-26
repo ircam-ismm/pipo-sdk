@@ -13,9 +13,8 @@
 #define _MAX_PIPO_H_
 
 #include "PiPo.h"
-#include "ext.h"
-#include "ext_obex.h"
-#include "ext_obex_util.h"
+#include "m_pd.h"
+
 
 #ifdef PIPO_MAX_WITH_DOC
 #include "ircammaxcapi.h"

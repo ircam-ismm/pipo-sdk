@@ -18,13 +18,8 @@ typedef PiPoGraph PiPoChain; // alias typedef, to be removed when graph works ex
 #else
 #include "PiPoChain.h"
 #endif
-#include "MaxPiPo.h"
-#include "ext.h"
-#include "ext_obex.h"
-#include "ext_systhread.h"
-#include "z_dsp.h"
-#include "ext_systhread.h"
-#include "z_dsp.h"
+#include "PDPiPo.h"
+#include "m_pd.h"
 
 #include <string>
 #include <vector>
