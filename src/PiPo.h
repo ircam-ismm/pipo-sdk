@@ -123,38 +123,21 @@ struct PiPoStreamAttributes
   // copy ctor
   PiPoStreamAttributes (const PiPoStreamAttributes &other)
   {
-    // printf("PiPoStreamAttributes copy ctor\n");
+    //printf("PiPoStreamAttributes copy ctor\n");
+    freelabels(); // free old labels array before pointer is overwritten
     *this = other;
-
-    if (other.labels  &&  other.labels_alloc >= 0)
-    { // copy label pointers array (but not strings, they're interned symbols!)
-      this->labels = new const char *[other.labels_alloc];
-
-      for (int i = 0; i < other.labels_alloc; i++)
-        this->labels[i] = other.labels[i];
-
-      //printf("  dup %d/%d labels %p -> %p\n", numLabels, labels_alloc, other.labels, labels);
-    }
+    copylabels(other);
   }
 
   // copy assignment
   PiPoStreamAttributes &operator= (const PiPoStreamAttributes &other)
   {
-    // printf("PiPoStreamAttributes copy assignment\n");
-
+    //printf("PiPoStreamAttributes copy assignment\n");
     if (this != &other) // self-assignment check expected
     {
+      freelabels(); // free old labels array before pointer is overwritten
       memcpy(this, &other, sizeof(other)); // shallow copy
-
-      if (other.labels  &&  other.labels_alloc >= 0)
-      { // copy label pointers array (but not strings, they're interned symbols!)
-        this->labels = new const char *[other.labels_alloc];
-
-        for (int i = 0; i < other.labels_alloc; i++)
-          this->labels[i] = other.labels[i];
-
-        //printf("  dup %d/%d labels %p -> %p\n", numLabels, labels_alloc, other.labels, labels);
-      }
+      copylabels(other);
     }
     return *this;
   }
@@ -183,11 +166,30 @@ struct PiPoStreamAttributes
     }
   };
 
-  ~PiPoStreamAttributes()
+  void freelabels ()
   {
+    //printf("  freelabels %p(%d)\n", labels, labels_alloc);
     if (labels  &&  labels_alloc >= 0)
       delete [] labels;
-  };
+  }
+
+  void copylabels (const PiPoStreamAttributes &other)
+  {
+    if (other.labels  &&  other.labels_alloc >= 0)
+    { // copy label pointers array (but not strings, they're interned symbols!)
+      labels = new const char *[other.labels_alloc];
+
+      for (int i = 0; i < other.labels_alloc; i++)
+	labels[i] = other.labels[i];
+      
+      //printf("  dup %d/%d labels %p -> %p\n", numLabels, labels_alloc, other.labels, labels);
+    }
+  }
+  
+  ~PiPoStreamAttributes()
+  {
+    freelabels();
+  }
 
   /**
    * look up column by name
