@@ -119,9 +119,10 @@ struct PiPoStreamAttributes
 
   // copy ctor
   PiPoStreamAttributes (const PiPoStreamAttributes &other)
+  : labels(NULL) // init labels at target before copy assignment calls freelabels()
   {
     //printf("PiPoStreamAttributes copy ctor\n");
-    *this = other; // calls &operator=() (which handles labels array)
+    *this = other; // calls copy assignment &operator=() (which handles labels array)
   }
 
   // copy assignment
