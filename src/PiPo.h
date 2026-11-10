@@ -117,12 +117,12 @@ struct PiPoStreamAttributes
     }
   }
 
-  // copy ctor
+  // copy constructor.  No need to do freelabels(), target object is uninitialized.
   PiPoStreamAttributes (const PiPoStreamAttributes &other)
-  : labels(NULL) // init labels at target before copy assignment calls freelabels()
   {
     //printf("PiPoStreamAttributes copy ctor\n");
-    *this = other; // calls copy assignment &operator=() (which handles labels array)
+    memcpy(this, &other, sizeof(other)); // shallow copy
+    copylabels(other);
   }
 
   // copy assignment
@@ -135,6 +135,32 @@ struct PiPoStreamAttributes
       memcpy(this, &other, sizeof(other)); // shallow copy
       copylabels(other);
     }
+    return *this;
+  }
+
+  // move constructor.  Transfers the label pointer and its ownership. The source is left in a valid, empty state.
+  PiPoStreamAttributes (PiPoStreamAttributes &&other) noexcept
+  {
+    memcpy(this, &other, sizeof(other)); // shallow copy
+
+    other.labels = NULL;
+    other.numLabels = 0;
+    other.labels_alloc = -1;
+  }
+
+  // move assignment.  Releases existing owned storage and takes ownership of the source storage without allocating.
+  PiPoStreamAttributes &operator= (PiPoStreamAttributes &&other) noexcept
+  {
+    if (this != &other)
+    {
+      freelabels();
+      memcpy(this, &other, sizeof(other)); // shallow copy
+
+      other.labels = NULL;
+      other.numLabels = 0;
+      other.labels_alloc = -1;
+    }
+
     return *this;
   }
 
