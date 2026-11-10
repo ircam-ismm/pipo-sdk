@@ -57,7 +57,7 @@
 
 #ifndef PIPO_SDK_VERSION
 #define PIPO_SDK_VERSION 0.6
-#define PIPO_SDK_VERSION_INT 6	// major * 10 + minor (0..9)
+#define PIPO_SDK_VERSION_INT 6  // major * 10 + minor (0..9)
 
 #endif
 
@@ -70,53 +70,50 @@ typedef float PiPoValue;
 
 struct PiPoStreamAttributes
 {
-  int hasTimeTags;
-  double rate;
-  double offset;
-  unsigned int dims[2]; // width, height (by pipo convention)
-  const char **labels;
-  unsigned int numLabels;
-  bool hasVarSize;
-  double domain;
-  unsigned int maxFrames;
-  int labels_alloc; ///< allocated size of labels, -1 for no (outside) allocation
-  int ringTail;
+  int           hasTimeTags;
+  double        rate;
+  double        offset;
+  unsigned int  dims[2]; // width, height (by pipo convention)
+  const char  **labels;
+  unsigned int  numLabels;
+  bool          hasVarSize;
+  double        domain;
+  unsigned int  maxFrames;
+  int           labels_alloc; ///< allocated size of labels, -1 for no (outside) allocation
+  int           ringTail;
 
+  // no-arg constructor
   PiPoStreamAttributes (int numlabels = -1)
   {
     init(numlabels);
   }
 
-  PiPoStreamAttributes (bool hasTimeTags, double rate, double offset, unsigned int width, unsigned int height, const char **labels, bool hasVarSize, double domain, unsigned int maxFrames, int ringTail = 0)
+  // fully specified constructor
+  PiPoStreamAttributes(bool _hasTimeTags, double _rate, double _offset, unsigned int _width, unsigned int _height, const char **_labels, bool _hasVarSize, double _domain, unsigned int _maxFrames, int _ringTail = 0)
   {
-    this->hasTimeTags = hasTimeTags;
-    this->rate    = rate;
-    this->offset  = offset;
-    this->dims[0] = width;
-    this->dims[1] = height;
-    this->numLabels = width;
-    this->hasVarSize  = hasVarSize;
-    this->domain  = domain;
-    this->maxFrames = maxFrames;
-    this->ringTail      = ringTail;
+    hasTimeTags = _hasTimeTags;
+    rate        = _rate;
+    offset      = _offset;
+    dims[0]     = _width;
+    dims[1]     = _height;
+    numLabels   = _width;
+    hasVarSize  = _hasVarSize;
+    domain      = _domain;
+    maxFrames   = _maxFrames;
+    ringTail    = _ringTail;
 
-    if (labels)
-    { // copy label pointers array (but not strings, they're interned symbols!)
-      this->labels = new const char *[width];
-      this->labels_alloc = width;
-      
-      for (int i = 0; i < this->labels_alloc; i++)
-      {
-        if(labels[i] != NULL)
-          this->labels[i] = labels[i];
-        else
-          this->labels[i] = NULL;
-      }
+    if (_labels)
+    { // copy label pointers array (but not strings, they're interned symbols!) (Own a copy of the pointer array, not the strings)
+      labels = new const char *[_width];
+      labels_alloc = _width;
+
+      for (unsigned int i = 0; i < _width; ++i)
+        labels[i] = _labels[i];
     }
     else
     {
-      this->labels = NULL;
-      this->labels_alloc = -1; // signals external memory
+      labels = NULL;
+      labels_alloc = -1;
     }
   }
 
@@ -124,9 +121,7 @@ struct PiPoStreamAttributes
   PiPoStreamAttributes (const PiPoStreamAttributes &other)
   {
     //printf("PiPoStreamAttributes copy ctor\n");
-    freelabels(); // free old labels array before pointer is overwritten
-    *this = other;
-    copylabels(other);
+    *this = other; // calls &operator=() (which handles labels array)
   }
 
   // copy assignment
@@ -142,35 +137,39 @@ struct PiPoStreamAttributes
     return *this;
   }
 
+  // initialisation by constructors only (don't call on existing object, would leak labels array)
   void init (int _numlab = -1)
   {
-    this->hasTimeTags = false;
-    this->rate    = 1000.0;
-    this->offset  = 0.0;
-    this->dims[0] = 1;  // width
-    this->dims[1] = 1;  // height
-    this->labels  = NULL;
-    this->numLabels = 0;
-    this->labels_alloc  = _numlab;
-    this->hasVarSize  = false;
-    this->domain  = 0.0;
-    this->maxFrames = 1;
-    this->ringTail      = 0;
+    hasTimeTags  = false;
+    rate         = 1000.0;
+    offset       = 0.0;
+    dims[0]      = 1;  // width
+    dims[1]      = 1;  // height
+    labels       = NULL;
+    numLabels    = 0;
+    labels_alloc = _numlab;
+    hasVarSize   = false;
+    domain       = 0.0;
+    maxFrames    = 1;
+    ringTail     = 0;
 
     if (_numlab >= 0)
     {
-      this->labels = new const char *[_numlab];
+      labels = new const char *[_numlab];
 
       for (int i = 0; i < _numlab; i++)
-        this->labels[i] = NULL;
+        labels[i] = NULL;
     }
   };
 
   void freelabels ()
   {
-    //printf("  freelabels %p(%d)\n", labels, labels_alloc);
+    // printf("  freelabels %p(%d)\n", labels, labels_alloc);
     if (labels  &&  labels_alloc >= 0)
+    {
       delete [] labels;
+      labels = NULL; // for safety
+    }
   }
 
   void copylabels (const PiPoStreamAttributes &other)
@@ -180,7 +179,7 @@ struct PiPoStreamAttributes
       labels = new const char *[other.labels_alloc];
 
       for (int i = 0; i < other.labels_alloc; i++)
-	labels[i] = other.labels[i];
+        labels[i] = other.labels[i];
       
       //printf("  dup %d/%d labels %p -> %p\n", numLabels, labels_alloc, other.labels, labels);
     }
@@ -249,8 +248,8 @@ struct PiPoStreamAttributes
             "ringTail\t= %d\n",
             (int) hasTimeTags, rate, offset, dims[0], dims[1],
             labels && numLabels > 0 && labels[0] != NULL  ?  labels[0]  :  "n/a",
-	    numLabels > 1  ?  "..."  :  "",
-	    numLabels > 1  ?  (labels && labels[numLabels - 1] != NULL  ?  labels[numLabels - 1]  :  "n/a")  :  "",
+            numLabels > 1  ?  "..."  :  "",
+            numLabels > 1  ?  (labels && labels[numLabels - 1] != NULL  ?  labels[numLabels - 1]  :  "n/a")  :  "",
             numLabels, labels_alloc,
             (int) hasVarSize, domain, maxFrames, ringTail);
     
@@ -433,7 +432,7 @@ public:
   };
 
 protected:
-  int sdk_version_int = PIPO_SDK_VERSION_INT;	//WARNING: don't move this field, it needs to be first to make the version check work for old pipos pre 0.5 because at this memory address older pipos have the parent pointer and it is 0 at the moment the check is run
+  int sdk_version_int = PIPO_SDK_VERSION_INT;   //WARNING: don't move this field, it needs to be first to make the version check work for old pipos pre 0.5 because at this memory address older pipos have the parent pointer and it is 0 at the moment the check is run
   Parent *parent;
   std::vector<PiPo *> receivers; /**< list of receivers */
 
@@ -547,7 +546,7 @@ public:
    TODO: should be const!!!
    * @param size        actual number of elements in each frame (number of channels for audio, can differ from width * height for varsize frames!)
    * @param num         number of frames (number of sample framess for audio input)
-   * @return		PIPO_OK (0) for ok or a negative error code (to be specified), PIPO_ERROR (-1) for an unspecified error
+   * @return            PIPO_OK (0) for ok or a negative error code (to be specified), PIPO_ERROR (-1) for an unspecified error
    */
   virtual int frames (double time, double weight, PiPoValue *values, unsigned int size, unsigned int num) = 0;
 
@@ -858,8 +857,8 @@ public:
     const char *  getString() const { return (isString() ? this->data.str : ""); }
 
     // implicit cast conversion operators
-    operator int ()	      const { return getInt(); }
-    operator double ()	      const { return getDouble(); }
+    operator int ()           const { return getInt(); }
+    operator double ()        const { return getDouble(); }
     operator const char* ()   const { return getString(); }
     
   }; // class PiPo::Atom
@@ -1227,9 +1226,9 @@ public:
   // checks that index is < max_num, looks up strings in given column names, returns int array of valid indices
   // N.B.: no sorting, double columns are allowed
   //
-  // @param attr		pipo attribute to get column index or name from, can be any PiPo::Attr subclass that has operator[] defined (fixed or var size list, not yet scalar)
-  // @param max_num	highest valid index + 1
-  // @param labels	array of max_num column names for lookup from string attr
+  // @param attr                pipo attribute to get column index or name from, can be any PiPo::Attr subclass that has operator[] defined (fixed or var size list, not yet scalar)
+  // @param max_num     highest valid index + 1
+  // @param labels      array of max_num column names for lookup from string attr
   // @return vector<int> of valid column indices ( 0 .. max_num - 1), empty attr list returns vector of all indices 0 .. max_num - 1
 
   template<typename ATTRTYPE>
@@ -1249,22 +1248,22 @@ public:
       {
         case PiPo::Double:
         case PiPo::Int:
-	{
-	  int res = elem.getInt();
-	  if (res >= 0  &&  static_cast<unsigned int>(res) < max_num)
-	    checked.push_back(res);
-	}
-	break;
+        {
+          int res = elem.getInt();
+          if (res >= 0  &&  static_cast<unsigned int>(res) < max_num)
+            checked.push_back(res);
+        }
+        break;
 
         case PiPo::String:
-	  if (labels != NULL) // lookup string atom by search (TBD: make dict lookup?)
-	    for (unsigned int j = 0; j < max_num; j++)
-	      if (labels[j] != NULL  &&  std::strcmp(elem.getString(), labels[j]) == 0)
-		checked.push_back(j);
-	  break;
+          if (labels != NULL) // lookup string atom by search (TBD: make dict lookup?)
+            for (unsigned int j = 0; j < max_num; j++)
+              if (labels[j] != NULL  &&  std::strcmp(elem.getString(), labels[j]) == 0)
+                checked.push_back(j);
+          break;
 
         default: 
-	  break;
+          break;
       }
     }
 
@@ -1278,7 +1277,7 @@ public:
       // fill with all indices
       checked.resize(max_num);
       for (unsigned int i = 0; i < max_num; ++i)
-	checked[i] = i;
+        checked[i] = i;
     }
 
     return checked;
@@ -1333,7 +1332,7 @@ private:
 
 public:
   PiPoScalarAttr(PiPo *pipo, const char *name, const char *descr, bool changesStream,
-		 const char *initVal = (const char *) 0)
+                 const char *initVal = (const char *) 0)
   : Attr(pipo, name, descr, &typeid(const char *), changesStream)
   {
     this->value = initVal;
